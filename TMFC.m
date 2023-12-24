@@ -45,187 +45,197 @@ function varargout = TMFC()
 % Contact email: masharipov@ihb.spb.ru
 
 %% ==================[ Set up GUI and tmfc structure ]=====================
- 
-% CONDITIONAL SEQUENCE to Run only 1 INSTANCE of TMFC GUI
-if isempty(findobj("Tag", "MAIN_WINDOWS")) == 1 
-
-tmfc.defaults.parallel = 1;      
-tmfc.defaults.maxmem = 2^31;
-tmfc.defaults.resmem = true;
-
-tmfc.project_path = "";
-tmfc.subjects(1).paths = "";
-tmfc.subjects(1).FIR = [];
-tmfc.subjects(1).LSS_after_FIR = [];
-tmfc.subjects(1).LSS_without_FIR = [];
-
-tmfc.FIR_window = NaN; 
-tmfc.FIR_bins = NaN;   
-
-tmfc.LSS_after_FIR.conditions = "";
-tmfc.LSS_without_FIR.conditions = "";
-
-tmfc.ROIs_set = [];
-
-% Assign Project variables 
-assignin('base', 'tmfc', tmfc);
-
-% Initializing Handles & Elements of the GUI 
-
-handles.MAIN_F = figure("Name", "TMFC Toolbox", "NumberTitle", "off", "Units", "normalized", "Position", [0.40 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off',"Tag", "MAIN_WINDOWS");
-
-% Select Subjects
-handles.SUB = uicontrol('Style','pushbutton', "String", "Subjects","Units", "normalized", "Position",[0.06 0.86 0.40 0.0715]);
-handles.SUB_stat = uicontrol('Style','text',"String", "Not selected","ForegroundColor","red","Units", "normalized", "Position",[0.55 0.84 0.40 0.0715],'backgroundcolor','w', "Tag", "SS_1");
-
-% FIR Task Regression
-handles.FIR_TR = uicontrol('Style','pushbutton', "String", "FIR task regression","Units", "normalized", "Position",[0.06 0.765 0.40 0.0715]);
-handles.FIR_TR_stat = uicontrol('Style','text',"String", "Not done","ForegroundColor","#C55A11","Units", "normalized", "Position",[0.55 0.745 0.40 0.0715],'backgroundcolor','w');
-
-% LSS after FIR
-handles.LSS_R = uicontrol('Style','pushbutton', "String", "LSS after FIR","Units", "normalized", "Position",[0.06 0.669 0.40 0.0715]);
-handles.LSS_R_stat = uicontrol('Style','text',"String", "Not done","ForegroundColor","#C55A11","Units", "normalized", "Position",[0.55 0.653 0.40 0.0715],'backgroundcolor','w');
-
-% LSS without FIR 
-handles.LSS_RW = uicontrol('Style','pushbutton', "String", "LSS without FIR","Units", "normalized", "Position",[0.06 0.571 0.40 0.0715]);
-handles.LSS_RW_stat = uicontrol('Style','text',"String", "Not done","ForegroundColor","#C55A11","Units", "normalized", "Position",[0.55 0.551 0.40 0.0715],'backgroundcolor','w');
-
-% Background Connectivity, BSC-LSS & gPPI 
-handles.bgrd = uicontrol('Style','pushbutton', "String", "Background Connectivity","Units", "normalized", "Position",[0.06 0.475 0.875 0.0715]);
-handles.BSC = uicontrol('Style','pushbutton', "String", "BSC-LSS","Units", "normalized", "Position",[0.06 0.380 0.875 0.0715]);
-handles.gppi = uicontrol('Style','pushbutton', "String", "gPPI","Units", "normalized", "Position",[0.06 0.280 0.875 0.0715]);
-
-% Peripheral Buttons 
-% (Save project, open project, Change paths, Settings)
-handles.save_p = uicontrol('Style','pushbutton', "String", "Save project","Units", "normalized", "Position",[0.06 0.130 0.40 0.0715]);
-handles.open_p = uicontrol('Style','pushbutton', "String", "Open project","Units", "normalized", "Position",[0.536 0.130 0.40 0.0715]);
-handles.change_p = uicontrol('Style','pushbutton', "String", "Change paths","Units", "normalized", "Position",[0.06 0.038 0.40 0.0715]);
-handles.settings = uicontrol('Style','pushbutton', "String", "Settings","Units", "normalized", "Position",[0.536 0.038 0.40 0.0715]);
 
 
-% CallBack functions corresponding to each button
-set(handles.MAIN_F, 'CloseRequestFcn', {@Close_TMFC, handles.MAIN_F}); 
-set(handles.SUB, 'callback', {@SUB_SEL, handles.MAIN_F});
-set(handles.FIR_TR, 'callback', {@FIR_REG, handles.MAIN_F});
-set(handles.settings, 'callback', {@Settings, handles.MAIN_F});
-set(handles.change_p, 'callback', {@CP_GUI, handles.MAIN_F});
-set(handles.save_p, 'callback', {@SAVE_PROJ, handles.MAIN_F});
-set(handles.open_p, 'callback', {@LOAD_PROJ, handles.MAIN_F});
+    % CONDITIONAL SEQUENCE to Run only 1 INSTANCE of TMFC GUI
+    if isempty(findobj("Tag", "MAIN_WINDOWS")) == 1 
+
+        tmfc.defaults.parallel = 1;      
+        tmfc.defaults.maxmem = 2^31;
+        tmfc.defaults.resmem = true;
+
+        tmfc.project_path = "";
+        tmfc.subjects(1).paths = "";
+        
+        tmfc.FIR_window = NaN; %32
+        tmfc.FIR_bins = NaN;   %16
+        
+        tmfc.subjects(1).FIR = [];
+        tmfc.subjects(1).LSS_after_FIR = [];
+        tmfc.subjects(1).LSS_without_FIR = [];
+        
+        tmfc.LSS_after_FIR.conditions = "";
+        tmfc.LSS_without_FIR.conditions = "";
+
+        tmfc.ROIs_set = [];
+        
+        % Assign Project variables 
+        assignin('base', 'tmfc', tmfc);
+
+
+        % Initializing Handles & Elements of the GUI 
+        
+        handles.MAIN_F = figure("Name", "TMFC Toolbox", "NumberTitle", "off", "Units", "normalized", "Position", [0.40 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off',"Tag", "MAIN_WINDOWS");
+        
+        % Select Subjects
+        handles.SUB = uicontrol('Style','pushbutton', "String", "Subjects","Units", "normalized", "Position",[0.06 0.86 0.40 0.0715]);
+        handles.SUB_stat = uicontrol('Style','text',"String", "Not selected","ForegroundColor","red","Units", "normalized", "Position",[0.55 0.84 0.40 0.0715],'backgroundcolor','w', "Tag", "SS_1");
+        
+        % FIR Task Regression
+        handles.FIR_TR = uicontrol('Style','pushbutton', "String", "FIR task regression","Units", "normalized", "Position",[0.06 0.765 0.40 0.0715]);
+        handles.FIR_TR_stat = uicontrol('Style','text',"String", "Not done","ForegroundColor","#C55A11","Units", "normalized", "Position",[0.55 0.745 0.40 0.0715],'backgroundcolor','w');
+        
+        % LSS after FIR
+        handles.LSS_R = uicontrol('Style','pushbutton', "String", "LSS after FIR","Units", "normalized", "Position",[0.06 0.669 0.40 0.0715]);
+        handles.LSS_R_stat = uicontrol('Style','text',"String", "Not done","ForegroundColor","#C55A11","Units", "normalized", "Position",[0.55 0.653 0.40 0.0715],'backgroundcolor','w');
+       
+        % LSS without FIR 
+        handles.LSS_RW = uicontrol('Style','pushbutton', "String", "LSS without FIR","Units", "normalized", "Position",[0.06 0.571 0.40 0.0715]);
+        handles.LSS_RW_stat = uicontrol('Style','text',"String", "Not done","ForegroundColor","#C55A11","Units", "normalized", "Position",[0.55 0.551 0.40 0.0715],'backgroundcolor','w');
+       
+        % Background Connectivity, BSC-LSS & gPPI 
+        handles.bgrd = uicontrol('Style','pushbutton', "String", "Background Connectivity","Units", "normalized", "Position",[0.06 0.475 0.875 0.0715]);
+        handles.BSC = uicontrol('Style','pushbutton', "String", "BSC-LSS","Units", "normalized", "Position",[0.06 0.380 0.875 0.0715]);
+        handles.gppi = uicontrol('Style','pushbutton', "String", "gPPI","Units", "normalized", "Position",[0.06 0.280 0.875 0.0715]);
+       
+        % Peripheral Buttons 
+        % (Save project, open project, Change paths, Settings)
+        handles.save_p = uicontrol('Style','pushbutton', "String", "Save project","Units", "normalized", "Position",[0.06 0.130 0.40 0.0715]);
+        handles.open_p = uicontrol('Style','pushbutton', "String", "Open project","Units", "normalized", "Position",[0.536 0.130 0.40 0.0715]);
+        handles.change_p = uicontrol('Style','pushbutton', "String", "Change paths","Units", "normalized", "Position",[0.06 0.038 0.40 0.0715]);
+        handles.settings = uicontrol('Style','pushbutton', "String", "Settings","Units", "normalized", "Position",[0.536 0.038 0.40 0.0715]);
+
+
+        % CallBack functions corresponding to each button
+        set(handles.MAIN_F, 'CloseRequestFcn', {@Close_TMFC, handles.MAIN_F}); 
+        set(handles.SUB, 'callback', {@SUB_SEL, handles.MAIN_F});
+        set(handles.FIR_TR, 'callback', {@FIR_REG, handles.MAIN_F});
+        set(handles.settings, 'callback', {@Settings, handles.MAIN_F});
+        set(handles.change_p, 'callback', {@CP_GUI, handles.MAIN_F});
+        set(handles.save_p, 'callback', {@SAVE_PROJ, handles.MAIN_F});
+        set(handles.open_p, 'callback', {@LOAD_PROJ, handles.MAIN_F});
 %        set(handles.ROI, 'callback', {@ROI_EXEC, handles.MAIN_F});
-set(handles.LSS_R, 'callback', {@LSS_REG, handles.MAIN_F});
-
-else
-% Error displayed if user tries to run TMFC when already running
-
-% This statement will bring the Toolbox to the front
-figure(findobj("Tag", "MAIN_WINDOWS")); 
-error("TMFC toolbox is already running");
-
-end
-    
-%% ======================[ TMFC Close Action ]=============================
- 
-function Close_TMFC(ButtonH, EventData, MAIN_F) 
-    
-        % Exit Dialouge GUI
-        EXIT_PROMPT = figure("Name", "TMFC: Exit", "NumberTitle", "off", "Units", "normalized", "Position", [0.38 0.44 0.25 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', "Tag", "EXIT_FIN", 'WindowStyle','modal'); %X Y W H
-
-        % Content - Can be changed to a single sentence using \html or
-        % sprtinf
-        EX_Q1 = uicontrol(EXIT_PROMPT,'Style','text',"String", "Would you like to save your progress","Units", "normalized", "HorizontalAlignment", "center",'fontunits','normalized', 'fontSize', 0.38);
-        EX_Q2 = uicontrol(EXIT_PROMPT,'Style','text',"String", "before exiting TMFC toolbox?", "Units","normalized", "HorizontalAlignment", "center",'fontunits','normalized', 'fontSize', 0.38);
-
-        % Buttons of the GUI
-        EX_YES = uicontrol(EXIT_PROMPT,'Style','pushbutton',"String", "Yes","Units", "normalized",'fontunits','normalized', 'fontSize', 0.38);
-        EX_NO = uicontrol(EXIT_PROMPT,'Style','pushbutton', "String", "No","Units", "normalized",'fontunits','normalized', 'fontSize', 0.38);
-
-        % Spawn Positions of the GUI text boxes & buttons
-        EX_Q1.Position = [0.04 0.55 0.94 0.260];
-        EX_Q2.Position = [0.10 0.40 0.80 0.260];
-        EX_YES.Position = [0.16 0.18 0.300 0.200];
-        EX_NO.Position = [0.57 0.18 0.300 0.200];
-
-        % Colour of Text boxes & actions of buttons
-        set([EX_Q1,EX_Q2],'backgroundcolor',get(EXIT_PROMPT,'color'));
-        set(EX_NO, 'callback', @EX_WO_SAVE);
-        set(EX_YES, 'callback', @EX_W_SAVE);
+        set(handles.LSS_R, 'callback', {@LSS_REG, handles.MAIN_F});
         
-        % EX_NO = Exit without saving TMFC toolbox
-        % EX_YES = Save & then Exit TMFC toolbox
+    else
+        % Error displayed if user tries to run TMFC when already running
         
-    % Function to Exit toolbox WITHOUT saving TMFC variable
-    function EX_WO_SAVE(~,~)
-        % Closes dialouge box -> closes Main GUI
-        close(EXIT_PROMPT);
-        delete(handles.MAIN_F);
+        % This statement will bring the Toolbox to the front
+        figure(findobj("Tag", "MAIN_WINDOWS")); 
+        error("TMFC toolbox is already running");
         
     end
     
-    % Function to Exit toolbox AFTER saving TMFC variable
-    function EX_W_SAVE(~,~)
-        % Performs saving of TMFC variable using SAVE_PROJECT function
-        CT_1 = SAVE_PROJ();
+%% =========================[ TMFC Close Action ]==========================
+ 
+    % Function to peform Save & Exit from TMFC function. This function is 
+    % linked to the close button on the top right handside of the Window
+    
+    % NEED TO ADD CONDITION WHEN TMFC VARIABLE IS DELETED BUT TRY TO EXIT
+    % DELETE TMFC in WS-> Close TMFC -> DO NOT ASK TO SAVE (Give warning)
+    function Close_TMFC(ButtonH, EventData, MAIN_F) 
         
-        % Based on the result of successful save, TMFC toolbox is
-        % closed (i.e. Save->Save Status-> Close Main GUI)
-        if CT_1 == 1
+            % Exit Dialouge GUI
+            EXIT_PROMPT = figure("Name", "TMFC: Exit", "NumberTitle", "off", "Units", "normalized", "Position", [0.38 0.44 0.25 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', "Tag", "EXIT_FIN", 'WindowStyle','modal'); %X Y W H
+
+            % Content - Can be changed to a single sentence using \html or
+            % sprtinf
+            EX_Q1 = uicontrol(EXIT_PROMPT,'Style','text',"String", "Would you like to save your progress","Units", "normalized", "HorizontalAlignment", "center",'fontunits','normalized', 'fontSize', 0.38);
+            EX_Q2 = uicontrol(EXIT_PROMPT,'Style','text',"String", "before exiting TMFC toolbox?", "Units","normalized", "HorizontalAlignment", "center",'fontunits','normalized', 'fontSize', 0.38);
+
+            % Buttons of the GUI
+            EX_YES = uicontrol(EXIT_PROMPT,'Style','pushbutton',"String", "Yes","Units", "normalized",'fontunits','normalized', 'fontSize', 0.38);
+            EX_NO = uicontrol(EXIT_PROMPT,'Style','pushbutton', "String", "No","Units", "normalized",'fontunits','normalized', 'fontSize', 0.38);
+
+            % Spawn Positions of the GUI text boxes & buttons
+            EX_Q1.Position = [0.04 0.55 0.94 0.260];
+            EX_Q2.Position = [0.10 0.40 0.80 0.260];
+            EX_YES.Position = [0.16 0.18 0.300 0.200];
+            EX_NO.Position = [0.57 0.18 0.300 0.200];
+
+            % Colour of Text boxes & actions of buttons
+            set([EX_Q1,EX_Q2],'backgroundcolor',get(EXIT_PROMPT,'color'));
+            set(EX_NO, 'callback', @EX_WO_SAVE);
+            set(EX_YES, 'callback', @EX_W_SAVE);
+            
+            % EX_NO = Exit without saving TMFC toolbox
+            % EX_YES = Save & then Exit TMFC toolbox
+            
+        % Function to Exit toolbox WITHOUT saving TMFC variable
+        function EX_WO_SAVE(~,~)
+            % Closes dialouge box -> closes Main GUI
             close(EXIT_PROMPT);
             delete(handles.MAIN_F);
-            
+            disp("Goodbye!");
         end
+        
+        % Function to Exit toolbox AFTER saving TMFC variable
+        function EX_W_SAVE(~,~)
+            % Performs saving of TMFC variable using SAVE_PROJECT function
+            CT_1 = SAVE_PROJ();
+            
+            % Based on the result of successful save, TMFC toolbox is
+            % closed (i.e. Save->Save Status-> Close Main GUI)
+            if CT_1 == 1
+                close(EXIT_PROMPT);
+                delete(handles.MAIN_F);
+                disp("Goodbye!");
+            end
+        end
+        
     end
     
-end
-    
+
 %% ====================[ TMFC Save Project Action ]========================
 
-    % Function to perform saving of tmfc structure from workspace to 
+    % Function to perform Saving of TMFC variable from workspace to
     % individual .m file in user desired location
     
-function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, MAIN_F)
-   
-    % Acquire variable from Workspace
-    %TMFC = evalin('base', 'tmfc');
-    
-    % Ask user for Filename & location name:
-    [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as'); %pwd
-    
-    % Set Flag save status to Zero, this flag is used in the future as
-    % a reference to check if the Save was successful or not
-    SAVE_STAT = 0;
-    
-    % Check if FileName or Path is missing or not available 
-    if isequal(filename_SO, 0) || isequal(pathname_SO, 0)
-        error("TMFC variable not saved, File name or Save Directory not selected");
-    
-    else
-        % If all data is available
-        % Construct full path: PATH + FileName
-        % e.g (D:\user\matlab\ + Test.m)
+    function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, MAIN_F)
+       
+        % Acquire variable from Workspace
+        %TMFC = evalin('base', 'tmfc');
         
-        fullpath = fullfile(pathname_SO, filename_SO);
+        % Ask user for Filename & location name:
+        [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as'); %pwd
         
-        % D receives the save status of the variable in the desingated
-        % location
-        SAVE_STAT = Saver(fullpath);
+        % Set Flag save status to Zero, this flag is used in the future as
+        % a reference to check if the Save was successful or not
+        SAVE_STAT = 0;
         
-        % If the variable was successfully saved then display info
-        if SAVE_STAT == 1
-            fprintf("File saved successfully in path: %s\n", fullpath);
+        % Check if FileName or Path is missing or not available 
+        if isequal(filename_SO, 0) || isequal(pathname_SO, 0)
+            error("TMFC variable not saved, File name or Save Directory not selected");
+        
         else
-            fprintf("File not saved ");
+            % If all data is available
+            % Construct full path: PATH + FileName
+            % e.g (D:\user\matlab\ + Test.m)
+            
+            fullpath = fullfile(pathname_SO, filename_SO);
+            
+            % D receives the save status of the variable in the desingated
+            % location
+            SAVE_STAT = Saver(fullpath);
+            
+            % If the variable was successfully saved then display info
+            if SAVE_STAT == 1
+                fprintf("File saved successfully in path: %s\n", fullpath);
+            else
+                fprintf("File not saved ");
+            end
+            %save(pathname, replace( filename, ".mat" , "" ));
+            %save(fullpath, "TMFC");
+            %fprintf("File saved successfully in path: %s\n", fullpath);
         end
-        %save(pathname, replace( filename, ".mat" , "" ));
-        %save(fullpath, "TMFC");
-        %fprintf("File saved successfully in path: %s\n", fullpath);
+              
     end
-          
-end
 
 
-%% ----------- ----------- TMFC LOAD PROJECT Action ----------- -----------
+%% ====================[ TMFC LOAD PROJECT Action ]========================
 
-    % Function to perform loading of TMFC variable from .m file to Workspace in matlab
+    % Function to perform loading of TMFC variable from .m file 
+    % to Workspace in matlab
     
     function LOAD_PROJ(ButtonH, EventData, MAIN_F)
         
@@ -248,7 +258,8 @@ end
             
             % Assign generated data into Base workspace under corresponding
             % variable name
-            assignin('base', variable_name_L{1}, variable_value_L);
+            %assignin('base', variable_name_L{1}, variable_value_L);
+            assignin('base', "tmfc", variable_value_L);
             
             % Supporting Function - To Update TMFC GUI when loading data
             evaluate_file();
@@ -260,7 +271,7 @@ end
     end
 
 
-%% ----------- ----------- TMFC CHANGE PATHS Action ----------- -----------
+%% ====================[ TMFC CHANGE PATHS Action ]========================
 
 % Function to perform change of paths using Select subs
 
@@ -284,13 +295,12 @@ end
     end
 
 
-%% ------------ ------------ TMFC Settings Action ----------- ------------
+%% ======================[ TMFC Settings Action ]==========================
 
 
     % Function that launches Settings Window & Synchronizes new options 
     
     % Variables to store & display selected settings in the settings window
-    
     % Type of computing (Default computing: Parallel - 0, Sequential - 1)
     COMPUTING = ["Parallel computing", "Sequential computing"];
     STORAGE = ["Store temporary files for GLM estimation in RAM", "Store temporary files for GLM estimation on disk"];
@@ -397,23 +407,184 @@ end
     end
 
 
-%% ----------- ---------- TMFC SELECT SUBJECTS Action --------- -----------
+%% ===================[ TMFC SELECT SUBJECTS Action ]======================
 
-    % Function that performs Select Subject operation(WITH four-stage checks)
+    % Function that performs Select Subject operation
+    % (WITH four-stage checks)
     
     function SUB_SEL (ButtonH, EventData, MAIN_F)
-        
-        % '1' in parameters indicate perform selection with Checks
         tmfc_select_subjects_GUI(MAIN_F, 1);
-        
     end
 
 
+
+
+%% ===================[ TMFC FIR Regression Action ]=======================
+
+    function FIR_REG(ButtonH, EventData, MAIN_F)
+        
+    % Function that performs Cordinates & performs FIR Regression 
+    % Supporting functions (External) - tmfc_FIR_GUI(), tmfc_FIR_regress()
+    %                      (Internal) - FIR_Runner()
+        
+    % Freezing the Main window
+    try
+        h_FREZ = findobj('Tag','MAIN_WINDOWS');
+        F_data = guidata(h_FREZ); 
+        set([F_data.SUB,F_data.FIR_TR, F_data.LSS_R, F_data.LSS_RW, F_data.BSC, F_data.gppi,F_data.save_p, F_data.open_p, F_data.change_p, F_data.settings,F_data.bgrd],'Enable', "off");
+    end
+    
+        % Checking if the FIR_WINDOWS & BINS GUI is open 
+        try 
+            CHECK_FIR = findobj("Tag", "FIR_REG_NUM");
+        end 
+        
+        % Continue with selection if the window doesn't exist
+        if isempty(CHECK_FIR)
+        
+            % Initialize Local copy of start index & TMFC variable in runtime
+            N_index = 0;
+            SUB_EXT = evalin('base', 'tmfc');
+
+            % If there exists subjects in the TMFC variable then proceed
+            if SUB_EXT.subjects(1).paths ~= ""            
+
+                % Check if FIR WINDOWS is not NaN, enter WIN & BIN
+                if isnan(SUB_EXT.FIR_window)
+                   tmfc_FIR_GUI(1);               
+                   uiwait();
+                end
+
+                % Create second local copy of TMFC that collects WIN & BIN
+                SUB_EXT_2 = evalin('base', 'tmfc');
+                % Create variable to store the lenght of subjects
+                DG = length(SUB_EXT_2.subjects);
+
+                % Check condition if FIR WINDOWS & BINS is not ZERO or NaN
+                if SUB_EXT_2.FIR_window ~= 0 & SUB_EXT_2.FIR_bins ~= 0 & isnan(SUB_EXT_2.FIR_window) == 0 & isnan(SUB_EXT_2.FIR_bins) == 0
+
+                    
+                    % CONDITION 1: When running FIR Regression for the
+                    % FIRST TIME (EMPTY)
+                    
+                    % Check if first subject is processed (i.e. not NaN)
+                    if isnan(SUB_EXT_2.subjects(1).FIR) % 
+                        FIR_RUNNER(1);
+
+                    % CONDITION 2: When running FIR Regression after 
+                    % FULL COMPUTATION IS COMPELTED (Full Re-Run)
+                    
+                    % Condition to check if the last subject is computed
+                    elseif isnan(SUB_EXT_2.subjects(DG).FIR) == 0% FULL RE-RUN                        
+                        tmfc_FIR_GUI(2); % GUI to ask Restart Permission
+                        uiwait();
+                        
+                        % Obtain status of Restart from User (0/1)
+                        h18 = findobj("Tag", "MAIN_WINDOWS");
+                        h18_V = getappdata(h18, "RESTART_FIR");
+                        
+                        % If Restart is allowed, proceed
+                        if h18_V == 1
+                            
+                            % Ask for WINDOWS & BINS
+                            tmfc_FIR_GUI(1);                                           % Enter Windows & Bins 
+                            uiwait();
+                            
+                            % Collect Restart state again & RUN from start
+                            h4 = findobj("Tag", "MAIN_WINDOWS");
+                            D4 = getappdata(h4, "RESTART_FIR");
+                            if D4 == 1
+                                FIR_RUNNER(1);
+                            end
+                        end
+
+                    else
+                        % CONDITION 3: When running FIR Regression from 
+                        % THE MIDDLE OR CONTINUATION (Last processed sub)
+                        
+                        % Find the last procssed subject (i.e. not NaN)
+                        for i = 1:DG
+                            SUB_EXT_3 = evalin('base', 'tmfc');
+                            if isnan(SUB_EXT_3.subjects(i).FIR) == 1
+                                N_index = i; % INDEX of last processed subject is found
+                                break;
+                            end
+                        end
+                        
+                        % Ask User if they want to continue from the Index
+                        % GUI for Continue or Restart action
+                        tmfc_FIR_GUI(3, N_index); 
+                        uiwait();
+                        
+                        % Get Status of Continuation
+                        h5 = findobj("Tag", "MAIN_WINDOWS");
+                        D5 = getappdata(h5, "CONTD_FIR");
+                        
+                        if D5 == 1 % Continue computation from the Last processed index
+                            FIR_RUNNER(int32(N_index));
+                            setappdata(h5,"CONTD_FIR", 0);
+                            
+                        elseif D5 == 2 % Restart Computation from the first subject
+                            tmfc_FIR_GUI(1);        % Enter Windows & Bins 
+                            uiwait();                            
+                            FIR_RUNNER(1);
+                            setappdata(h5,"CONTD_FIR", 0); % Reset status
+                        else
+                            warning("Somethings not right here, the status of CONTD_FIR was not changed by the GUI via App data");
+                        end
+                        
+                    end % Closing if statement for CONDITION 3
+                    
+                else
+                    error("Please enter the Windows and bins to perform FIR Regression");
+                end % Closing if statement for FIR Regress Conditions (1,2,3)
+                
+            else
+                error("Please select subjects to peform FIR regression");
+            end % Closing If statement to check WINDOWS & BINS 
+
+            else
+                error("FIR Regression is already running");
+        end % Closing if Statment to check if FIR exists
+        
+    end % Closing FIR Regress Function
+       
+
+    % FIR Function the performs computation 
+    function FIR_RUNNER(str_sub)
+        
+        % Freeze buttons on Main Window
+        FIR_TMFC = evalin('base', 'tmfc');
+        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gppi,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.bgrd],'Enable', "off");
+        
+        % Actuator Function 
+        try
+        tmfc_FIR_regress(FIR_TMFC, str_sub);
+        end
+        
+        % Unfrezee action after completion of actuation
+        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gppi,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.bgrd],'Enable', "on");
+        disp("FIR Processing completed");
+    end
+
+    
+    % Failsafe function to pervent unintended freeze of TMFC Main Window
+    try
+        h1_UNFREZ = findobj('Tag','MAIN_WINDOWS');
+        F1_data = guidata(h1_UNFREZ); 
+        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gppi,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.bgrd],'Enable', "on");
+    end
+            
+                
+    try % MAJOR CHANGE
+        guidata(handles.MAIN_F, handles);
+    end
+    
+    
 %% ----------- ---------- TMFC SELECT SUBJECTS Action --------- -----------
 
     % Function to perform
-    
-        
+
     function LSS_REG(ButtonH, ~, MAIN_F)
         
        L_checker = evalin('base', 'tmfc');
@@ -423,12 +594,14 @@ end
        elseif ~isnan(L_checker.FIR_bins) & ~isnan(L_checker.FIR_window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
            warning("Please complete the FIR Regression of all elements before proceeding with LSS regression");
        else
-           tmfc_LSS_GUI();       
+           disp("in progress");
+           %tmfc_LSS_GUI();
        end
     end
     
     
 %% ----------- ---------- TMFC SELECT SUBJECTS Action --------- -----------  
+
     function ROI_EXEC(ButtonH, EventData, MAIN_F)
         
         R_checker = evalin('base', 'tmfc');
@@ -448,111 +621,13 @@ end
             tmfc_ROI_SET();
         end
         
-    end  
-
-%% ----------- ---------- TMFC SELECT SUBJECTS Action --------- -----------
-    function FIR_REG(ButtonH, EventData, MAIN_F)
-        
-        try 
-            CHECK_FIR = findobj("Tag", "FIR_REG_NUM");
-        end 
-        
-        if isempty(CHECK_FIR)
-        
-        N_index = 0;
-        R2_C = evalin('base', 'tmfc');
-
-        % If there exists paths then do the following:
-        if R2_C.subjects(1).paths ~= ""            
-            
-            if R2_C.FIR_window == 0 
-               tmfc_FIR_regress_GUI();                                           % Enter Windows & Bins 
-                uiwait();
-            end
-            
-            BMP = evalin('base', 'tmfc');
-            DG = length(BMP.subjects);
-            
-            if BMP.FIR_window ~= 0 & BMP.FIR_bins ~= 0
-                
-                if isnan(BMP.subjects(1).FIR) % FIRST-RUN condition  isempty
-                    FIR_RUNNER(1);
-                    
-                elseif isnan(BMP.subjects(DG).FIR) == 0% FULL RE-RUN
-                    
-                    tmfc_FIR_restart_GUI();
-                    uiwait();
-                    h18 = findobj("Tag", "MAIN_WINDOWS");
-                    h18_V = getappdata(h18, "RESTART_FIR");
-                    if h18_V == 1
-                        tmfc_FIR_regress_GUI();                                           % Enter Windows & Bins 
-                        uiwait();
-                        h4 = findobj("Tag", "MAIN_WINDOWS");
-                        D4 = getappdata(h4, "RESTART_FIR");
-                        if D4 == 1
-                            FIR_RUNNER(1);
-                        end
-                    end
-                    
-                else
-                    % FIND THE LAST PROCESSED SUBJECT
-                    for i = 1:DG
-                        ISU = evalin('base', 'tmfc');
-                        if isnan(ISU.subjects(i).FIR) == 1
-                            N_index = i; % INDEX IS FOUND
-                            break;
-                        end
-                    end
-                    tmfc_FIR_continue_GUI(N_index); %  IF THEY WANT TO CONTINNUE
-                    uiwait();
-                    h5 = findobj("Tag", "MAIN_WINDOWS");
-                    D5 = getappdata(h5, "CONTD_FIR");
-                    if D5 == 1 % Continue computation from the Last processed index
-                        FIR_RUNNER(int32(N_index));
-                        setappdata(h5,"CONTD_FIR", 0);
-                    elseif D5 == 2 % Restart Computation from the first subject
-                        tmfc_FIR_regress_GUI();                                           % Enter Windows & Bins 
-                        uiwait();
-                        FIR_RUNNER(1);
-                        setappdata(h5,"CONTD_FIR", 0);
-                    else
-                        warning("Somethings not right here, the status of CONTD_FIR was not changed by the GUI via App data");
-                    end
-                end
-            else
-                error("Please enter the Windows and bins to perform FIR Regression");
-            end
-        else
-            error("Please select subjects to peform FIR regression");
-        end 
-        
-        else
-            error("FIR Regression is already running");
-        end
-        
-    end
-%    try get(handles.SUB, 'Enable') == 'off'
-%        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.ROI, handles.BSC, handles.gppi,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.bgrd],'Enable', "on");
-%    end
-        
-
-        function FIR_RUNNER(str_sub)
-            FIR_TMFC = evalin('base', 'tmfc');
-            set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gppi,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.bgrd],'Enable', "off");
-            try
-            tmfc_FIR_regress(FIR_TMFC, str_sub);
-            end
-            set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gppi,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.bgrd],'Enable', "on");
-        end
-
-    try % MAJOR CHANGE
-    guidata(handles.MAIN_F, handles);
     end
     
     
-    % Supporting Functions
+    %%
     
-    
+% Supporting Functions
+
     % This function performs Independent save & returns the status
     % of saving. 0 - Success, 1 - Fail
     function SAVER_STAT =  Saver(save_path)
