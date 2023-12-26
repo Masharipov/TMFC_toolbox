@@ -108,14 +108,15 @@ function varargout = TMFC()
 
         % CallBack functions corresponding to each button
         set(handles.MAIN_F, 'CloseRequestFcn', {@Close_TMFC, handles.MAIN_F}); 
-        set(handles.SUB, 'callback', {@SUB_SEL, handles.MAIN_F});
-        set(handles.FIR_TR, 'callback', {@FIR_REG, handles.MAIN_F});
-        set(handles.settings, 'callback', {@Settings, handles.MAIN_F});
-        set(handles.change_p, 'callback', {@CP_GUI, handles.MAIN_F});
         set(handles.save_p, 'callback', {@SAVE_PROJ, handles.MAIN_F});
         set(handles.open_p, 'callback', {@LOAD_PROJ, handles.MAIN_F});
-%        set(handles.ROI, 'callback', {@ROI_EXEC, handles.MAIN_F});
+        set(handles.change_p, 'callback', {@CP_GUI, handles.MAIN_F});
+        set(handles.settings, 'callback', {@Settings, handles.MAIN_F});
+        set(handles.SUB, 'callback', {@SUB_SEL, handles.MAIN_F});
+        set(handles.FIR_TR, 'callback', {@FIR_REG, handles.MAIN_F});
         set(handles.LSS_R, 'callback', {@LSS_REG, handles.MAIN_F});
+        %set(handles.ROI, 'callback', {@ROI_EXEC, handles.MAIN_F});
+        
         
     else
         % Error displayed if user tries to run TMFC when already running
@@ -536,16 +537,22 @@ function varargout = TMFC()
                     end % Closing if statement for CONDITION 3
                     
                 else
-                    error("Please enter the Windows and bins to perform FIR Regression");
+                    warning("Please enter the Windows and bins to perform FIR Regression");
+                    
+                    
                 end % Closing if statement for FIR Regress Conditions (1,2,3)
                 
             else
-                error("Please select subjects to peform FIR regression");
+                warning("Please select subjects to peform FIR regression");
             end % Closing If statement to check WINDOWS & BINS 
 
             else
-                error("FIR Regression is already running");
+                warning("FIR Regression is already running");
         end % Closing if Statment to check if FIR exists
+ 
+        try          % Unfrezee action after completion of actuation
+        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gppi,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.bgrd],'Enable', "on");
+        end
         
     end % Closing FIR Regress Function
        
@@ -581,11 +588,11 @@ function varargout = TMFC()
     end
     
     
-%% ----------- ---------- TMFC SELECT SUBJECTS Action --------- -----------
+%% ===================[ TMFC LSS Regression Action ]=======================
 
     % Function to perform
 
-    function LSS_REG(ButtonH, ~, MAIN_F)
+    function LSS_REG(ButtonH, EventData, MAIN_F)
         
        L_checker = evalin('base', 'tmfc');
        
