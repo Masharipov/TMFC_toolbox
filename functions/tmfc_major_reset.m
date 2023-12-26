@@ -8,8 +8,8 @@ function tmfc_major_reset()
     DR_RESET.project_path = "";
     
     % Project Variables of group 2
-    DR_RESET.FIR_window = 0; %32
-    DR_RESET.FIR_bins = 0;   %16
+    DR_RESET.FIR_window = NaN; %32
+    DR_RESET.FIR_bins = NaN;   %16
     DR_RESET.subjects(1).FIR = [];
     
     % Project Variables of group 3

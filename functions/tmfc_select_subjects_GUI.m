@@ -22,7 +22,11 @@ end
             
             
 if CHECK_STATUS == 1
-                                    % Selection of Project Path from the User
+    
+    disp("Please Select a folder for the new TMFC project");
+    
+    
+        % Selection of Project Path from the User
         path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
         if path == ""
             warning("Project Path Not selected, Subjects not saved");
@@ -280,7 +284,7 @@ add_subs = {};           % Variable used to create & merge new subjects
         file_func = {};
         file_no_func = {};
         
-    
+           
         % Pre conditions to verify existence of subujects 
         if isempty(main_subjects)
             warning("There are no selected subjects, please select subjects and SPM.mat files");
@@ -299,6 +303,12 @@ add_subs = {};           % Variable used to create & merge new subjects
         close(f);                                       % Close Select Subjects GUI    
         
         if CHECK_STATUS == 1
+            
+            try
+            D_FREZ = findobj('Tag','MAIN_WINDOWS');
+            DF_data = guidata(D_FREZ); 
+            set([DF_data.SUB,DF_data.FIR_TR, DF_data.LSS_R, DF_data.LSS_RW, DF_data.BSC, DF_data.gppi, DF_data.save_p, DF_data.open_p, DF_data.change_p, DF_data.settings, DF_data.bgrd],'Enable', "off");
+            end
 
 
 
@@ -374,8 +384,8 @@ add_subs = {};           % Variable used to create & merge new subjects
                                     for i = 1:length(file_func)                 % Assigning the subject paths to the respective structure variable
                                         FD.subjects(i).paths = char(file_func(i));
                                         FD.subjects(i).FIR = NaN;
-                                        FD.subjects(i).LSS_residual_ts = NaN;
-                                        FD.subjects(i).LSS_original_ts = NaN;
+                                        FD.subjects(i).LSS_after_FIR = NaN;
+                                        FD.subjects(i).LSS_without_FIR = NaN;
                                         FD.subjects(i).BSC = NaN;
                                         FD.subjects(i).VOI = NaN;
                                         FD.subjects(i).PPIterm = NaN;

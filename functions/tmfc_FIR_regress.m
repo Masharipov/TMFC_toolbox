@@ -135,15 +135,13 @@ switch tmfc.defaults.parallel
         handles.wp = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', "W_Parallel",'CreateCancelBtn', @quitter);        
         N = length(tmfc.subjects);                                          % Threshold of elements to run FIR regression
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 
-        afterEach(D, @parfor_waitbar);                                      % Command to update Waitbar
-        parfor_waitbar(handles.wp,N);                                        % Custom function to update waitbar
+        afterEach(D, @tmfc_parfor_waitbar);                                      % Command to update Waitbar
+        tmfc_parfor_waitbar(handles.wp, N);                                        % Custom function to update waitbar
        
 
         
         % Possible Addition: Condition to create parallel pool if not
         % running or non-existent (i.e disabled via preferences)
-        
-        
         % Parallel loop that creates Futures for result generation
         for i = start_sub:N
             f(i) = parfeval(@Worker, 1, tmfc, batch, i); 
@@ -153,7 +151,7 @@ switch tmfc.defaults.parallel
             figure(DG.MAIN_F);
             end
         end
-        
+        disp("Processing... please wait");
         %try
             %disp("CHECK");
             %DG = guidata(findobj("Tag", "MAIN_WINDOWS"));    
@@ -296,7 +294,7 @@ end
             spm_get_defaults('stats.fmri.ufp',1);
             spm_jobman('run', batch{idx});
             tmfc_write_residuals([batch{idx}{1}.spm.stats.fmri_spec.dir{1}  filesep 'SPM.mat'],NaN);
-            tmfc_tmfc_parsave([batch{idx}{1}.spm.stats.fmri_spec.dir{1}  filesep 'GLM_batch.mat'],batch{idx});
+            tmfc_parsave([batch{idx}{1}.spm.stats.fmri_spec.dir{1}  filesep 'GLM_batch.mat'],batch{idx});
             status = 1;
         catch
             status = 0;
@@ -325,4 +323,28 @@ end
   
    end
         
+function tmfc_parsave(fname,matlabbatch)
+  save(fname, 'matlabbatch')
+end
+
+
+function tmfc_parfor_waitbar(waitbarHandle,iterations)
+    persistent count h N start
+
+    if nargin == 2
+        count = 0;
+        h = waitbarHandle;
+        N = iterations;
+        start = tic;
+        
+    else
+        if isvalid(h)         
+            count = count + 1;
+            time = toc(start);
+            t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
+            waitbar(count / N,h,[num2str(count/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+        end
+    end
+end
+
    
