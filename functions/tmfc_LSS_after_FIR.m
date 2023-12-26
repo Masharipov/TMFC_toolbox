@@ -63,10 +63,10 @@ else
    g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
    set(g7data.LSS_R_stat,"String", "Updating...","ForegroundColor","#C55A11")       % Assigning the status to the TMFC variable
 end
-paths = "";
+%paths = "";
    
 for i_2 = 1:length(tmfc.subjects)
-    paths(i_2) = tmfc.subjects(i_2).paths;
+    paths(i_2,:) = tmfc.subjects(i_2).paths;
 end
 N = length(paths);
 
