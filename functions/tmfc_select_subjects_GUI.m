@@ -1,4 +1,4 @@
-function [varargout] = tmfc_select_subjects_GUI(FigH, RUN_CHECK)
+function [varargout] = tmfc_select_subjects_GUI(FigH, SPM_check)
 
 % UIWAIT IS USED HERE TO Accomodate WITHOUT CHECKING SELECTION
 % Select_subjects_GUI performs selection of subjects using the SPM Select
@@ -12,55 +12,52 @@ function [varargout] = tmfc_select_subjects_GUI(FigH, RUN_CHECK)
 % tmfc_select_subjects_GUI([], 1) - With checks
 
 
-CHECK_STATUS = RUN_CHECK;
+CHECK_STATUS = SPM_check;
 
 try
     h_FREZ = findobj('Tag','MAIN_WINDOWS');
     F_data = guidata(h_FREZ); 
-    set([F_data.SUB,F_data.FIR_TR, F_data.LSS_R, F_data.LSS_RW, F_data.BSC, F_data.gppi,F_data.save_p, F_data.open_p, F_data.change_p, F_data.settings,F_data.bgrd],'Enable', "off");
+    set([F_data.SUB, F_data.FIR_TR, F_data.LSS_R, F_data.LSS_RW, F_data.BSC, F_data.gppi, F_data.save_p, F_data.open_p, F_data.change_p, F_data.settings, F_data.bgrd], 'Enable', 'off');
 end
             
             
 if CHECK_STATUS == 1
     
-    disp("Please Select a folder for the new TMFC project");
+    disp('Please Select a folder for the new TMFC project');    
     
-    
-        % Selection of Project Path from the User
-        path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
-        if path == ""
-            warning("Project Path Not selected, Subjects not saved");
-            try
+    % Select project path
+    path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
+    if path == ""
+        warning('Project Path Not selected, Subjects not saved');
+        try
             h1_UNFREZ = findobj('Tag','MAIN_WINDOWS');
             F1_data = guidata(h1_UNFREZ); 
-            set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gppi,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.bgrd],'Enable', "on");
-            end
-            return;
-        else
-            PROJECT_PATHS = path;
-            disp("Proceeding with Subject Selection");
+            set([F1_data.SUB, F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gppi, F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings, F1_data.bgrd], 'Enable', 'on');
         end
+        return
+    else
+        PROJECT_PATHS = path;
+        disp('Proceeding with Subject Selection');
+    end
         
 end
 
 % Creation of Figure for the Window
-f = figure("Name", "Subject Manager", "NumberTitle", "off", "Units", "normalized", "Position", [0.32 0.26 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', "Tag", "Select_SUBS",'WindowStyle', "modal",'CloseRequestFcn', @Closeaction);
-
+f = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'Tag', 'Select_SUBS','WindowStyle', 'modal','CloseRequestFcn', @Closeaction);
 
 % Initializing Elements of the UI (Buttons, Stats, Boxes etc) 
-b1 = uicontrol(f,'Style','pushbutton', "String", "Select subject folders","Units", "normalized", "Position",[0.033 0.850 0.455 0.095]);
-b1_Stat = uicontrol(f,'Style','text',"String", "Not Selected","ForegroundColor","red","Units", "normalized", "Position",[0.500 0.820 0.450 0.095],'backgroundcolor','w');
+b1 = uicontrol(f,'Style','pushbutton', 'String', 'Select subject folders','Units', 'normalized', 'Position',[0.033 0.850 0.455 0.095]);
+b1_Stat = uicontrol(f,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.820 0.450 0.095],'backgroundcolor','w');
 
-b2 = uicontrol(f,'Style','pushbutton', "String", "Select SPM.mat file for Subject №1","Units", "normalized", "Position",[0.033 0.750 0.455 0.095]);
-b2_Stat = uicontrol(f,'Style','text',"String", "Not Selected","ForegroundColor","red","Units", "normalized", "Position",[0.500 0.720 0.450 0.095],'backgroundcolor','w');
+b2 = uicontrol(f,'Style','pushbutton', 'String', 'Select SPM.mat file for Subject №1','Units', 'normalized', 'Position',[0.033 0.750 0.455 0.095]);
+b2_Stat = uicontrol(f,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.720 0.450 0.095],'backgroundcolor','w');
 
-b3 = uicontrol(f,'Style','pushbutton', "String", "Add new subject","Units", "normalized", "Position",[0.033 0.14 0.300 0.095]);
-b4 = uicontrol(f,'Style','pushbutton', "String", "Remove selected subject","Units", "normalized", "Position",[0.346 0.14 0.300 0.095]);
-b5 = uicontrol(f,'Style','pushbutton', "String", "OK","Units", "normalized", "Position",[0.390 0.04 0.200 0.080]);
+b3 = uicontrol(f,'Style','pushbutton', 'String', 'Add new subject','Units', 'normalized', 'Position',[0.033 0.14 0.300 0.095]);
+b4 = uicontrol(f,'Style','pushbutton', 'String', 'Remove selected subject','Units', 'normalized', 'Position',[0.346 0.14 0.300 0.095]);
+b5 = uicontrol(f,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.390 0.04 0.200 0.080]);
 
-lst = uicontrol(f, 'Style', 'listbox', "String", "",'Max',100,"Units", "normalized", "Position",[0.033 0.250 0.920 0.490]);
-clr = uicontrol(f,'Style','pushbutton', "String", "Clear all subjects","Units", "normalized", "Position",[0.660 0.14 0.300 0.095]);
-
+lst = uicontrol(f, 'Style', 'listbox', 'String', "",'Max',100,'Units', 'normalized', 'Position',[0.033 0.250 0.920 0.490]);
+clr = uicontrol(f,'Style','pushbutton', 'String', 'Clear all subjects','Units', 'normalized', 'Position',[0.660 0.14 0.300 0.095]);
 
 % Assigning Functions Callbacks for each Element (button, listbox etc)
 set(b1, 'callback', @action_1)
@@ -77,12 +74,10 @@ function Closeaction(hObject, eventdata)
     try
         h1_UNFREZ = findobj('Tag','MAIN_WINDOWS');
         F1_data = guidata(h1_UNFREZ); 
-        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gppi,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.bgrd],'Enable', "on");
+        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gppi,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.bgrd],'Enable', 'on');
     end
     delete(f);
 end
-
-
 
 % Local Variables that work throughout the RunTime upto checking stage
 main_subjects = {};      % Variable to store Subject Addresses
@@ -92,72 +87,67 @@ mm_add = {};             % Varaible to store the selected .extension file
 selection = {};          % Variable to store the selected list of addreses(as INDEX)
 add_subs = {};           % Variable used to create & merge new subjects
 
-
-
 % Execution function for Main Subject Selection
-    function action_1(~,~)
-        
-        set(lst, "String", "");                   % Intializing display list in the GUI 
-        main_subjects = sub_folder();             % Prompt for SPM_DIR select 
-        main_subjects = unique(main_subjects);    % Filtering new selection for repetitions
-        len_subs_A1 = size(main_subjects);        % Calculation of Size of added subjects
-        
+function action_1(~,~)
+    
+set(lst, 'String', "");                   % Intializing display list in the GUI 
+main_subjects = sub_folder();             % Prompt for SPM_DIR select 
+main_subjects = unique(main_subjects);    % Filtering new selection for repetitions
+len_subs_A1 = size(main_subjects);        % Calculation of Size of added subjects
 
-        % Logical & Warning Conditions
-        if isempty(main_subjects)
-            disp("0 Subjects selected");
-            set(b1_Stat,"String", "Not selected","ForegroundColor","red");
-            set(b2_Stat,"String", "Not selected","ForegroundColor","red");
-            mm_add = "";
-            file_address = "";
-        else
-            fprintf("Subjects selected are: %d \n", len_subs_A1(1));
-            disp("Proceed to Select SPM.mat file");
-            set(b1_Stat,"String", len_subs_A1(1)+" selected","ForegroundColor","#385723");
-            set(b2_Stat,"String", "Not selected","ForegroundColor","red");
-            mm_add = "";
-            file_address = "";
-        end
-        
-        
-        if file_address == "" & mm_add == "" & main_subjects == ""
-            warning("No Subjects selected");
-            mm_add = "";
-            file_address = "";
-            main_subjects = "";
-            set(b1_Stat,"String", "Not selected","ForegroundColor","red");
-            set(b2_Stat,"String", "Not selected","ForegroundColor","red");
-        end
-        
-    end
+% Logical & Warning Conditions
+if isempty(main_subjects)
+    disp('0 Subjects selected');
+    set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
+    set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+    mm_add = "";
+    file_address = "";
+else
+    fprintf('Subjects selected are: %d \n', len_subs_A1(1));
+    disp('Proceed to Select SPM.mat file');
+    set(b1_Stat,'String', len_subs_A1(1)+' selected','ForegroundColor','#385723');
+    set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+    mm_add = "";
+    file_address = "";
+end
+
+if file_address == "" & mm_add == "" & main_subjects == ""
+    warning('No Subjects selected');
+    mm_add = "";
+    file_address = "";
+    main_subjects = "";
+    set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
+    set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+end 
+
+end
 
 
 
 
-    % Execution function for .EXTENSION file selection from the first Subject
-    function action_2(~,~)
+% Execution function for .EXTENSION file selection from the first Subject
+function action_2(~,~)
 
-        % Logical & Warning Condition
-        if isempty(main_subjects)
-            warning("Please select subject folders");        
-            
-        elseif file_address == "" & main_subjects == "" 
-            warning("Please select subject folders");
-            set(b2_Stat,"String", "Not selected","ForegroundColor","red");
-            set(lst, "String", "");
-            
-        else
-            
-            [file_address, mm_add] = mat_file(main_subjects);              % Creation of full list of Subs with .FILE extension
-            if mm_add ~= ""
-                set(lst, "String", file_address);                          % Display Full Address of Subs in the GUI
-                disp("The SPM.mat file has been succesfully selected");
-                set(b2_Stat,"String", "Selected","ForegroundColor","#385723");
-            end
-            
-        end
-        
-    end
+% Logical & Warning Condition
+if isempty(main_subjects)
+    warning('Please select subject folders');        
+    
+elseif file_address == "" & main_subjects == "" 
+    warning('Please select subject folders');
+    set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+    set(lst, 'String', "");
+    
+else
+    
+    [file_address, mm_add] = mat_file(main_subjects);              % Creation of full list of Subs with .FILE extension
+    if mm_add ~= ""
+        set(lst, 'String', file_address);                          % Display Full Address of Subs in the GUI
+        disp('The SPM.mat file has been succesfully selected');
+        set(b2_Stat,'String', 'Selected','ForegroundColor','#385723');
+    end 
+end
+
+end
 
 
 
@@ -167,15 +157,15 @@ add_subs = {};           % Variable used to create & merge new subjects
         
         % Logical & Warning condition
         if isempty(main_subjects) | file_address == ""
-            warning("No subjects present to clear");
+            warning('No subjects present to clear');
         else
             main_subjects = {};
             file_address = {};
             mm_add = {};
-            set(lst, "String", "");                                         % Clearing Display
-            disp("All selected subjects have been cleared");
-            set(b1_Stat,"String", "None selected","ForegroundColor","red");
-            set(b2_Stat,"String", "None selected","ForegroundColor","red");
+            set(lst, 'String', "");                                         % Clearing Display
+            disp('All selected subjects have been cleared');
+            set(b1_Stat,'String', 'None selected','ForegroundColor','red');
+            set(b2_Stat,'String', 'None selected','ForegroundColor','red');
         end 
         
         
@@ -198,17 +188,17 @@ add_subs = {};           % Variable used to create & merge new subjects
         
         % Logical & Warning Condition (Iteration i)
         if isempty(main_subjects) | file_address == ""
-            warning("No existing list of subjects present, Please select subjects via ""Select subject folders"" button");
+            warning('No existing list of subjects present, Please select subjects via ''Select subject folders'' button');
             
         elseif isempty(mm_add)
-            warning("Cannot add new subjects without SPM.mat, Please select subjects via ""Select subject folders"" button and proceed to Select SPM.mat file");
+            warning('Cannot add new subjects without SPM.mat, Please select subjects via ''Select subject folders'' button and proceed to Select SPM.mat file');
 
         else
             
             add_subs = mid_sub_folder();                                    % Addition Function
             
             if isempty(add_subs)
-                warning("No newly selected subjects");
+                warning('No newly selected subjects');
             else
                 len_exst = size(file_address);                              % Size of existing subjects
                 len_subs_3 = size(add_subs);                                % Length of Size of new subjects
@@ -226,16 +216,16 @@ add_subs = {};           % Variable used to create & merge new subjects
                
                 % Warning & logical Condition (Iteration ii)
                 if new_ones(1) == 0
-                    warning("Newly selected subjects are already present in the list, no new subjects added");
+                    warning('Newly selected subjects are already present in the list, no new subjects added');
                 else
-                    fprintf("New subjects selected are: %d \n", new_ones(1)); 
+                    fprintf('New subjects selected are: %d \n', new_ones(1)); 
                 end 
                 
             end 
             
-            set(lst, "String", file_address);                               % Updating display with new Subjects
+            set(lst, 'String', file_address);                               % Updating display with new Subjects
             len_subs = size(file_address);
-            set(b1_Stat,"String", len_subs(1)+" selected","ForegroundColor","#385723");
+            set(b1_Stat,'String', len_subs(1)+' selected','ForegroundColor','#385723');
             
         end
     end
@@ -248,22 +238,22 @@ add_subs = {};           % Variable used to create & merge new subjects
         
         % Logical & Warning Condition
         if isempty(selection)
-            warning("There are no selected subjects to remove from the list, please select subjects once again");
+            warning('There are no selected subjects to remove from the list, please select subjects once again');
         else
             file_address(selection,:) = [];                                 % Nullifying the Indexs selected as per the user
             holder = size(selection);
-            fprintf("Number of subjects removed are: %d \n", holder(2));
+            fprintf('Number of subjects removed are: %d \n', holder(2));
             
             set(lst,'Value',[]);                                             % Setting Min select value to 1 since it gives a warning of dynamic mismatch
             
-            set(lst, "String", file_address);                               % Updating the display with the new list of subjects after removal 
+            set(lst, 'String', file_address);                               % Updating the display with the new list of subjects after removal 
             selection ={};
             
             if size(file_address) < 1
-                set(b1_Stat,"String", "Not selected","ForegroundColor","red");
+                set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
             else
                 len_subs = size(file_address);
-                set(b1_Stat,"String", len_subs(1)+" selected","ForegroundColor","#385723")
+                set(b1_Stat,'String', len_subs(1)+' selected','ForegroundColor','#385723')
             end
         end
     end 
@@ -287,15 +277,15 @@ add_subs = {};           % Variable used to create & merge new subjects
            
         % Pre conditions to verify existence of subujects 
         if isempty(main_subjects)
-            warning("There are no selected subjects, please select subjects and SPM.mat files");
+            warning('There are no selected subjects, please select subjects and SPM.mat files');
             
         % Condition to check for selected SPM.mat file but not subjects
         elseif (isempty(file_address) & isempty(mm_add)) | (main_subjects ~= "" & mm_add == "");
-            warning("Please select SPM.mat file for the first subject");
+            warning('Please select SPM.mat file for the first subject');
         
         % Condition to check for Action cleared SPM.mat & Subjects
         elseif file_address == "" & mm_add ~= "";
-            warning("Please Re-select the subjects and the SPM.mat file if required");
+            warning('Please Re-select the subjects and the SPM.mat file if required');
             
         
         % 4 Stage File Checking
@@ -307,7 +297,7 @@ add_subs = {};           % Variable used to create & merge new subjects
             try
             D_FREZ = findobj('Tag','MAIN_WINDOWS');
             DF_data = guidata(D_FREZ); 
-            set([DF_data.SUB,DF_data.FIR_TR, DF_data.LSS_R, DF_data.LSS_RW, DF_data.BSC, DF_data.gppi, DF_data.save_p, DF_data.open_p, DF_data.change_p, DF_data.settings, DF_data.bgrd],'Enable', "off");
+            set([DF_data.SUB,DF_data.FIR_TR, DF_data.LSS_R, DF_data.LSS_RW, DF_data.BSC, DF_data.gppi, DF_data.save_p, DF_data.open_p, DF_data.change_p, DF_data.settings, DF_data.bgrd],'Enable', 'off');
             end
 
 
@@ -316,7 +306,7 @@ add_subs = {};           % Variable used to create & merge new subjects
                 [file_exist,file_not_exist] = SPM_EXT_CHK(file_address);         % Stage 1 - File Existence check
 
                 if size(file_address) == size(file_not_exist) | file_exist == ""
-                    warning("STAGE 1 CHECK FAILED: All files are missing from the directories, Please try again");
+                    warning('STAGE 1 CHECK FAILED: All files are missing from the directories, Please try again');
                     Royal_Reset();
 
                 else
@@ -324,21 +314,21 @@ add_subs = {};           % Variable used to create & merge new subjects
                     [file_correct, file_incorrect] = SPM_COND(file_exist);       % Stage 2 - File Correct/Incorrect Check
 
                     if size(file_incorrect) == size(file_exist) | file_correct == ""
-                        warning("STAGE 2 CHECK FAILED: All files have incorrect conditions, Please try again");
+                        warning('STAGE 2 CHECK FAILED: All files have incorrect conditions, Please try again');
                         Royal_Reset();
                     else
 
                         [file_dir,file_no_dir] = CHECK_DIR(file_correct);        % Stage 3 - File Directory exist/Not exist
 
                         if size(file_no_dir) == size(file_correct) | file_dir == ""
-                            warning("STAGE 3 CHECK FAILED: The directories are missing from All selected Files, Please try again");
+                            warning('STAGE 3 CHECK FAILED: The directories are missing from All selected Files, Please try again');
                             Royal_Reset();
                         else
 
                             [file_func,file_no_func] = CHECK_FUNCTION(file_dir); % Stage 4 - File Functional files exist/Not exist
 
                             if size(file_no_func) == size(file_dir) | file_func == ""
-                                warning("STAGE 4 CHECK FAILED: Files are missing from All directories, Please try again");
+                                warning('STAGE 4 CHECK FAILED: Files are missing from All directories, Please try again');
                                 Royal_Reset();
                             else
 
@@ -347,7 +337,7 @@ add_subs = {};           % Variable used to create & merge new subjects
 
 
                                 %flag = 1;
-                                %warning("All Selected Subjects & their respective paths are stored in variable ""Addresses"" ");
+                                %warning('All Selected Subjects & their respective paths are stored in variable ''Addresses'' ');
 
 
                                 % Synchronization of all Data with the main
@@ -366,11 +356,11 @@ add_subs = {};           % Variable used to create & merge new subjects
 
                                         ADRS = size(file_func);                     % Variable with the size of the final subjects after all checking
 
-                                        set(g1data.SUB_stat,"ForegroundColor","#385723");
-                                        set(g1data.SUB_stat,'String',ADRS(1)+" selected");      % Assigning the variable to the Main GUI static text
-                                        set([g1data.SUB,g1data.FIR_TR, g1data.LSS_R, g1data.LSS_RW, g1data.BSC, g1data.gppi,g1data.save_p, g1data.open_p, g1data.change_p, g1data.settings,g1data.bgrd],'Enable', "on");
+                                        set(g1data.SUB_stat,'ForegroundColor','#385723');
+                                        set(g1data.SUB_stat,'String',ADRS(1)+' selected');      % Assigning the variable to the Main GUI static text
+                                        set([g1data.SUB,g1data.FIR_TR, g1data.LSS_R, g1data.LSS_RW, g1data.BSC, g1data.gppi,g1data.save_p, g1data.open_p, g1data.change_p, g1data.settings,g1data.bgrd],'Enable', 'on');
                                     catch 
-                                        warning("Please close older instances of TMFC toolbox");
+                                        warning('Please close older instances of TMFC toolbox');
                                         
                                     end
 
@@ -391,7 +381,7 @@ add_subs = {};           % Variable used to create & merge new subjects
                                         FD.subjects(i).PPIterm = NaN;
                                         FD.subjects(i).gPPI = NaN;
                                     end
-                                    disp(ADRS(1)+" subjects selected");
+                                    disp(ADRS(1)+' subjects selected');
                                     FD.project_path = PROJECT_PATHS;            % Assigning the Project paths to the respective structure variable 
 
                                     assignin('base', 'tmfc', FD);               % Updating the TMFC variable to the base workspace after performing all modifications to its local copy
@@ -399,7 +389,7 @@ add_subs = {};           % Variable used to create & merge new subjects
                                     end
 
                                 else                                            % if else is used here in order to support independent execution
-                                    assignin('base', "Addresses", char(file_func));   % In case TMFC window doesn't exist, it will create a single variable called Addresses & assing it to the base.
+                                    assignin('base', 'Addresses', char(file_func));   % In case TMFC window doesn't exist, it will create a single variable called Addresses & assing it to the base.
 
                                 end 
                                 %Royal_Reset();
@@ -424,12 +414,12 @@ add_subs = {};           % Variable used to create & merge new subjects
             main_subjects = {};
             file_address = {};
             mm_add = {};
-            %set(lst, "String", ""); %Intializing list in GUI workspace
-            set(b1_Stat,"String", "Not selected","ForegroundColor","red");
-            set(b2_Stat,"String", "Not selected","ForegroundColor","red");
+            %set(lst, 'String', ""); %Intializing list in GUI workspace
+            set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
+            set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
             h_UNFREZ = findobj('Tag','MAIN_WINDOWS');
             UF_data = guidata(h_UNFREZ); 
-            set([UF_data.SUB,UF_data.FIR_TR, UF_data.LSS_R, UF_data.LSS_RW, UF_dataBSC, UF_data.gppi,UF_data.save_p, UF_data.open_p, UF_data.change_p, UF_data.settings,UF_data.bgrd],'Enable', "on");
+            set([UF_data.SUB,UF_data.FIR_TR, UF_data.LSS_R, UF_data.LSS_RW, UF_dataBSC, UF_data.gppi,UF_data.save_p, UF_data.open_p, UF_data.change_p, UF_data.settings,UF_data.bgrd],'Enable', 'on');
         end
     
 uiwait(f);
@@ -531,18 +521,18 @@ function [file_exist,file_not_exist] = SPM_EXT_CHK(Y_1)
             if length(file_exist) ~= length(Y_1) 
                 
                 % Creation of Pop up Window & show the respective files that are missing
-                f_1 = figure("Name", "Subject Manager", "NumberTitle", "off", "Units", "normalized", "Position", [0.32 0.26 0.35 0.18], 'color', 'w', 'MenuBar', 'none', 'ToolBar', 'none','Resize','off');
+                f_1 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w', 'MenuBar', 'none', 'ToolBar', 'none','Resize','off');
 
                 % Initializing Elements of the UI
-                lst_1 = uicontrol(f_1, 'Style', 'listbox', "String", "",'Max',100,"Units", "normalized", "Position", [0.025 0.280 0.940 0.490]);
-                G1_Stat = uicontrol(f_1,'Style','text',"String", "Warning, the following SPM.mat files are missing:","Units", "normalized", "Position",[0.280 0.820 0.450 0.095], 'backgroundcolor', 'w');
-                G1 = uicontrol(f_1,'Style','pushbutton', "String", "OK","Units", "normalized", "Position",[0.4 0.05 0.180 0.180]);
+                lst_1 = uicontrol(f_1, 'Style', 'listbox', 'String', "",'Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
+                G1_Stat = uicontrol(f_1,'Style','text','String', 'Warning, the following SPM.mat files are missing:','Units', 'normalized', 'Position',[0.280 0.820 0.450 0.095], 'backgroundcolor', 'w');
+                G1 = uicontrol(f_1,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.05 0.180 0.180]);
 
                 % Assigning Functions Callbacks for each Element (button, listbox etc)
-                set(lst_1, "String", file_not_exist);                 
-                set(G1, "Callback", @action_close_GUI_1);
+                set(lst_1, 'String', file_not_exist);                 
+                set(G1, 'Callback', @action_close_GUI_1);
                 waitforbuttonpress;
-                set(lst_1, "String", "");  
+                set(lst_1, 'String', "");  
             end
             
             function action_close_GUI_1(~,~)
@@ -617,15 +607,15 @@ function [file_correct, file_incorrect] = SPM_COND(Y_2)
             if length(file_correct) ~=  length(Y_2)
                 
                 % Creation of GUI Figure
-                f_2 = figure("Name", "Subject Manager", "NumberTitle", "off", "Units", "normalized", "Position", [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
+                f_2 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
 
                 % Initializing Elements of the UI
-                lst_2 = uicontrol(f_2, 'Style', 'listbox', "String", "",'Max',100,"Units", "normalized", "Position", [0.025 0.280 0.940 0.490]);
-                G2_Stat = uicontrol(f_2,'Style','text',"String", "Warning, in the following SPM.mat files different conditions are specified:","Units", "normalized", "Position", [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
-                G2 = uicontrol(f_2,'Style','pushbutton', "String", "OK","Units", "normalized", "Position", [0.4 0.05 0.180 0.180]);
+                lst_2 = uicontrol(f_2, 'Style', 'listbox', 'String', "",'Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
+                G2_Stat = uicontrol(f_2,'Style','text','String', 'Warning, in the following SPM.mat files different conditions are specified:','Units', 'normalized', 'Position', [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
+                G2 = uicontrol(f_2,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.180]);
 
                 % Assigning Functions Callbacks for each Element (button, listbox etc)
-                set(lst_2, "String", file_incorrect);  
+                set(lst_2, 'String', file_incorrect);  
                 set(G2, 'callback', @action_close_GUI_2)
                 waitforbuttonpress;
                 
@@ -680,15 +670,15 @@ function [file_dir,file_no_dir] = CHECK_DIR(Y_3)
             if length(file_dir) ~=  length(Y_3)
                 
                 % Creation of Figure window
-                f_3 = figure("Name", "Subject Manager", "NumberTitle", "off", "Units", "normalized", "Position", [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
+                f_3 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
 
                 % Initializing Elements of the UI
-                lst_3 = uicontrol(f_3, 'Style', 'listbox', "String", "",'Max',100,"Units", "normalized", "Position", [0.025 0.280 0.940 0.490]);
-                G3_Stat = uicontrol(f_3,'Style','text',"String", "Warning, the output folder (SPM.swd) specified in the following SPM.mat files do not exist: ","Units", "normalized", "Position", [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
-                G3 = uicontrol(f_3,'Style','pushbutton', "String", "OK","Units", "normalized", "Position", [0.4 0.05 0.180 0.180]);
+                lst_3 = uicontrol(f_3, 'Style', 'listbox', 'String', "",'Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
+                G3_Stat = uicontrol(f_3,'Style','text','String', 'Warning, the output folder (SPM.swd) specified in the following SPM.mat files do not exist: ','Units', 'normalized', 'Position', [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
+                G3 = uicontrol(f_3,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.180]);
 
                 % Assigning Functions Callbacks for each Element (button, listbox etc)
-                set(lst_3, "String", file_no_dir);  
+                set(lst_3, 'String', file_no_dir);  
                 set(G3, 'callback', @action_close_GUI_3)
                 waitforbuttonpress;
             end
@@ -746,15 +736,15 @@ function [file_func,file_no_func] = CHECK_FUNCTION(Y_4)
             if length(file_func) ~=  length(Y_4)
                 
                 % Creation of Figure for GUI window
-                f_4 = figure("Name", "Subject Manager", "NumberTitle", "off", "Units", "normalized", "Position", [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
+                f_4 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
 
                 % Initializing Elements of the UI
-                lst_4 = uicontrol(f_4, 'Style', 'listbox', "String", "",'Max',100,"Units", "normalized", "Position", [0.025 0.280 0.940 0.490]);
-                G4_Stat = uicontrol(f_4,'Style','text',"String", "Warning, the functional files specified in the following SPM.mat files do not exist:","Units", "normalized", "Position", [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
-                G4 = uicontrol(f_4,'Style','pushbutton', "String", "OK","Units", "normalized", "Position", [0.4 0.05 0.180 0.180]);
+                lst_4 = uicontrol(f_4, 'Style', 'listbox', 'String', "",'Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
+                G4_Stat = uicontrol(f_4,'Style','text','String', 'Warning, the functional files specified in the following SPM.mat files do not exist:','Units', 'normalized', 'Position', [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
+                G4 = uicontrol(f_4,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.180]);
 
                 % Assigning Functions Callbacks for each Element (button, listbox etc)
-                set(lst_4, "String", file_no_func);  
+                set(lst_4, 'String', file_no_func);  
                 set(G4, 'callback', @action_close_GUI_4)
                 waitforbuttonpress;
             end
