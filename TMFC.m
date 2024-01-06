@@ -49,7 +49,7 @@ function TMFC
 if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1 
     
     % Set up TMFC structure
-    tmfc.defaults.parallel = 0;      
+    tmfc.defaults.parallel = 1;      
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
 
@@ -76,7 +76,7 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     
     % Select subjects
     handles.SUB = uicontrol('Style', 'pushbutton', 'String', 'Subjects', 'Units', 'normalized', 'Position', [0.06 0.86 0.40 0.0715]);
-    handles.SUB_stat = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'normalized', 'Position',[0.55 0.84 0.40 0.0715], 'backgroundcolor', 'w', 'Tag', 'SS_1'); % ASH: Why do we need SS_1 tag?
+    handles.SUB_stat = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'normalized', 'Position',[0.55 0.84 0.40 0.0715], 'backgroundcolor', 'w'); 
     
     % FIR task regression
     handles.FIR_TR = uicontrol('Style', 'pushbutton', 'String', 'FIR task regression', 'Units', 'normalized', 'Position', [0.06 0.765 0.40 0.0715]);
@@ -283,8 +283,8 @@ end
 
 % Variables to store & display selected settings in the settings window
 % Type of computing (Default computing: Parallel - 0, Sequential - 1)
-COMPUTING = ['Parallel computing', 'Sequential computing'];
-STORAGE = ['Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'];
+COMPUTING = {'Parallel computing', 'Sequential computing'};
+STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
 
 function Settings(ButtonH, EventData, MAIN_F)
         
@@ -293,13 +293,13 @@ function Settings(ButtonH, EventData, MAIN_F)
     SET_VAR = evalin('base', 'tmfc');
 
     % Create the Main figure for settings Window
-    MAIN_F_SET = figure('Name', 'Settings', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle','modal','Tag', 'MAIN_WINDOW_Settings');
+    MAIN_F_SET = figure('Name', 'Settings', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','Tag', 'MAIN_WINDOW_Settings');%,'WindowStyle','modal'
     
     % Textual Data to be displayed on the settings window
-    TEXT_1 = ['Parallel computing use Parallel Computing Toolbox. The number of workers in a parallel pool can be changed in MATLAB settings.'];
-    TEXT_2 = ['This option temporary changes resmem variable in spm_defaults, which governing whether temporary files during GLM estimation are stored on disk or kept in memory. If you have enough available RAM, not writing the files to disk will speed the estimation.'];
-    TEXT_3 = ['Max RAM temporary changes maxmem variable in spm_defaults, which indicates how much memory can be used at the same time during GLM estimation. If your computer has a large amount of RAM, you can increase that memory setting:'];
-    TEXT_4 = ['• 2^31 = 2GB','• 2^32 = 4GB', '• 2^33 = 8GB','• 2^34 = 16GB','• 2^35 = 32GB'];
+    TEXT_1 = {'Parallel computing use Parallel Computing Toolbox. The number of workers in a parallel pool can be changed in MATLAB settings.'};
+    TEXT_2 = {'This option temporary changes resmem variable in spm_defaults, which governing whether temporary files during GLM estimation are stored on disk or kept in memory. If you have enough available RAM, not writing the files to disk will speed the estimation.'};
+    TEXT_3 = {'Max RAM temporary changes maxmem variable in spm_defaults, which indicates how much memory can be used at the same time during GLM estimation. If your computer has a large amount of RAM, you can increase that memory setting:'};
+    TEXT_4 = {'• 2^31 = 2GB','• 2^32 = 4GB', '• 2^33 = 8GB','• 2^34 = 16GB','• 2^35 = 32GB'};
 
     % Initializing Drop down menus of options for Settings Window
     
@@ -334,30 +334,33 @@ function Settings(ButtonH, EventData, MAIN_F)
 
            % SYNC: Computation type
            % Check status of string in stat box -> if changed -> SWAP
-           % details -> Change TMFC variable -> END
-           if (MF_S1.String{MF_S1.Value}) == 'Sequential computing'
-               COMPUTING = ['Sequential computing','Parallel computing'];
+           % details -> Change TMFC variable -> END          
+           
+           C_1 = (MF_S1.String(MF_S1.Value));
+           if strcmp(C_1{1},'Sequential computing')
+               COMPUTING = {'Sequential computing','Parallel computing'};
                set(MF_S1, 'String', COMPUTING);
                SET_SYNC.defaults.parallel = 0;
 
-           elseif (MF_S1.String{MF_S1.Value}) == 'Parallel computing'
-               COMPUTING = ['Parallel computing','Sequential computing',];
+           elseif strcmp(C_1{1},'Parallel computing')
+               COMPUTING = {'Parallel computing','Sequential computing',};
                set(MF_S1, 'String', COMPUTING);
                SET_SYNC.defaults.parallel = 1;
-
            end
 
 
            % SYNC: Storage type
            % Check status of string in stat box -> if changed -> SWAP
            % details -> Change TMFC variable -> END
-           if (MF_S2.String{MF_S2.Value}) == 'Store temporary files for GLM estimation in RAM'
-               STORAGE = ['Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'];
+           C_2 = (MF_S2.String(MF_S2.Value));
+           
+           if strcmp(C_2{1}, 'Store temporary files for GLM estimation in RAM')
+               STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
                set(MF_S2, 'String', STORAGE);
                SET_SYNC.defaults.resmem =  true;
 
-           elseif (MF_S2.String{MF_S2.Value}) == 'Store temporary files for GLM estimation on disk'
-               STORAGE = ['Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'];
+           elseif strcmp(C_2{1}, 'Store temporary files for GLM estimation on disk')
+               STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
                set(MF_S2, 'String', STORAGE);
                SET_SYNC.defaults.resmem =  false;
 
