@@ -53,8 +53,8 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
 
-    tmfc.project_path = "";
-    tmfc.subjects(1).path = "";
+    tmfc.project_path = '';
+    tmfc.subjects(1).path = '';
     
     tmfc.FIR_window = NaN;
     tmfc.FIR_bins = NaN;
