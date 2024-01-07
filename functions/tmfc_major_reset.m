@@ -35,8 +35,8 @@ function tmfc_major_reset()
     set(g1data.LSS_R_stat,"ForegroundColor","#C55A11");
     set(g1data.LSS_R_stat,'String',"Not done");      % Assigning the variable to the Main GUI static text
     
-    set(g1data.LSS_RW_stat,"ForegroundColor","red");
-    set(g1data.LSS_RW_stat,'String',"Not selected");      % Assigning the variable to the Main GUI static text
+    set(g1data.LSS_RW_stat,"ForegroundColor","#C55A11");
+    set(g1data.LSS_RW_stat,'String',"Not done");      % Assigning the variable to the Main GUI static text
     catch
         
         warning("TMFC GUI window not found, TMFC variable reset");

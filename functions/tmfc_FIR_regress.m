@@ -121,7 +121,7 @@ end
 
 % Variable to Exit FIR regression during execution
 EXIT_STATUS = 0;
-
+FLAG_PAR = 0;
 
 
 
@@ -185,26 +185,9 @@ switch tmfc.defaults.parallel
 
         try                                                                 % Closing the Waitbar after Sucessful execution
             delete(handles.wp);
-                    % Find the last procssed subject (i.e. not NaN)
-                    N_index = 0;
-                    SUB_EXT_3 = evalin('base', 'tmfc');
-                    DG = length(SUB_EXT_3.subjects);
-            for i = 1:DG
-                
-                if isnan(SUB_EXT_3.subjects(i).FIR) == 1
-                    N_index = i; % INDEX of last processed subject is found
-                    break;
-                else
-                    N_index = DG;
-                end
-            end
-            
+            FLAG_PAR = 1;
         end
-            try 
-                HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
-                g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
-                set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done'), 'ForegroundColor','#385723');       % Assigning the status to the TMFC variable
-            end
+        
     
         
             
@@ -230,7 +213,7 @@ switch tmfc.defaults.parallel
                     spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                     spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_get_defaults('stats.fmri.ufp',1);
-                    spm_jobman('run',batch{i});
+                    spm_jobman('run', batch{i});
                     tmfc_write_residuals([batch{i}{1}.spm.stats.fmri_spec.dir{1}  filesep 'SPM.mat'],NaN);
                     tmfc_parsave([batch{i}{1}.spm.stats.fmri_spec.dir{1}  filesep 'GLM_batch.mat'],batch{i});
                     sub_check(i) = 1;
@@ -282,6 +265,37 @@ end
     assignin('base', 'tmfc', FIR_E);                                        % Assinging the Updated TMFC variable back to the Base workspace
         
         
+    if FLAG_PAR == 1
+        try
+            % Find the last procssed subject (i.e. not NaN)
+            N_index = 0;
+            SUB_EXT_3 = evalin('base', 'tmfc');
+            DG = length(SUB_EXT_3.subjects);
+            
+            for i = 1:DG
+                
+                if isnan(SUB_EXT_3.subjects(i).FIR) == 1
+                    N_index = i; % INDEX of last processed subject is found
+                    break;
+                else
+                    N_index = DG;
+                end
+                
+            end
+            
+        end
+        
+        try 
+            HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
+            g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
+            set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done test'), 'ForegroundColor','#385723');       % Assigning the status to the TMFC variable
+        end
+    end
+    
+    
+    
+    
+    
         
     function quitter(~,~)                                                   % Function that changes the state of execution when CANCEL is pressed
         EXIT_STATUS = 1;
@@ -366,7 +380,7 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
             count = count + 1;
             time = toc(start);
             t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
-            waitbar(count / N,h,[num2str(count/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
         end
     end
 end
