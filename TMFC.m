@@ -613,19 +613,23 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     if V_FIR ~= 0
         set(handles.FIR_TR_stat,'ForegroundColor','#385723');
         set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
+    else 
+        set(handles.FIR_TR_stat,'ForegroundColor','#C55A11');
+        set(handles.FIR_TR_stat,'String','Not done');
     end
     
     
     V_LSS = 0;
-    for i = 1:BPL_LEN
-        if ~isnan(BPL.subjects(i).LSS_after_FIR)
-        V_LSS = V_LSS + 1 ;
-        end
-    end
-    if V_LSS ~= 0
-        set(handles.LSS_R_stat,'ForegroundColor','#385723');
-        set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS), '/', num2str(BPL_LEN), ' done'));
-    end
+    %for i = 1:BPL_LEN
+    %    if ~isnan(BPL.subjects(i).LSS_residual_ts)
+    %    V_LSS = V_LSS + 1 ;
+    %    end
+    %end
+    
+    %if V_LSS ~= 0
+    %    set(handles.LSS_R_stat,'ForegroundColor','#385723');
+    %    set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS), '/', num2str(BPL_LEN), ' done'));
+    %end
     
     
     %if BPL.ROIs(1).paths ~= ""
