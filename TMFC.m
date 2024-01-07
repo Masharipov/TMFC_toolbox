@@ -425,7 +425,7 @@ end
             SUB_EXT = evalin('base', 'tmfc');
 
             % If there exists subjects in the TMFC variable then proceed
-            if SUB_EXT.subjects(1).paths ~= ""            
+            if SUB_EXT.subjects(1).paths ~= ""            % HERE
 
                 % Check if FIR WINDOWS is not NaN, enter WIN & BIN
                 if isnan(SUB_EXT.FIR_window)
@@ -439,7 +439,7 @@ end
                 DG = length(SUB_EXT_2.subjects);
 
                 % Check condition if FIR WINDOWS & BINS is not ZERO or NaN
-                if SUB_EXT_2.FIR_window ~= 0 & SUB_EXT_2.FIR_bins ~= 0 & isnan(SUB_EXT_2.FIR_window) == 0 & isnan(SUB_EXT_2.FIR_bins) == 0
+                if SUB_EXT_2.FIR_window ~= 0 & SUB_EXT_2.FIR_bins ~= 0 & isnan(SUB_EXT_2.FIR_window) == 0 & isnan(SUB_EXT_2.FIR_bins) == 0 %HERE
 
                     
                     % CONDITION 1: When running FIR Regression for the
@@ -576,7 +576,7 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
    elseif ~isnan(L_checker.FIR_bins) & ~isnan(L_checker.FIR_window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
        warning('Please complete the FIR Regression of all elements before proceeding with LSS regression');
    else
-       disp('in progress');
+       disp('LSS development in progress');
        %tmfc_LSS_GUI();
    end
 end
@@ -602,8 +602,7 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     BPL = evalin('base', 'tmfc');
     BPL_LEN = length(BPL.subjects);
     set(handles.SUB_stat,'ForegroundColor','#385723');
-    set(handles.SUB_stat,'String',BPL_LEN+' selected');
-    
+    set(handles.SUB_stat,'String',strcat(num2str(BPL_LEN), ' selected'));
    
     V_FIR = 0;
     for i = 1:BPL_LEN
@@ -613,10 +612,8 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     end
     if V_FIR ~= 0
         set(handles.FIR_TR_stat,'ForegroundColor','#385723');
-        set(handles.FIR_TR_stat,'String',V_FIR+'/'+BPL_LEN+' done');
+        set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
     end
-    
-    
     
     
     V_LSS = 0;
@@ -627,7 +624,7 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     end
     if V_LSS ~= 0
         set(handles.LSS_R_stat,'ForegroundColor','#385723');
-        set(handles.LSS_R_stat,'String',V_LSS+'/'+BPL_LEN+' done');
+        set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS), '/', num2str(BPL_LEN), ' done'));
     end
     
     
