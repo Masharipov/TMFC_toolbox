@@ -618,7 +618,7 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     
     V_LSS = 0;
     for i = 1:BPL_LEN
-        if ~isnan(BPL.subjects(i).LSS_residual_ts)
+        if ~isnan(BPL.subjects(i).LSS_after_FIR)
         V_LSS = V_LSS + 1 ;
         end
     end
