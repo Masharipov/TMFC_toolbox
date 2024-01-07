@@ -425,8 +425,8 @@ end
             SUB_EXT = evalin('base', 'tmfc');
 
             % If there exists subjects in the TMFC variable then proceed
-            if SUB_EXT.subjects(1).paths ~= ""            % HERE
-
+            if ~strcmp(SUB_EXT.subjects(1).paths, '')
+                
                 % Check if FIR WINDOWS is not NaN, enter WIN & BIN
                 if isnan(SUB_EXT.FIR_window)
                    tmfc_FIR_GUI(1);               
