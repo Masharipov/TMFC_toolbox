@@ -94,8 +94,6 @@ set(lst, 'String', '');                   % Intializing display list in the GUI
 main_subjects = sub_folder();             % Prompt for SPM_DIR select 
 main_subjects = unique(main_subjects);    % Filtering new selection for repetitions
 len_subs_A1 = size(main_subjects);        % Calculation of Size of added subjects
-assignin('base', 'main_subjects', main_subjects);
-assignin('base', 'len_subs_A1', len_subs_A1);
 
 % Logical & Warning Conditions
 if isempty(main_subjects)
@@ -378,10 +376,10 @@ end
                                         FD.subjects(i).FIR = NaN;
                                         FD.subjects(i).LSS_after_FIR = NaN;
                                         FD.subjects(i).LSS_without_FIR = NaN;
-                                        FD.subjects(i).BSC = NaN;
-                                        FD.subjects(i).VOI = NaN;
-                                        FD.subjects(i).PPIterm = NaN;
-                                        FD.subjects(i).gPPI = NaN;
+                                        %FD.subjects(i).BSC = NaN;
+                                        %FD.subjects(i).VOI = NaN;
+                                        %FD.subjects(i).PPIterm = NaN;
+                                        %FD.subjects(i).gPPI = NaN;
                                     end
                                     disp(strcat(num2str(ADRS(1)),' selected'));
                                     FD.project_path = PROJECT_PATHS;            % Assigning the Project paths to the respective structure variable 

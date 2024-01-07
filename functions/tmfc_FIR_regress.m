@@ -42,10 +42,10 @@ else
        sub_check = NaN(start_sub, length(tmfc.subjects));
        %sub_check(1:start_sub - 1) = 1;
    end
-    SS1_FIR = findobj('Tag','MAIN_WINDOWS');                    % Finding the GUI's object via the handle
+    SS1_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
     g6data = guidata(SS1_FIR);                                  % Creating a local refernce of the GUI's object 
-    set(g6data.FIR_TR_stat,"String", "Updating...","ForegroundColor","#C55A11")       % Assigning the status to the TMFC variable
-    set([g6data.SUB,g6data.FIR_TR, g6data.LSS_R, g6data.LSS_RW, g6data.BSC, g6data.gppi,g6data.save_p, g6data.open_p, g6data.change_p, g6data.settings,g6data.bgrd],'Enable', "off");
+    set(g6data.FIR_TR_stat,'String', 'Updating...','ForegroundColor','#C55A11')       % Assigning the status to the TMFC variable
+    set([g6data.SUB, g6data.FIR_TR, g6data.LSS_R, g6data.LSS_RW, g6data.BSC, g6data.gPPI, g6data.save_p, g6data.open_p, g6data.change_p, g6data.settings, g6data.BGFC],'Enable', 'off');
 end
 
 spm('defaults','fmri');
@@ -134,7 +134,7 @@ switch tmfc.defaults.parallel
     case 1
         
         % Creation of Waitbar Figure
-        handles.wp = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', "W_Parallel");%,'CreateCancelBtn', @quitter,"WindowStyle", "modal");        
+        handles.wp = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'W_Parallel');%,'CreateCancelBtn', @quitter,'WindowStyle', 'modal');        
         N = length(tmfc.subjects);                                          % Threshold of elements to run FIR regression
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 
         afterEach(D, @tmfc_parfor_waitbar);                                      % Command to update Waitbar
@@ -143,13 +143,13 @@ switch tmfc.defaults.parallel
         cleanupObj = onCleanup(@cleanMeUp);
 
 
-        disp("Processing... please wait");
+        disp('Processing... please wait');
         % Possible Addition: Condition to create parallel pool if not
         % running or non-existent (i.e disabled via preferences)
         % Parallel loop that creates Futures for result generation
         try
-            DG = guidata(findobj("Tag", "MAIN_WINDOWS"));    
-            set(DG.MAIN_F, "Position", [0.18 0.26 0.205 0.575])
+            DG = guidata(findobj('Tag', 'MAIN_WINDOW'));    
+            set(DG.MAIN_F, 'Position', [0.18 0.26 0.205 0.575])
             figure(DG.MAIN_F);
         end
        
@@ -172,9 +172,9 @@ switch tmfc.defaults.parallel
                 
                 try 
                     % Updating the TMFC GUI with the progress
-                    HBC_FIR = findobj('Tag','MAIN_WINDOWS');                    % Finding the GUI's object via the handle
+                    HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
                     g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
-                    set(g1data.FIR_TR_stat,"String", i+"/"+N+" done","ForegroundColor","#385723");       % Assigning the status to the TMFC variable
+                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor','#385723');       % Assigning the status to the TMFC variable
                 end
                 
                 try 
@@ -201,9 +201,9 @@ switch tmfc.defaults.parallel
             
         end
             try 
-                HBC_FIR = findobj('Tag','MAIN_WINDOWS');                    % Finding the GUI's object via the handle
+                HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
                 g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
-                set(g1data.FIR_TR_stat,"String", N_index+"/"+N_index+" done","ForegroundColor","#385723");       % Assigning the status to the TMFC variable
+                set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done'), 'ForegroundColor','#385723');       % Assigning the status to the TMFC variable
             end
     
         
@@ -215,7 +215,7 @@ switch tmfc.defaults.parallel
     case 0
         
         % Creation of Waitbar Figure
-        handles.ws = waitbar(0,'Please wait...','Name','FIR task regression',"Tag", "W_Serial", 'CreateCancelBtn', @quitter);
+        handles.ws = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'W_Serial', 'CreateCancelBtn', @quitter);
         N = length(tmfc.subjects);                                          % Threshold of elements to run FIR Regression
 
         % Serial Execution of FIR Regression
@@ -242,18 +242,18 @@ switch tmfc.defaults.parallel
                 waitbar(N,handles.ws,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
                 delete(handles.ws);
                 try                                                             % Updating the TMFC GUI window with the progress
-                    HBC_FIR = findobj('Tag','MAIN_WINDOWS');                        % Finding the GUI's object via handle
+                    HBC_FIR = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
                     g1data = guidata(HBC_FIR);                                      % Creating a local reference of the GUI's object
-                    set(g1data.FIR_TR_stat,"String", i-1+"/"+N+" done","ForegroundColor","#385723");    % Assigning the status to the TMFC varaible
+                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i-1), '/', num2str(N), ' done'),'ForegroundColor','#385723');    % Assigning the status to the TMFC varaible
                 end
                 break;
             end
             
 
             try                                                             % Updating the TMFC GUI window with the progress
-                HBC_FIR = findobj('Tag','MAIN_WINDOWS');                        % Finding the GUI's object via handle
+                HBC_FIR = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
                 g1data = guidata(HBC_FIR);                                      % Creating a local reference of the GUI's object
-                set(g1data.FIR_TR_stat,"String", i+"/"+N+" done","ForegroundColor","#385723");    % Assigning the status to the TMFC varaible
+                set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', '#385723');    % Assigning the status to the TMFC varaible
             end
             
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';                  % Time calculation for the wait bar
@@ -311,11 +311,12 @@ end
     function cleanMeUp()
 
         try
-            h_FREZ_U = findobj('Tag','MAIN_WINDOWS');
+            h_FREZ_U = findobj('Tag','MAIN_WINDOW');
             FZ_data = guidata(h_FREZ_U); 
-            set([FZ_data.SUB,FZ_data.FIR_TR, FZ_data.LSS_R, FZ_data.LSS_RW, FZ_data.BSC, FZ_data.gppi,FZ_data.save_p, FZ_data.open_p, FZ_data.change_p, FZ_data.settings,FZ_data.bgrd],'Enable', "on");
-            delete(findall(0,'Tag', 'W_Parallel',"type", "Figure"));
+            set([FZ_data.SUB, FZ_data.FIR_TR, FZ_data.LSS_R, FZ_data.LSS_RW, FZ_data.BSC, FZ_data.gPPI, FZ_data.save_p, FZ_data.open_p, FZ_data.change_p, FZ_data.settings, FZ_data.BGFC],'Enable', 'on');
+            delete(findall(0,'Tag', 'W_Parallel','type', 'Figure'));
              
+            % FUTURE UPDATE PENDING
             % This is where the piece of code that checks the last
             % processed subjects should be inserted
              
@@ -339,9 +340,9 @@ end
             G = F;
         else
             count = count + 1;
-            HBC = findobj('Tag','MAIN_WINDOWS');
+            HBC = findobj('Tag','MAIN_WINDOW');
             g1data = guidata(HBC);
-            set(g1data.FIR_TR_stat,"String", count+" Completed","ForegroundColor","#385723");
+            set(g1data.FIR_TR_stat,'String', strcat(num2str(count), ' Completed'),'ForegroundColor','#385723');
         end
   
    end
