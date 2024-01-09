@@ -588,8 +588,11 @@ end
 function SAVER_STAT =  Saver(save_path)
 
     try 
-        EXPORT = evalin('base', 'tmfc');
-        save(save_path, 'EXPORT');
+        % Major change may affect the funcitoning of TMFC variable
+        %EXPORT = evalin('base', 'tmfc');
+        %save(save_path, 'EXPORT');
+        tmfc = evalin('base', 'tmfc');
+        save(save_path, 'tmfc');
         SAVER_STAT = 1;
         % Save Success
     catch 
@@ -614,7 +617,7 @@ function evaluate_file() % function to update the TMFC window after loading a tm
         set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
         set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
     else 
-        set(handles.FIR_TR_stat,'ForegroundColor','red');
+        set(handles.FIR_TR_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
         set(handles.FIR_TR_stat,'String','Not done');
     end
     
