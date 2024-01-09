@@ -601,7 +601,7 @@ end
 function evaluate_file() % function to update the TMFC window after loading a tmfc project
     BPL = evalin('base', 'tmfc');
     BPL_LEN = length(BPL.subjects);
-    set(handles.SUB_stat,'ForegroundColor','#385723');
+    set(handles.SUB_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
     set(handles.SUB_stat,'String',strcat(num2str(BPL_LEN), ' selected'));
    
     V_FIR = 0;
@@ -611,7 +611,7 @@ function evaluate_file() % function to update the TMFC window after loading a tm
         end
     end
     if V_FIR ~= 0
-        set(handles.FIR_TR_stat,'ForegroundColor','#385723');
+        set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
         set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
     else 
         set(handles.FIR_TR_stat,'ForegroundColor','red');
@@ -627,13 +627,13 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     %end
     
     %if V_LSS ~= 0
-    %    set(handles.LSS_R_stat,'ForegroundColor','#385723');
+    %    set(handles.LSS_R_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
     %    set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS), '/', num2str(BPL_LEN), ' done'));
     %end
     
     
     %if BPL.ROIs(1).paths ~= ""
-    %    set(handles.ROI_stat,'ForegroundColor','#385723');
+    %    set(handles.ROI_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
     %    set(handles.ROI_stat,'String',length(BPL.ROIs)+' selected');
     %end
     
