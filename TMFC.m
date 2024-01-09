@@ -80,15 +80,15 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     
     % FIR task regression
     handles.FIR_TR = uicontrol('Style', 'pushbutton', 'String', 'FIR task regression', 'Units', 'normalized', 'Position', [0.06 0.765 0.40 0.0715]);
-    handles.FIR_TR_stat = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', 'red', 'Units', 'normalized', 'Position', [0.55 0.745 0.40 0.0715], 'backgroundcolor', 'w');
+    handles.FIR_TR_stat = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'normalized', 'Position', [0.55 0.745 0.40 0.0715], 'backgroundcolor', 'w');
     
     % LSS after FIR
     handles.LSS_R = uicontrol('Style', 'pushbutton', 'String', 'LSS after FIR', 'Units', 'normalized', 'Position', [0.06 0.669 0.40 0.0715]);
-    handles.LSS_R_stat = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', 'red', 'Units', 'normalized', 'Position', [0.55 0.653 0.40 0.0715], 'backgroundcolor', 'w');
+    handles.LSS_R_stat = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'normalized', 'Position', [0.55 0.653 0.40 0.0715], 'backgroundcolor', 'w');
    
     % LSS without FIR 
     handles.LSS_RW = uicontrol('Style', 'pushbutton', 'String', 'LSS without FIR', 'Units', 'normalized', 'Position', [0.06 0.571 0.40 0.0715]);
-    handles.LSS_RW_stat = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', 'red', 'Units', 'normalized', 'Position', [0.55 0.551 0.40 0.0715], 'backgroundcolor', 'w');
+    handles.LSS_RW_stat = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'normalized', 'Position', [0.55 0.551 0.40 0.0715], 'backgroundcolor', 'w');
    
     % Background connectivity, BSC-LSS, gPPI 
     handles.BGFC = uicontrol('Style', 'pushbutton', 'String', 'Background connectivity', 'Units', 'normalized', 'Position',[0.06 0.475 0.875 0.0715]);
