@@ -26,20 +26,20 @@ function tmfc_major_reset()
     h1 = findobj('Tag','MAIN_WINDOW');              % Find the Main GUI using its handle
     g1data = guidata(h1);                        % Get Handles and Data associated to Main GUI
 
-    set(g1data.SUB_stat,"ForegroundColor","red");
-    set(g1data.SUB_stat,'String',"Not selected");      % Assigning the variable to the Main GUI static text
+    set(g1data.SUB_stat,'ForegroundColor','red');
+    set(g1data.SUB_stat,'String','Not selected');      % Assigning the variable to the Main GUI static text
     
-    set(g1data.FIR_TR_stat,"ForegroundColor","#C55A11");
-    set(g1data.FIR_TR_stat,'String',"Not done");      % Assigning the variable to the Main GUI static text
+    set(g1data.FIR_TR_stat,'ForegroundColor',[0.772, 0.353, 0.067]);
+    set(g1data.FIR_TR_stat,'String','Not done');      % Assigning the variable to the Main GUI static text
     
-    set(g1data.LSS_R_stat,"ForegroundColor","#C55A11");
-    set(g1data.LSS_R_stat,'String',"Not done");      % Assigning the variable to the Main GUI static text
+    set(g1data.LSS_R_stat,'ForegroundColor',[0.772, 0.353, 0.067]);
+    set(g1data.LSS_R_stat,'String','Not done');      % Assigning the variable to the Main GUI static text
     
-    set(g1data.LSS_RW_stat,"ForegroundColor","#C55A11");
-    set(g1data.LSS_RW_stat,'String',"Not done");      % Assigning the variable to the Main GUI static text
+    set(g1data.LSS_RW_stat,'ForegroundColor',[0.772, 0.353, 0.067]);
+    set(g1data.LSS_RW_stat,'String','Not done');      % Assigning the variable to the Main GUI static text
     catch
         
-        warning("TMFC GUI window not found, TMFC variable reset");
+        warning('TMFC GUI window not found, TMFC variable reset');
         
     end
     

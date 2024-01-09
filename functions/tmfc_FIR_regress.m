@@ -42,10 +42,12 @@ else
        sub_check = NaN(start_sub, length(tmfc.subjects));
        %sub_check(1:start_sub - 1) = 1;
    end
+   try
     SS1_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
     g6data = guidata(SS1_FIR);                                  % Creating a local refernce of the GUI's object 
-    set(g6data.FIR_TR_stat,'String', 'Updating...','ForegroundColor','#C55A11')       % Assigning the status to the TMFC variable
+    set(g6data.FIR_TR_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
     set([g6data.SUB, g6data.FIR_TR, g6data.LSS_R, g6data.LSS_RW, g6data.BSC, g6data.gPPI, g6data.save_p, g6data.open_p, g6data.change_p, g6data.settings, g6data.BGFC],'Enable', 'off');
+   end
 end
 
 spm('defaults','fmri');
@@ -174,7 +176,7 @@ switch tmfc.defaults.parallel
                     % Updating the TMFC GUI with the progress
                     HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
                     g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
-                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor','#385723');       % Assigning the status to the TMFC variable
+                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
                 end
                 
                 try 
@@ -227,7 +229,7 @@ switch tmfc.defaults.parallel
                 try                                                             % Updating the TMFC GUI window with the progress
                     HBC_FIR = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
                     g1data = guidata(HBC_FIR);                                      % Creating a local reference of the GUI's object
-                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i-1), '/', num2str(N), ' done'),'ForegroundColor','#385723');    % Assigning the status to the TMFC varaible
+                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i-1), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
                 end
                 break;
             end
@@ -236,7 +238,7 @@ switch tmfc.defaults.parallel
             try                                                             % Updating the TMFC GUI window with the progress
                 HBC_FIR = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
                 g1data = guidata(HBC_FIR);                                      % Creating a local reference of the GUI's object
-                set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', '#385723');    % Assigning the status to the TMFC varaible
+                set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
             
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';                  % Time calculation for the wait bar
@@ -288,7 +290,7 @@ end
         try 
             HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
             g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
-            set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done test'), 'ForegroundColor','#385723');       % Assigning the status to the TMFC variable
+            set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done'), 'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
         end
     end
     
@@ -356,7 +358,7 @@ end
             count = count + 1;
             HBC = findobj('Tag','MAIN_WINDOW');
             g1data = guidata(HBC);
-            set(g1data.FIR_TR_stat,'String', strcat(num2str(count), ' Completed'),'ForegroundColor','#385723');
+            set(g1data.FIR_TR_stat,'String', strcat(num2str(count), ' Completed'),'ForegroundColor',[0.219, 0.341, 0.137]);
         end
   
    end

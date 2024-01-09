@@ -105,7 +105,7 @@ if isempty(main_subjects)
 else
     fprintf('Subjects selected are: %d \n', len_subs_A1(1));
     disp('Proceed to Select SPM.mat file');
-    set(b1_Stat,'String', strcat(num2str(len_subs_A1(1)),' selected'),'ForegroundColor','#385723');    
+    set(b1_Stat,'String', strcat(num2str(len_subs_A1(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);    
     set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
     mm_add = '';
     file_address = '';
@@ -143,7 +143,7 @@ else
     if ~strcmp(mm_add, '')
         set(lst, 'String', file_address);                          % Display Full Address of Subs in the GUI
         disp('The SPM.mat file has been succesfully selected');
-        set(b2_Stat,'String', 'Selected','ForegroundColor','#385723');
+        set(b2_Stat,'String', 'Selected','ForegroundColor',[0.219, 0.341, 0.137]);
     end 
 end
 
@@ -225,7 +225,7 @@ end
             
             set(lst, 'String', file_address);                               % Updating display with new Subjects
             len_subs = size(file_address);
-            set(b1_Stat,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor','#385723');
+            set(b1_Stat,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
             
         end
     end
@@ -253,7 +253,7 @@ end
                 set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
             else
                 len_subs = size(file_address);
-                set(b1_Stat,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor','#385723')
+                set(b1_Stat,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137])
             end
         end
     end 
@@ -356,7 +356,7 @@ end
 
                                         ADRS = size(file_func);                     % Variable with the size of the final subjects after all checking
 
-                                        set(g1data.SUB_stat,'ForegroundColor','#385723');
+                                        set(g1data.SUB_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
                                         set(g1data.SUB_stat,'String',strcat(num2str(ADRS(1)),' selected'));      % Assigning the variable to the Main GUI static text
                                         set([g1data.SUB,g1data.FIR_TR, g1data.LSS_R, g1data.LSS_RW, g1data.BSC, g1data.gPPI,g1data.save_p, g1data.open_p, g1data.change_p, g1data.settings,g1data.BGFC],'Enable', 'on');
                                     catch 

@@ -59,9 +59,11 @@ else
    %sub_check(1:length(tmfc.subjects)) = 0;
    sub_check = NaN(1, length(tmfc.subjects));
    sub_check(1:start_sub-1) = 1;
-   SS1_LSS = findobj('Tag','MAIN_WINDOWS');                    % Finding the GUI's object via the handle
+   try
+   SS1_LSS = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
    g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
-   set(g7data.LSS_R_stat,"String", "Updating...","ForegroundColor","#C55A11")       % Assigning the status to the TMFC variable
+   set(g7data.LSS_R_stat,"String", "Updating...","ForegroundColor",[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
+   end
 end
 %paths = "";
    
@@ -71,7 +73,7 @@ end
 N = length(paths);
 
 
-cond_list = tmfc.LSS_residual_ts.conditions;
+cond_list = tmfc.LSS_after_FIR.conditions;
 
 [~,index] = sortrows([cond_list.sess; cond_list.number]');
 cond_list = cond_list(index); clear index
@@ -81,7 +83,7 @@ cond_list = cond_list(index); clear index
 % Loop through subjects
 for i = start_sub:N % this loops the whole content in Parallel or serial computing
     tic
-    SPM = load(paths(i));
+    SPM = load(paths(i,:));
     cd(SPM.SPM.swd)
     
     if ~isfolder('LSS_after_FIR_task_regression')
@@ -210,7 +212,7 @@ for i = start_sub:N % this loops the whole content in Parallel or serial computi
                     f(N_p) = parfeval(@Worker, 1, tmfc, batch, i, j, N_p, paths); 
                     
                     try %STOPs Minimimizing of the Window
-                    DG = guidata(findobj("Tag", "MAIN_WINDOWS"));
+                    DG = guidata(findobj("Tag", "MAIN_WINDOW"));
                     set(DG.MAIN_F, "Position", [0.18 0.26 0.205 0.575])
                     figure(DG.MAIN_F);
                     end
@@ -259,16 +261,16 @@ for i = start_sub:N % this loops the whole content in Parallel or serial computi
                         waitbar(N,handles.L_ws, sprintf("Cancelling Operation"));
                         delete(handles.L_ws);
                         try                                                             % Updating the TMFC GUI window with the progress
-                            HBC_LSS = findobj('Tag','MAIN_WINDOWS');                        % Finding the GUI's object via handle
+                            HBC_LSS = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
                             g1data = guidata(HBC_LSS);                                      % Creating a local reference of the GUI's object
-                            set(g1data.LSS_R_stat,"String", i-1+"/"+N+" done","ForegroundColor","#385723");    % Assigning the status to the TMFC varaible
+                            set(g1data.LSS_R_stat,"String", i-1+"/"+N+" done","ForegroundColor",[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
                         end
                         break;
                     end
                     try                                                             % Updating the TMFC GUI window with the progress
-                        HBC_LSS = findobj('Tag','MAIN_WINDOWS');                        % Finding the GUI's object via handle
+                        HBC_LSS = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
                         g1data = guidata(HBC_LSS);                                      % Creating a local reference of the GUI's object
-                        set(g1data.LSS_R_stat,"String", i-1+"/"+N+" done","ForegroundColor","#385723");    % Assigning the status to the TMFC varaible
+                        set(g1data.LSS_R_stat,"String", i-1+"/"+N+" done","ForegroundColor",[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
                     end
                     
                     t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
@@ -310,9 +312,9 @@ end
 
 
                         try                                                         % Updating the TMFC GUI with the progress
-                        HBC_LSS = findobj('Tag','MAIN_WINDOWS');                    % Finding the GUI's object via the handle
+                        HBC_LSS = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
                         g1data = guidata(HBC_LSS);                                  % Creating a local refernce of the GUI's object 
-                        set(g1data.LSS_R_stat,"String", gin+"/"+N_p+" done","ForegroundColor","#385723");       % Assigning the status to the TMFC variable
+                        set(g1data.LSS_R_stat,"String", gin+"/"+N_p+" done","ForegroundColor",[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
                         end
 
 
@@ -386,9 +388,9 @@ end
             G = F;
         else
             count = count + 1;
-            HLL = findobj('Tag','MAIN_WINDOWS');
+            HLL = findobj('Tag','MAIN_WINDOW');
             gLdata = guidata(HLL);
-            set(gLdata.LSS_R_stat,"String", count+" Completed","ForegroundColor","#385723");
+            set(gLdata.LSS_R_stat,"String", count+" Completed","ForegroundColor",[0.219, 0.341, 0.137]);
         end
   
    end
