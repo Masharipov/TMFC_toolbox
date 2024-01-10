@@ -1,6 +1,8 @@
 function TMFC
     
-% Opens the main GUI window
+% ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
+%
+% Opens the main GUI window.
 %
 % The tmfc structure contains the following structures:
 %    
@@ -26,8 +28,9 @@ function TMFC
 %   tmfc.ROI_set:         information about the selected ROI set
 %                         and completed TMFC procedures
 %
+% =========================================================================
 %
-% Copyright (C) 2023 
+% Copyright (C) 2023 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -40,7 +43,7 @@ function TMFC
 % GNU General Public License for more details.
 % 
 % You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <https://www.gnu.org/licenses/>.
+% along with this program. If not, see <https://www.gnu.org/licenses/>.
 %
 % Contact email: masharipov@ihb.spb.ru
 
@@ -425,7 +428,7 @@ end
             SUB_EXT = evalin('base', 'tmfc');
 
             % If there exists subjects in the TMFC variable then proceed
-            if ~strcmp(SUB_EXT.subjects(1).paths, '')
+            if ~strcmp(SUB_EXT.subjects(1).path, '')
                 
                 % Check if FIR WINDOWS is not NaN, enter WIN & BIN
                 if isnan(SUB_EXT.FIR_window)

@@ -1,11 +1,32 @@
 function tmfc_FIR_GUI(OPS, TT)
 
+% ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
+%
 % This function is the GUI interface for FIR Regression in TMFC toolbox
 % The function takes 2 inputs as parameters, where
 % OPS = Case of exuection (i.e. FIR from START, RESTART, CONTINUATION) 
 % TT = Variable to indicate the index of CONTINUATION for CASE 3
-
+%
 % Supporting functions to create & use GUI windows
+%
+% =========================================================================
+%
+% Copyright (C) 2023 Ruslan Masharipov
+% 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program. If not, see <https://www.gnu.org/licenses/>.
+%
+% Contact email: masharipov@ihb.spb.ru
 
 
 % Switch case to select appropriate case as in TMFC/FIR_REG()

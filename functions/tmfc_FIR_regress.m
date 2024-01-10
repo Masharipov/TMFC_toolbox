@@ -1,9 +1,11 @@
 function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 
+% ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
+%
 % FIR task regression task regression are used to remove co-activations 
 % from BOLD time-series. Co-activations are simultaneous (de)activations 
 % without communication between brain regions. 
-
+%
 % This function uses SPM.mat file (which contains the specification of the
 % 1st-level GLM with canonical HRF) to specify and estimate 1st-level GLM
 % with FIR basis functions. FIR model regress out: (1) co-activations with
@@ -12,25 +14,39 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 % Residual time-series (Res_*.nii images stored in FIR_GLM subfolders) can
 % be further used for TMFC analysis to control for spurious inflation of
 % functional connectivity estimates1 due to co-activations.
-
+%
 % FORMAT [sub_check] = FIR_regress(tmfc)
 % Run a function starting from the first subject in the list
-% tmfc.subjects(i).paths - List of paths to SPM.mat files for N subjects
+% tmfc.subjects(i).path  - List of paths to SPM.mat files for N subjects
 % tmfc.FIR_window        - FIR window length (in seconds)
 % tmfc.FIR_bins          - Number of FIR time bins
 % tmfc.parallel          - 0 or 1 (sequential or parallel computing)
-
+%
 % FORMAT [sub_check] = FIR_regress(tmfc,start_sub)
 % Run the function starting from a specific subject in the path list
 % tmfc                   - As above
 % start_sub              - Subject number on the path list to start with
-
-
-%==========================================================================
-% Ruslan Masharipov, october, 2023
-% email: ruslan.s.masharipov@gmail.com
+%
+% =========================================================================
+%
+% Copyright (C) 2023 Ruslan Masharipov
+% 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program. If not, see <https://www.gnu.org/licenses/>.
+%
+% Contact email: masharipov@ihb.spb.ru
     
-    
+
 if nargin == 1
    start_sub = 1;
 else
@@ -56,7 +72,7 @@ spm_jobman('initcfg');
 
 for i = start_sub:length(tmfc.subjects)
     
-    SPM = load(tmfc.subjects(i).paths);
+    SPM = load(tmfc.subjects(i).path);
 
     cd(SPM.SPM.swd)
 

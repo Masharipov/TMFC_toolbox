@@ -1,15 +1,37 @@
 function [varargout] = tmfc_select_subjects_GUI(FigH, SPM_check)
 
-% UIWAIT IS USED HERE TO Accomodate WITHOUT CHECKING SELECTION
-% Select_subjects_GUI performs selection of subjects using the SPM Select
-% Function. The function can work in two modes i.e. via TMFC main window
-% route or independently as a single file where the selected subject paths
-% undergo 4 stages of checking and verificaiton after which it is exported
-% to the TMFC varaible or the Addresses variable in the base workspace. 
-
+% ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
+%
+% Opens a GUI window for selection of individual subject SPM.mat files
+% created by SPM12 after 1-st level GLM estimation. Optionally checks
+% SPM.mat files: 
+% (1) checks if all SPM.mat files are present in the specified paths
+% (2) checks if the same conditions are specified in all SPM.mat files
+% (3) checks if output folders specified in SPM.mat files exist
+% (4) checks if functional files specified in SPM.mat files exist
+%
 % When running this code independtenly FigH can be left as [] i.e. 
 % tmfc_select_subjects_GUI([], 0) - No checks
 % tmfc_select_subjects_GUI([], 1) - With checks
+%
+% =========================================================================
+%
+% Copyright (C) 2023 Ruslan Masharipov
+% 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program. If not, see <https://www.gnu.org/licenses/>.
+%
+% Contact email: masharipov@ihb.spb.ru
 
 
 CHECK_STATUS = SPM_check;
@@ -36,7 +58,7 @@ if CHECK_STATUS == 1
         end
         return
     else
-        PROJECT_PATHS = path;
+        project_path = path;
         disp('Proceeding with Subject Selection');
     end
         
@@ -372,17 +394,14 @@ end
                                     FD = evalin('base', 'tmfc');                % Creating a local copy of the TMFC variable from the base workspace
 
                                     for i = 1:length(file_func)                 % Assigning the subject paths to the respective structure variable
-                                        FD.subjects(i).paths = char(file_func(i));
+                                        FD.subjects(i).path = char(file_func(i));
                                         FD.subjects(i).FIR = NaN;
                                         FD.subjects(i).LSS_after_FIR = NaN;
                                         FD.subjects(i).LSS_without_FIR = NaN;
-                                        %FD.subjects(i).BSC = NaN;
-                                        %FD.subjects(i).VOI = NaN;
-                                        %FD.subjects(i).PPIterm = NaN;
-                                        %FD.subjects(i).gPPI = NaN;
                                     end
+
                                     disp(strcat(num2str(ADRS(1)),' selected'));
-                                    FD.project_path = PROJECT_PATHS;            % Assigning the Project paths to the respective structure variable 
+                                    FD.project_path = project_path;            % Assigning the project path to the respective structure variable 
 
                                     assignin('base', 'tmfc', FD);               % Updating the TMFC variable to the base workspace after performing all modifications to its local copy
 
@@ -753,6 +772,4 @@ function [file_func,file_no_func] = CHECK_FUNCTION(Y_4)
                 close(f_4);
             end
 
-end 
-
-% END 
+end
