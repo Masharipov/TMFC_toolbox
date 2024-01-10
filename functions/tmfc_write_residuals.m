@@ -20,10 +20,10 @@ function VRes = tmfc_write_residuals(SPM,Ic)
 
 %-Get SPM.mat
 %--------------------------------------------------------------------------
- if ~nargin || isempty(SPM)
-     [SPM,sts] = spm_select(1,'^SPM\.mat$','Select SPM.mat');
-     if ~sts, VRes = ''; return; end
- end
+if ~nargin || isempty(SPM)
+    [SPM,sts] = spm_select(1,'^SPM\.mat$','Select SPM.mat');
+    if ~sts, VRes = ''; return; end
+end
 
 if ~isstruct(SPM)
     swd = spm_file(SPM,'fpath');
@@ -37,6 +37,8 @@ end
 
 try, SPM.swd; catch, SPM.swd = pwd; end
 cwd = pwd; cd(SPM.swd);
+
+disp('Saving residual images... please wait');
 
 %-Get contrast used to adjust data
 %--------------------------------------------------------------------------

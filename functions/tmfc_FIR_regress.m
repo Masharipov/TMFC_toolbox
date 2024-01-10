@@ -19,9 +19,10 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 % Run a function starting from the first subject in the list
 %
 %   tmfc.subjects(i).path  - List of paths to SPM.mat files for N subjects
+%   tmfc.project_path      - The path where all results will be saved
 %   tmfc.FIR_window        - FIR window length (in seconds)
 %   tmfc.FIR_bins          - Number of FIR time bins
-%   tmfc.parallel          - 0 or 1 (sequential or parallel computing)
+%   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %
 % FORMAT [sub_check] = FIR_regress(tmfc,start_sub)
 % Run the function starting from a specific subject in the path list
@@ -52,37 +53,32 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 if nargin == 1
    start_sub = 1;
 else
-   %sub_check(1:length(tmfc.subjects)) = 0;
    if start_sub == 1
-       sub_check = NaN(1, length(tmfc.subjects));
-       %sub_check(1:start_sub-1) = 1;
+       sub_check = NaN(length(tmfc.subjects),1);
    else
-       sub_check = NaN(start_sub, length(tmfc.subjects));
-       %sub_check(1:start_sub - 1) = 1;
+       sub_check = NaN(length(tmfc.subjects),1);
+       sub_check(1:start_sub) = 1;
    end
    try
-    SS1_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
-    g6data = guidata(SS1_FIR);                                  % Creating a local refernce of the GUI's object 
-    set(g6data.FIR_TR_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
-    set([g6data.SUB, g6data.FIR_TR, g6data.LSS_R, g6data.LSS_RW, g6data.BSC, g6data.gPPI, g6data.save_p, g6data.open_p, g6data.change_p, g6data.settings, g6data.BGFC],'Enable', 'off');
+       SS1_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
+       g6data = guidata(SS1_FIR);                                 % Creating a local refernce of the GUI's object 
+       set(g6data.FIR_TR_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
+       set([g6data.SUB, g6data.FIR_TR, g6data.LSS_R, g6data.LSS_RW, g6data.BSC, g6data.gPPI, g6data.save_p, g6data.open_p, g6data.change_p, g6data.settings, g6data.BGFC],'Enable', 'off');
    end
 end
 
 spm('defaults','fmri');
 spm_jobman('initcfg');
 
-
 for i = start_sub:length(tmfc.subjects)
     
     SPM = load(tmfc.subjects(i).path);
 
-    cd(SPM.SPM.swd)
-
-    if isfolder('FIR_GLM')
-        rmdir('FIR_GLM','s');
+    if isfolder([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f')])
+        rmdir([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f')],'s');
     end
     
-    matlabbatch{1}.spm.stats.fmri_spec.dir = {[SPM.SPM.swd filesep 'FIR_GLM']};
+    matlabbatch{1}.spm.stats.fmri_spec.dir = {[tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f')]};
     matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
     matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
     matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
@@ -144,24 +140,20 @@ EXIT_STATUS = 0;
 FLAG_PAR = 0;
 
 
-
-% Switch case to select Parallel computing or Serial computing
-switch tmfc.defaults.parallel
-   
-    
+% Parallel or sequential computing
+switch tmfc.defaults.parallel   
     
     % ------------------------ Parallel Computing ------------------------
     case 1
         
         % Creation of Waitbar Figure
-        handles.wp = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'W_Parallel');%,'CreateCancelBtn', @quitter,'WindowStyle', 'modal');        
+        handles.wp = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'W_Parallel');       
         N = length(tmfc.subjects);                                          % Threshold of elements to run FIR regression
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 
-        afterEach(D, @tmfc_parfor_waitbar);                                      % Command to update Waitbar
-        tmfc_parfor_waitbar(handles.wp, N);                                        % Custom function to update waitbar
+        afterEach(D, @tmfc_parfor_waitbar);                                 % Command to update Waitbar
+        tmfc_parfor_waitbar(handles.wp, N);                                 % Custom function to update waitbar
        
         cleanupObj = onCleanup(@cleanMeUp);
-
 
         disp('Processing... please wait');
         % Possible Addition: Condition to create parallel pool if not
@@ -173,48 +165,42 @@ switch tmfc.defaults.parallel
             figure(DG.MAIN_F);
         end
        
-       parfor i = start_sub:N
-                try
-                    spm('defaults','fmri');
-                    spm_jobman('initcfg');
-                    spm_get_defaults('cmdline',true);
-                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
-                    spm_get_defaults('stats.fmri.ufp',1);
-                    spm_jobman('run',batch{i});
-                    tmfc_write_residuals([batch{i}{1}.spm.stats.fmri_spec.dir{1}  filesep 'SPM.mat'],NaN);
-                    tmfc_parsave([batch{i}{1}.spm.stats.fmri_spec.dir{1}  filesep 'GLM_batch.mat'],batch{i});
-                    sub_check(i) = 1;
-                catch
-                    sub_check(i) = 0;
-                end
-                send(D,[]); 
-                
-                try 
-                    % Updating the TMFC GUI with the progress
-                    HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
-                    g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
-                    set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
-                end
-                
-                try 
-                   waitbar(i/N,handles.wp,sprintf('Subjects Processed: %d',i)); % Updating the progress of the Wait bar
-                end
+        parfor i = start_sub:N
+            try
+                spm('defaults','fmri');
+                spm_jobman('initcfg');
+                spm_get_defaults('cmdline',true);
+                spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                spm_get_defaults('stats.fmri.ufp',1);
+                spm_jobman('run',batch{i});
+                tmfc_write_residuals([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM.mat'],NaN);
+                tmfc_parsave([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batch.mat'],batch{i});
+                sub_check(i) = 1;
+            catch
+                sub_check(i) = 0;
+            end
+            send(D,[]); 
+            
+            try 
+                % Updating the TMFC GUI with the progress
+                HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
+                g1data = guidata(HBC_FIR);                                 % Creating a local refernce of the GUI's object 
+                set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
+            end
+            
+            try 
+               waitbar(i/N,handles.wp,sprintf('Subjects Processed: %d',i)); % Updating the progress of the Wait bar
+            end
                 
         end
 
         try                                                                 % Closing the Waitbar after Sucessful execution
             delete(handles.wp);
             FLAG_PAR = 1;
-        end
+        end       
         
-    
-        
-            
-
-        
-        
-    % ------------------------ Serial Computing ------------------------
+    % ----------------------- Sequential Computing ------------------------
     case 0
         
         % Creation of Waitbar Figure
@@ -234,8 +220,8 @@ switch tmfc.defaults.parallel
                     spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_get_defaults('stats.fmri.ufp',1);
                     spm_jobman('run', batch{i});
-                    tmfc_write_residuals([batch{i}{1}.spm.stats.fmri_spec.dir{1}  filesep 'SPM.mat'],NaN);
-                    tmfc_parsave([batch{i}{1}.spm.stats.fmri_spec.dir{1}  filesep 'GLM_batch.mat'],batch{i});
+                    tmfc_write_residuals([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM.mat'],NaN);
+                    tmfc_parsave([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batch.mat'],batch{i});
                     sub_check(i) = 1;
                 catch
                     sub_check(i) = 0;
@@ -272,8 +258,7 @@ switch tmfc.defaults.parallel
         delete(handles.ws);
         end
     
-end
-    
+    end
 
     % Retriving the TMFC variable from the workspace 
     FIR_E = evalin('base', 'tmfc');                                         % Creation of local copy
@@ -282,68 +267,39 @@ end
         FIR_E.subjects(k).FIR = sub_check(k);
     end
     
-    assignin('base', 'tmfc', FIR_E);                                        % Assinging the Updated TMFC variable back to the Base workspace
-        
+    assignin('base', 'tmfc', FIR_E);                                        % Assinging the Updated TMFC variable back to the Base workspace      
         
     if FLAG_PAR == 1
         try
-            % Find the last procssed subject (i.e. not NaN)
+            % Find the last processed subject (i.e. not NaN)
             N_index = 0;
             SUB_EXT_3 = evalin('base', 'tmfc');
             DG = length(SUB_EXT_3.subjects);
             
-            for i = 1:DG
-                
+            for i = 1:DG   
                 if isnan(SUB_EXT_3.subjects(i).FIR) == 1
                     N_index = i; % INDEX of last processed subject is found
                     break;
                 else
                     N_index = DG;
-                end
-                
+                end 
             end
-            
         end
         
         try 
             HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
-            g1data = guidata(HBC_FIR);                                  % Creating a local refernce of the GUI's object 
+            g1data = guidata(HBC_FIR);                                 % Creating a local refernce of the GUI's object 
             set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done'), 'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
         end
     end
-    
-    
-    
-    
-    
-        
-    function quitter(~,~)                                                   % Function that changes the state of execution when CANCEL is pressed
+
+
+    function quitter(~,~)                                              % Function that changes the state of execution when CANCEL is pressed
         EXIT_STATUS = 1;
     end
 
-    
-    % Function to perform parallel computing
-    % The function returns the status of completion as either 1 or 0 
-    function [status] = Worker(tmfc, batch, idx)
-        try
-            spm('defaults','fmri');
-            spm_jobman('initcfg');
-            spm_get_defaults('cmdline',true);
-            spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-            spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
-            spm_get_defaults('stats.fmri.ufp',1);
-            spm_jobman('run', batch{idx});
-            tmfc_write_residuals([batch{idx}{1}.spm.stats.fmri_spec.dir{1}  filesep 'SPM.mat'],NaN);
-            tmfc_parsave([batch{idx}{1}.spm.stats.fmri_spec.dir{1}  filesep 'GLM_batch.mat'],batch{idx});
-            status = 1;
-        catch
-            status = 0;
-        end
-
-    end
 
     function cleanMeUp()
-
         try
             h_FREZ_U = findobj('Tag','MAIN_WINDOW');
             FZ_data = guidata(h_FREZ_U); 
@@ -355,37 +311,15 @@ end
             % processed subjects should be inserted
              
         end
-        
-    end
+    end  
+end   
 
-
-    
-end 
-    
-
-% Function to monitor the counting of the Parallel Loops
-   function setter(X, Y, F)
-
-        persistent count GDS; 
-
-        if nargin == 3                                                      % Intialization in the first iteration
-            count = 0;                                                      % Reset Count to zero
-            GDS = Y;                                                        % Dummy variable to store elements in the start
-            G = F;
-        else
-            count = count + 1;
-            HBC = findobj('Tag','MAIN_WINDOW');
-            g1data = guidata(HBC);
-            set(g1data.FIR_TR_stat,'String', strcat(num2str(count), ' Completed'),'ForegroundColor',[0.219, 0.341, 0.137]);
-        end
-  
-   end
-        
+% Save batches in parallel mode
 function tmfc_parsave(fname,matlabbatch)
   save(fname, 'matlabbatch')
 end
 
-
+% Waitbar for parallel mode
 function tmfc_parfor_waitbar(waitbarHandle,iterations)
     persistent count h N start
 
@@ -404,5 +338,3 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
         end
     end
 end
-
-   
