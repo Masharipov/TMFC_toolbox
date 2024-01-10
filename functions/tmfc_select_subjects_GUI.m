@@ -1,4 +1,4 @@
-function [paths] = tmfc_select_subjects_GUI(FigH, SPM_check)
+function [paths] = tmfc_select_subjects_GUI(FigH,SPM_check)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %

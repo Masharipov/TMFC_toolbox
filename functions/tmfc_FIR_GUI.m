@@ -2,8 +2,10 @@ function tmfc_FIR_GUI(start_case,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
-% Opens a GUI window for FIR task regression. Designed to run only via the
-% main GUI window.
+% Opens a GUI window for FIR task regression. Allows to specify FIR window
+% and number of FIR time bins.
+% 
+% Designed to run only via the main GUI window.
 % 
 %   start_case  - 1 or 2 or 3 (start FIR regression from the 1st subject, 
 %                              restart FIR regression from the 1st subject,
