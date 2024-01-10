@@ -70,12 +70,9 @@ set(CP_Help, 'callback', @help_details)
 function execute_change(~,~)
     oldp = get(CP_T2_A, 'String');
     newp = get(CP_T3_A, 'String');
-    
-    try
-          
-    spm_changepath(char(paths),char(oldp),char(newp));
-    
-    disp('Paths have been sucessfully modified');
+    try   
+        spm_changepath(char(paths),char(oldp),char(newp));        
+        disp('Paths have been sucessfully modified');
     catch 
         disp('Paths have not been changed');
     end
