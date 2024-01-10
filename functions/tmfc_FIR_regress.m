@@ -17,15 +17,17 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 %
 % FORMAT [sub_check] = FIR_regress(tmfc)
 % Run a function starting from the first subject in the list
-% tmfc.subjects(i).path  - List of paths to SPM.mat files for N subjects
-% tmfc.FIR_window        - FIR window length (in seconds)
-% tmfc.FIR_bins          - Number of FIR time bins
-% tmfc.parallel          - 0 or 1 (sequential or parallel computing)
+%
+%   tmfc.subjects(i).path  - List of paths to SPM.mat files for N subjects
+%   tmfc.FIR_window        - FIR window length (in seconds)
+%   tmfc.FIR_bins          - Number of FIR time bins
+%   tmfc.parallel          - 0 or 1 (sequential or parallel computing)
 %
 % FORMAT [sub_check] = FIR_regress(tmfc,start_sub)
 % Run the function starting from a specific subject in the path list
-% tmfc                   - As above
-% start_sub              - Subject number on the path list to start with
+%
+%   tmfc                   - As above
+%   start_sub              - Subject number on the path list to start with
 %
 % =========================================================================
 %

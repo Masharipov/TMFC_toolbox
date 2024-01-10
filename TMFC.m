@@ -52,7 +52,7 @@ function TMFC
 if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1 
     
     % Set up TMFC structure
-    tmfc.defaults.parallel = 1;      
+    tmfc.defaults.parallel = 0;      
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
 
@@ -285,8 +285,8 @@ end
 % Function that launches Settings Window & Synchronizes new options 
 
 % Variables to store & display selected settings in the settings window
-% Type of computing (Default computing: Parallel - 0, Sequential - 1)
-COMPUTING = {'Parallel computing', 'Sequential computing'};
+% Type of computing (Default computing: Sequential - 0, Parallel - 1)
+COMPUTING = {'Sequential computing', 'Parallel computing'};
 STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
 
 function Settings(ButtonH, EventData, MAIN_F)
