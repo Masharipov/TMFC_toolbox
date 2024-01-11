@@ -126,7 +126,8 @@ function action_5(~,~)
         end
         
         disp('LSS REGRESSION YET TO BE Connected');
-        RES_LSS = LSS_regress_resid_ts(GDR, 1);
+        disp(GDR.LSS_after_FIR.conditions);
+        %RES_LSS = LSS_regress_resid_ts(GDR, 1);
         %RES_LSS = LSS_regress_resid_worker(GDR, 1);
         
 
@@ -343,14 +344,15 @@ function [cond_list] = generate_LSS_conditions()
     
         try
         load(LG_C.subjects(1).path);
-    
+        
         k = 1;
         for i = 1:length(SPM.Sess)
             for j = 1:length({SPM.Sess(i).U(:).name})
                 cond_list(k).sess = i;
                 cond_list(k).number = j;
                 cond_list(k).name = char(SPM.Sess(i).U(j).name);
-                cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ')'];
+                %cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ')'];
+                cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ', Cond' num2str(j) ')'];
                 k = k + 1;
             end 
         end

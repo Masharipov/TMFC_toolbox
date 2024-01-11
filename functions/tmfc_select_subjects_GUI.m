@@ -1,4 +1,4 @@
-function [paths] = tmfc_select_subjects_GUI(FigH,SPM_check)
+function [paths] = tmfc_select_subjects_GUI(SPM_check)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -314,6 +314,8 @@ function file_func = action_5(~,~)
                                 
                                 % Select project path
                                 disp('Please Select a folder for the new TMFC project');    
+                                proj_path(ADRS(1));
+                                    
                                 project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
 
                                 if strcmp(project_path, '')
@@ -367,7 +369,31 @@ function Royal_Reset(~,~)
     set([UF_data.SUB,UF_data.FIR_TR, UF_data.LSS_R, UF_data.LSS_RW, UF_data.BSC, UF_data.gPPI,UF_data.save_p, UF_data.open_p, UF_data.change_p, UF_data.settings,UF_data.BGFC],'Enable', 'on');
 end
 
+
+function proj_path(S)
+    proj_path_gui = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.40 0.20 0.10],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'Proj_path');
+    details = {'Next, select the project path where all results and temporary files will be stored'};
+    stat_1 = uicontrol(proj_path_gui,'Style','text','String',strcat(num2str(S), ' subjects selected'),'Units', 'normalized', 'Position',[0.35 0.70 0.30 0.17],'backgroundcolor','w','fontunits','normalized','fontSize', 0.55,'ForegroundColor',[0.219, 0.341, 0.137]);
+    stat_2 = uicontrol(proj_path_gui,'Style','text','String',details,'Units', 'normalized', 'Position',[0.05 0.38 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.34);
+    OK = uicontrol(proj_path_gui,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.14 0.2 0.2]);
+    set(OK, 'callback', @OKAY);
     
+    function OKAY(~,~)
+        delete(proj_path_gui);
+    end
+    uiwait();
+end
+
+
+
+
+
+
+
+
+
+
+
 %% Close select subjects GUI window
 function Closeaction(~,~)
     try
