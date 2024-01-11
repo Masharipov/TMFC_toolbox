@@ -6,27 +6,31 @@ function TMFC
 %
 % The tmfc structure contains the following structures:
 %    
-%   tmfc.defaults.parallel: 1 or 0      (parallel or sequential computing) 
-%   tmfc.defaults.maxmem: 2^31          (how much RAM can be used at the
-%                                        same time during GLM estimation)
-%   tmfc.defaults.resmem: true or false (store temporaty files during GLM
-%                                        estimation in RAM or on disk)
+%   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
+%   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
+%                            the same time during GLM estimation)
+%   tmfc.defaults.resmem   - true or false (store temporaty files during
+%                            GLM estimation in RAM or on disk)
 %   
-%   tmfc.project_path: the path where all results will be saved
+%   tmfc.project_path      - The path where all results will be saved
 %   
-%   tmfc.subjects.path: paths to individual subjects' SPM.mat files
-%   tmfc.subjects.FIR: 1 or 0             (completed or not)
-%   tmfc.subjects.LSS_after_FIR: 1 or 0   (completed or not)
-%   tmfc.subjects.LSS_without_FIR: 1 or 0 (completed or not)
+%   tmfc.subjects.path     - Paths to individual subject SPM.mat files
+%   tmfc.subjects.FIR:            - 1 or 0 (completed or not)
+%   tmfc.subjects.LSS_after_FIR   - 1 or 0 (completed or not)
+%   tmfc.subjects.LSS_without_FIR - 1 or 0 (completed or not)
 %
-%   tmfc.FIR_window - FIR window length in [s]
-%   tmfc.FIR_bins - Number of FIR time bins
+%   tmfc.FIR_window        - FIR window length in [s]
+%   tmfc.FIR_bins          - Number of FIR time bins
 % 
-%   tmfc.LSS_after_FIR.conditions         (conditions of interest for LSS)
-%   tmfc.LSS_without_FIR.conditions       (conditions of interest for LSS)
+%   tmfc.LSS_after_FIR.conditions   - Conditions of interest for LSS 
+%                                     regression after FIR regression
+%                                     (based on residual time series)
+%   tmfc.LSS_without_FIR.conditions - Conditions of interest for LSS
+%                                     regression without FIR regression
+%                                     (based on original time series)            
 %
-%   tmfc.ROI_set:         information about the selected ROI set
-%                         and completed TMFC procedures
+%   tmfc.ROI_set:         - information about the selected ROI set
+%                           and completed TMFC procedures
 %
 % =========================================================================
 %

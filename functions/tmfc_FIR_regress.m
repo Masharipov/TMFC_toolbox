@@ -23,6 +23,10 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 %   tmfc.FIR_window        - FIR window length (in seconds)
 %   tmfc.FIR_bins          - Number of FIR time bins
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
+%   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
+%                            the same time during GLM estimation)
+%   tmfc.defaults.resmem   - true or false (store temporaty files during
+%                            GLM estimation in RAM or on disk)
 %
 % FORMAT [sub_check] = FIR_regress(tmfc,start_sub)
 % Run the function starting from a specific subject in the path list.

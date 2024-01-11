@@ -29,6 +29,11 @@ function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 %   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
 %   tmfc.project_path      - The path where all results will be saved
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
+%   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
+%                            the same time during GLM estimation)
+%   tmfc.defaults.resmem   - true or false (store temporaty files during
+%                            GLM estimation in RAM or on disk)
+%
 %   tmfc.LSS_after_FIR.conditions        - List of conditions of interest
 %   tmfc.LSS_after_FIR.conditions.sess   - Session number
 %                                          (as specified in SPM.Sess)
