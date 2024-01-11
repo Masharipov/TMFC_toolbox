@@ -274,7 +274,7 @@ function CP_GUI(ButtonH, EventData, MAIN_F)
     try
         % Select subjects to change the Path 
         % Using Select_Subjects_GUI (without checking)
-        D = tmfc_select_subjects_GUI([],0);  
+        D = tmfc_select_subjects_GUI(0);  
         % 
         % Continue exectuion using Change paths GUI (feed selected paths to change_paths_gui)
         tmfc_change_paths_GUI(D);    
@@ -401,7 +401,7 @@ end
 
 % Select subjects and check SPM.mat files
 function SUB_SEL(~, ~, MAIN_F)
-    tmfc_select_subjects_GUI(MAIN_F, 1);
+    tmfc_select_subjects_GUI(1);
 end
 
 %% ========================[ FIR Regression ]==============================
