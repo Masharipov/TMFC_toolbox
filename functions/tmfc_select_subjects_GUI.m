@@ -2,7 +2,7 @@ function [paths] = tmfc_select_subjects_GUI(SPM_check)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
-% Opens a GUI window for selection of individual subject SPM.mat files
+% Opens a GUI window for selecting individual subject SPM.mat files
 % created by SPM12 after 1-st level GLM estimation. Optionally checks
 % SPM.mat files: 
 % (1) checks if all SPM.mat files are present in the specified paths
@@ -12,7 +12,7 @@ function [paths] = tmfc_select_subjects_GUI(SPM_check)
 %
 % FORMAT [paths] = tmfc_select_subjects_GUI(SPM_check)
 %
-% SPM_check         - 0 or 1 (don't check or check SPM.mat files)
+%   SPM_check         - 0 or 1 (don't check or check SPM.mat files)
 %
 % =========================================================================
 %
