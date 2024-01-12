@@ -1,3 +1,4 @@
+%%
 function tmfc_LSS_GUI
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
@@ -26,6 +27,7 @@ function tmfc_LSS_GUI
 %
 % Contact email: masharipov@ihb.spb.ru
 
+%%
 
 % Generate All conditions using function
 all_cond = generate_LSS_conditions();
@@ -33,15 +35,17 @@ all_cond = generate_LSS_conditions();
 % Local Variables that work throughout the RunTime upto checking stage
 % Variable to store all conditions possible 
 try
-if ~isempty(all_cond)
-    LST_1 = {};
-    for i = 1:length(all_cond)
-        LST_1 = vertcat(LST_1, all_cond(i).list_name);        
-    end
-    ALL_CONDS_COPY = all_cond;
-end 
+    if ~isempty(all_cond)
+        
+        main_cond = sorter_1(all_cond);
+        LST_1 = {};
+        for i = 1:length(main_cond)
+            LST_1 = vertcat(LST_1, main_cond(i).list_name);        
+        end
+        ALL_CONDS_COPY = main_cond;
+    end 
 catch
-LST_1 = {};
+    LST_1 = {};
 end
 
 
@@ -49,7 +53,10 @@ LST_2 = {};
 selection_1 = {};          % Variable to store the selected list of areas in BOX 1(as INDEX)
 selection_2 = {};          % Variable to store the selected list of areas in BOX 2(as INDEX)
 
-    
+full_1 = main_cond;
+
+%% Creation of GUI & its elements
+
 LSS_GUI = figure('Name', 'LSS regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.65 0.25 0.22 0.56],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
 
 % Initializing Elements of the UI
@@ -69,15 +76,11 @@ LSS_OK = uicontrol(LSS_GUI,'Style','pushbutton','String', 'OK','Units', 'normali
 LSS_REV = uicontrol(LSS_GUI,'Style','pushbutton','String', 'Remove selected','Units', 'normalized','Position',[0.360 0.05 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
 LSS_REVA = uicontrol(LSS_GUI,'Style','pushbutton','String', 'Remove all','Units', 'normalized','Position',[0.680 0.05 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
 
-
+% Assignig actions of buttons of GUI 
 set(LSS_E1_lst, 'Value', []);
 set(LSS_E1_lst, 'callback', @action_select_1)
-
 set(LSS_E2_lst, 'Value', []);
 set(LSS_E2_lst, 'callback', @action_select_2)
-%set(LSS_E2_lst, 'Enable', 'off'); % Initially will remain off
-
-
 
 set(LSS_ADD, 'callback', @action_3)
 set(LSS_ADA, 'callback', @action_4)
@@ -87,7 +90,90 @@ set(LSS_OK, 'callback', @action_5)
 set(LSS_REV, 'callback', @action_6)
 set(LSS_REVA, 'callback', @action_7)
 
+%% Function to reuturn user's selection 
+% 
+function action_select_1(~,~)
+    index = get(LSS_E1_lst, 'Value');  % Retrieves the users selection LIVE
+    selection_1 = index;      
+end
 
+function action_select_2(~,~)
+    index = get(LSS_E2_lst, 'Value');  % Retrieves the users selection LIVE
+    selection_2 = index;             
+end
+%% Function to Add single condition
+
+function action_3(~,~)
+    
+    % Checking if there is a selection from the user
+    if isempty(selection_1)
+        
+        % if no selection, raise warning 
+        warning('No Areas selected');
+        
+    else
+        
+        % Else continue to add selected condition to selected list
+        
+        len_exst = length(LST_2);     % Find length of existing subjects in selected condition
+        
+        NEW_paths = {};               % Creation of empty array to store new paths
+        
+        % Based on the selection add variables to a selected list
+        for j = 1:length(selection_1) 
+            NEW_paths = vertcat(NEW_paths, LST_1(selection_1));
+        end
+       
+        LST_2 = vertcat(LST_2, NEW_paths);
+        new_ones = length(unique(LST_2)) - len_exst;
+        LST_2 = unique(LST_2);
+        
+        % Warning & logical Condition (Iteration ii)
+        if new_ones == 0
+            warning('Newly selected areas are already present in the list, no new subjects added');
+        else
+            fprintf('New subjects selected are: %d \n', new_ones(1)); 
+            LST_2 = sorter_2(LST_2, full_1);
+        end 
+        
+        
+        set(LSS_E2_lst, 'String', LST_2);
+        
+        
+    end
+    
+end
+
+%% Function to add all conditions 
+
+function action_4(~,~) % Add ll
+    
+    if length(LST_2) == length(LST_1)
+        warning('All areas are already selected');
+    else
+        len_exst_4 = length(LST_2);
+        NEW_paths_4 = {};                                             % Creation of empty array
+        for k = 1:length(LST_1)
+            NEW_paths_4 = vertcat(NEW_paths_4, LST_1(k));                                 % Nullifying the Indexs selected as per the user
+        end
+       
+        LST_2 = vertcat(LST_2, NEW_paths_4);
+        new_ones_4 = length(unique(LST_2)) - len_exst_4;
+        LST_2 = unique(LST_2);
+        
+        % Warning & logical Condition (Iteration ii)
+        if new_ones_4 == 0
+            warning('Newly selected areas are already present in the list, no new subjects added');
+        else
+            fprintf('New subjects selected are: %d \n', new_ones_4(1)); 
+            LST_2 = sorter_2(LST_2, full_1);
+        end 
+        set(LSS_E2_lst, 'String', LST_2);
+    end
+    
+end
+
+%% function to continue performing LSS regression
 function action_5(~,~)
    
    if isempty(LST_2)
@@ -169,8 +255,7 @@ function action_5(~,~)
    end
    
 end
-
-
+%% function to perform removal of indiviudual conditon
 
 function action_6(~,~)
    
@@ -190,6 +275,8 @@ function action_6(~,~)
     
 end
 
+%% function to perform removal of all conditions
+
 function action_7(~,~) % Add ll
     
     if isempty(LST_2)
@@ -203,117 +290,7 @@ function action_7(~,~) % Add ll
     
 end
 
-
-
-function action_4(~,~) % Add ll
-    
-    if length(LST_2) == length(LST_1)
-        warning('All areas are already selected');
-    else
-        len_exst_4 = length(LST_2);
-        NEW_paths_4 = {};                                             % Creation of empty array
-        for k = 1:length(LST_1)
-            NEW_paths_4 = vertcat(NEW_paths_4, LST_1(k));                                 % Nullifying the Indexs selected as per the user
-        end
-       
-        LST_2 = vertcat(LST_2, NEW_paths_4);
-        new_ones_4 = length(unique(LST_2)) - len_exst_4;
-        LST_2 = unique(LST_2);
-        
-        % Warning & logical Condition (Iteration ii)
-        if new_ones_4 == 0
-            warning('Newly selected areas are already present in the list, no new subjects added');
-        else
-            fprintf('New subjects selected are: %d \n', new_ones_4(1)); 
-        end 
-        set(LSS_E2_lst, 'String', LST_2);
-    end
-    
-end
-
-function action_3(~,~)
-    
-    if isempty(selection_1)
-        warning('No Areas selected');
-    else
-        
-        len_exst = length(LST_2);                              % Size of existing subjects
-        
-        NEW_paths = {};                                             % Creation of empty array
-        for j = 1:length(selection_1)
-            NEW_paths = vertcat(NEW_paths, LST_1(selection_1));                                 % Nullifying the Indexs selected as per the user
-        end
-       
-        LST_2 = vertcat(LST_2, NEW_paths);
-        new_ones = length(unique(LST_2)) - len_exst;
-        LST_2 = unique(LST_2);
-        
-        % Warning & logical Condition (Iteration ii)
-        if new_ones == 0
-            warning('Newly selected areas are already present in the list, no new subjects added');
-        else
-            fprintf('New subjects selected are: %d \n', new_ones(1)); 
-        end 
-        set(LSS_E2_lst, 'String', LST_2);
-        
-        
-    end
-    
-end
-
-    
-
-% Execution function for Main Subject Selection
-function action_select_1(~,~)
-    index = get(LSS_E1_lst, 'Value');                                          % Retrieves the users selection LIVE
-    selection_1 = index;      
-end
-
-function action_select_2(~,~)
-    index = get(LSS_E2_lst, 'Value');                                          % Retrieves the users selection LIVE
-    selection_2 = index;             
-end
-
-
-
-
-
-    % Function to select the respective item from the user via index
-function action_select(~,~)
-    index = get(lst, 'Value');                                          % Retrieves the users selection LIVE
-    selection = index;                                                  % variable for full selection
-end
-
-
-
-
-
-
-
-% Clear Function: To Clear all existing subjects & .FILE extensions
-function action_clr(~,~)
-    
-    % Logical & Warning condition
-    if isempty(main_subjects) | strcmp(file_address,'')
-        warning('No subjects present to clear');
-    else
-        main_subjects = {};
-        file_address = {};
-        mm_add = {};
-        set(lst, 'String', '');                                         % Clearing Display
-        disp('All selected subjects have been cleared');
-        set(b1_Stat,'String', 'None selected','ForegroundColor','red');
-        set(b2_Stat,'String', 'None selected','ForegroundColor','red');
-    end 
-    
-    
-end
-
-
-
-
-
-
+%% Function to launch help window for Selection of conditions
 function LSS_H(~,~)
 
     LSS_H_W = figure('Name', 'LSS regression: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.65 0.15 0.22 0.50],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
@@ -351,7 +328,6 @@ function [cond_list] = generate_LSS_conditions()
                 cond_list(k).sess = i;
                 cond_list(k).number = j;
                 cond_list(k).name = char(SPM.Sess(i).U(j).name);
-                %cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ')'];
                 cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ', Cond' num2str(j) ')'];
                 k = k + 1;
             end 
@@ -362,4 +338,41 @@ function [cond_list] = generate_LSS_conditions()
     catch
         warning('TMFC varaible doesn''t exist, Please launch TMFC Toolbox');
     end
+end
+
+function [out_list] = sorter_1(in_list)
+    [~,index] = sortrows([in_list.sess; in_list.number]');
+    out_list = in_list(index); 
+    clear index
+end
+
+function [sorted_list] = sorter_2(disp_set, full_set)
+
+temp = {};
+k = 1;
+for i = 1:length(disp_set)
+    for j = 1:length(full_set)
+        if strcmp(disp_set(i),full_set(j).list_name)
+            if k == 1
+                temp = full_set(j);
+                k = k + 1;
+            else 
+                temp(k) = full_set(j);
+                k = k + 1;
+            end
+        end
+    end
+end
+
+[~,index] = sortrows([temp.sess; temp.number]');
+out_list = temp(index); 
+
+sorted_list = {};
+for x = 1:length(out_list) 
+    sorted_list = vertcat(sorted_list, out_list(x).list_name);
+end
+
+clear index
+
+
 end
