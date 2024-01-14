@@ -309,6 +309,10 @@ function cleanMeUp()
         set([FZ_data.SUB, FZ_data.FIR_TR, FZ_data.LSS_R, FZ_data.LSS_RW, FZ_data.BSC, FZ_data.gPPI, FZ_data.save_p, FZ_data.open_p, FZ_data.change_p, FZ_data.settings, FZ_data.BGFC],'Enable', 'on');
         delete(findall(0,'Tag', 'W_Parallel','type', 'Figure'));
          
+        try                                                                 % Closing the Waitbar after Sucessful execution
+            del_wp = findall(0,'type','figure','Tag', 'W_Parallel');
+            delete(del_wp);
+        end       
         % FUTURE UPDATE PENDING
         % This is where the piece of code that checks the last
         % processed subjects should be inserted

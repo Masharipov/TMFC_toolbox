@@ -116,7 +116,6 @@ function action_3(~,~)
         % Else continue to add selected condition to selected list
         
         len_exst = length(LST_2);     % Find length of existing subjects in selected condition
-        
         NEW_paths = {};               % Creation of empty array to store new paths
         
         % Based on the selection add variables to a selected list
@@ -124,21 +123,22 @@ function action_3(~,~)
             NEW_paths = vertcat(NEW_paths, LST_1(selection_1));
         end
        
+        % Addition & extraction of unique selected conditions
         LST_2 = vertcat(LST_2, NEW_paths);
         new_ones = length(unique(LST_2)) - len_exst;
         LST_2 = unique(LST_2);
         
-        % Warning & logical Condition (Iteration ii)
+        % Logical condition to check if newly selected conditions have been added
         if new_ones == 0
             warning('Newly selected areas are already present in the list, no new subjects added');
         else
             fprintf('New subjects selected are: %d \n', new_ones(1)); 
+            % Sorting of elements as per SESS & NUMBER
             LST_2 = sorter_2(LST_2, full_1);
         end 
         
-        
+        % Set sorted list of conditions into GUI
         set(LSS_E2_lst, 'String', LST_2);
-        
         
     end
     
@@ -148,37 +148,47 @@ end
 
 function action_4(~,~) % Add ll
     
+    % Logical condition to check if all elements are already present
     if length(LST_2) == length(LST_1)
         warning('All areas are already selected');
     else
+        
+        % Selection of all elements
         len_exst_4 = length(LST_2);
-        NEW_paths_4 = {};                                             % Creation of empty array
+        NEW_paths_4 = {};                                             
         for k = 1:length(LST_1)
-            NEW_paths_4 = vertcat(NEW_paths_4, LST_1(k));                                 % Nullifying the Indexs selected as per the user
+            NEW_paths_4 = vertcat(NEW_paths_4, LST_1(k));             
         end
-       
+        
+       % Addition & extraction of unique selected conditions
         LST_2 = vertcat(LST_2, NEW_paths_4);
         new_ones_4 = length(unique(LST_2)) - len_exst_4;
         LST_2 = unique(LST_2);
         
-        % Warning & logical Condition (Iteration ii)
+        % Logical condition to check if newly selected conditions have been added
         if new_ones_4 == 0
             warning('Newly selected areas are already present in the list, no new subjects added');
         else
             fprintf('New subjects selected are: %d \n', new_ones_4(1)); 
+            % Sorting of elements as per SESS & NUMBER
             LST_2 = sorter_2(LST_2, full_1);
         end 
+        
+        % Set sorted list of conditions into GUI
         set(LSS_E2_lst, 'String', LST_2);
     end
     
 end
 
-%% function to continue performing LSS regression
+%% Function to continue performing LSS regression
 function action_5(~,~)
    
+    % Logical condition to Check if there are elements selected for Export
    if isempty(LST_2)
        warning('Please select areas to export');
    else
+       
+       % import tmfc
        LS_GR = evalin('base', 'tmfc');
        EXPORT = struct;
        for kgb = 1:length(ALL_CONDS_COPY)
@@ -194,17 +204,21 @@ function action_5(~,~)
            end
        end
        
-       
+       % Assign conditions to TMFC variable in workspace
        LS_GR.LSS_after_FIR.conditions = EXPORT;
        close(LSS_GUI);
        assignin('base', 'tmfc', LS_GR);
        disp(strcat(num2str(length(LST_2)),' areas successfully selected'));
    end
    
+   % Initiate LSS Regression 
    GDR = evalin('base', 'tmfc');
+   
+   % Check if LSS conditions exist, then procced
    if isstruct(GDR.LSS_after_FIR.conditions)
         warning('Initiating LSS regression');
         
+        % Freeze TMFC main window
         try
         FDR_FREZ = findobj('Tag','MAIN_WINDOWS');
         FR_data = guidata(FDR_FREZ); 
@@ -212,10 +226,10 @@ function action_5(~,~)
         end
         
         disp('LSS REGRESSION YET TO BE Connected');
-        disp(GDR.LSS_after_FIR.conditions);
+        
         %RES_LSS = LSS_regress_resid_ts(GDR, 1);
         %RES_LSS = LSS_regress_resid_worker(GDR, 1);
-        
+        %{
 
         D = size(RES_LSS);
 
@@ -245,9 +259,10 @@ function action_5(~,~)
             assignin('base', 'tmfc', Ringer);
         end
 
-
+        %}
    end
    
+   % UnFreeze main TMFC Window
    try
     FDR_FREZ_2 = findobj('Tag','MAIN_WINDOWS');
     FR2_data = guidata(FDR_FREZ_2); 
@@ -255,37 +270,44 @@ function action_5(~,~)
    end
    
 end
-%% function to perform removal of indiviudual conditon
+%% Function to perform removal of indiviudual conditon
 
 function action_6(~,~)
    
+    % Logical condition to check if there are Area's present to remove
     if isempty(LST_2)
         warning('No areas present to remove, please add areas');
+        
+    % Logical condition if No areas are selected by the user for removal
     elseif isempty(selection_2)
         warning('No areas selected to remove');
+        
     else
+        
+       % Listing the number of Areas removed 
        LST_2(selection_2,:) = [];
        sizer = length(selection_2);
        fprintf('Number of areas removed are: %d \n', sizer);
        set(LSS_E2_lst, 'Value', []);
        set(LSS_E2_lst, 'String', LST_2);
        selection_2 = {};
+       
     end
         
-    
 end
 
-%% function to perform removal of all conditions
+%% Function to perform removal of all conditions
 
-function action_7(~,~) % Add ll
+function action_7(~,~) 
     
+    % Logical condition to check if there are selected condition
     if isempty(LST_2)
         warning('No areas present to remove');
     else
-    LST_2 = {};                                             % Creation of empty array
-    set(LSS_E2_lst, 'String', []);
-    selection_2 = {};
-    warning('All selected areas have been removed');
+        LST_2 = {};                                             
+        set(LSS_E2_lst, 'String', []);
+        selection_2 = {};
+        warning('All selected areas have been removed');
     end
     
 end
@@ -293,6 +315,7 @@ end
 %% Function to launch help window for Selection of conditions
 function LSS_H(~,~)
 
+    % Creation of GUI window for Help description
     LSS_H_W = figure('Name', 'LSS regression: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.65 0.15 0.22 0.50],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
 
     Data_1 = {'Suppose you have two separate sessions.','','Both sessions contains task regressors for', '“Cond A”, “Cond B” and “Errors”', '','If you are only interested in “Cond A” and “Cond B” comparison, the following conditions should be selected:',...
@@ -305,8 +328,6 @@ function LSS_H(~,~)
 
     set(LSS_H_OK, 'callback', @LSS_H_close);
     
-
-
     function LSS_H_close(~,~);
         close(LSS_H_W);
     end
@@ -314,7 +335,8 @@ end
    
 end
 
-
+%%
+% Function to create & generate LSS conditions for selection via GUI interface
 function [cond_list] = generate_LSS_conditions()
     try
     LG_C = evalin('base', 'tmfc');
@@ -340,39 +362,42 @@ function [cond_list] = generate_LSS_conditions()
     end
 end
 
+%%
+% Function to perform intial sorting of LSS conditions
 function [out_list] = sorter_1(in_list)
     [~,index] = sortrows([in_list.sess; in_list.number]');
     out_list = in_list(index); 
     clear index
 end
 
+%%
+% Function to perform selective Sorting after selection of conditions 
 function [sorted_list] = sorter_2(disp_set, full_set)
 
-temp = {};
-k = 1;
-for i = 1:length(disp_set)
-    for j = 1:length(full_set)
-        if strcmp(disp_set(i),full_set(j).list_name)
-            if k == 1
-                temp = full_set(j);
-                k = k + 1;
-            else 
-                temp(k) = full_set(j);
-                k = k + 1;
+    temp = {};
+    k = 1;
+    for i = 1:length(disp_set)
+        for j = 1:length(full_set)
+            if strcmp(disp_set(i),full_set(j).list_name)
+                if k == 1
+                    temp = full_set(j);
+                    k = k + 1;
+                else 
+                    temp(k) = full_set(j);
+                    k = k + 1;
+                end
             end
         end
     end
-end
 
-[~,index] = sortrows([temp.sess; temp.number]');
-out_list = temp(index); 
+    [~,index] = sortrows([temp.sess; temp.number]');
+    out_list = temp(index); 
 
-sorted_list = {};
-for x = 1:length(out_list) 
-    sorted_list = vertcat(sorted_list, out_list(x).list_name);
-end
+    sorted_list = {};
+    for x = 1:length(out_list) 
+        sorted_list = vertcat(sorted_list, out_list(x).list_name);
+    end
 
-clear index
-
+    clear index
 
 end

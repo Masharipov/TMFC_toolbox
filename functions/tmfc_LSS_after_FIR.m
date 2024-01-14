@@ -96,6 +96,7 @@ else
    g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
    set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
    end
+   
 end
 
 spm('defaults','fmri');
