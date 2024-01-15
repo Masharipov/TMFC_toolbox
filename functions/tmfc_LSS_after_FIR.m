@@ -106,7 +106,8 @@ N = length(tmfc.subjects);
 cond_list = tmfc.LSS_after_FIR.conditions;
 
 
-EXIT_STATUS_LSS = 0;      
+EXIT_STATUS_LSS = 0;
+
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
     case 1
@@ -121,6 +122,11 @@ end
 
 % Loop through subjects
 for i = start_sub:N
+    % I loop
+    if EXIT_STATUS_LSS == 1 
+        break;
+    end
+    
     tic
     SPM = load(tmfc.subjects(i).path);
     
@@ -133,6 +139,10 @@ for i = start_sub:N
     % Loop through sessions
     for j = 1:length(SPM.SPM.Sess)       
         
+        % J loop
+        if EXIT_STATUS_LSS == 1 
+            break;
+        end
         % Trials of interest
         E = 0;
         ons_of_int = [];
@@ -315,16 +325,10 @@ for i = start_sub:N
                     end
                     break;
                 end
-                %if EXIT_STATUS_LSS == 1
-                %    break;
-                %end
             end 
         end        
         clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number
-        % J loop
-        if EXIT_STATUS_LSS == 1 
-            break;
-        end
+
     end
     
     % Update waitbar for sequential and parallel computing
@@ -353,10 +357,6 @@ for i = start_sub:N
 
     clear SPM batch
 
-    % I loop
-    if EXIT_STATUS_LSS == 1 
-        break;
-    end
 end
 
 % Deleting the wait bars after completion of LSS regression
@@ -379,6 +379,7 @@ assignin('base', 'tmfc', lss_upd);
 
 function quitter(~,~)                                                  % Function that changes the state of execution when CANCEL is pressed
     EXIT_STATUS_LSS = 1;
+    disp("CHANGED");
 end
 
 function cleanMeUp()
