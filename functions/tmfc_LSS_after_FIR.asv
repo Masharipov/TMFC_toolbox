@@ -92,9 +92,9 @@ else
        sub_check(1:start_sub) = 1;
    end
    try
-   SS1_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via the handle
-   g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
-   set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
+       SS1_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via the handle
+       g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
+       set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
    end
 end
 
@@ -104,6 +104,8 @@ spm_jobman('initcfg');
 N = length(tmfc.subjects);
 
 cond_list = tmfc.LSS_after_FIR.conditions;
+
+exit_flag = 0;
 
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
@@ -116,8 +118,6 @@ switch tmfc.defaults.parallel
     case 0
         handles.L_ws = waitbar(0,'Please wait...','Name','LSS regression','Tag','LSS_Serial','CreateCancelBtn',@quitter);
 end
-
-
 
 % Loop through subjects
 for i = start_sub:N
@@ -262,6 +262,7 @@ for i = start_sub:N
                     catch
                         sub_check(i,j,k) = 0;
                     end
+                    
                 end
                 
 %                     try %STOPs Minimimizing of the waitbar
@@ -346,10 +347,24 @@ for i = start_sub:N
     clear SPM batch
 end
 
+% Deleting the wait bars after completion of LSS regression
 try
-    delete(handles.L_w|);
+    delete(handles.L_wp);
+end
+
+try
     delete(handles.L_ws);
 end
+
+
+lss_upd = evalin('base', 'tmfc');                                         % Creation of local copy
+for i = start_sub:N                                                     % Updating the status of the FIR per subject
+    for j = 
+    lss_upd.subjects(k).LSS_after_FIR = sub_check(k);
+end
+assignin('base', 'tmfc', lss_upd);      
+
+
 
 function quitter(~,~)                                                   % Function that changes the state of execution when CANCEL is pressed
     EXIT_STATUS_LSS = 1;

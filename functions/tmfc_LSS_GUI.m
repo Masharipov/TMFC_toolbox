@@ -1,13 +1,16 @@
 %%
-function tmfc_LSS_GUI
+function [conditions] = tmfc_LSS_GUI(SPM,start_case,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
 % Opens a GUI window for LSS regression. Allows to choose conditions of
 % interest for LSS regression.
+% 
+% FORMAT [conditions] = tmfc_LSS_GUI(SPM)
+%   SPM          - Path to individual subject SPM.mat file
 %
-% Designed to run only via the main GUI window.
-%
+% FORMAT [conditions] = tmfc_LSS_GUI(SPM,start_case,start_sub)
+% To run this function from main TMFC GUI
 % =========================================================================
 %
 % Copyright (C) 2023 Ruslan Masharipov
@@ -216,57 +219,26 @@ function action_5(~,~)
    
    % Check if LSS conditions exist, then procced
    if isstruct(GDR.LSS_after_FIR.conditions)
+
         warning('Initiating LSS regression');
         
         % Freeze TMFC main window
         try
-        FDR_FREZ = findobj('Tag','MAIN_WINDOWS');
-        FR_data = guidata(FDR_FREZ); 
-        set([FR_data.SUB,FR_data.FIR_TR, FR_data.LSS_R, FR_data.ROI, FR_data.BSC, FR_data.gppi,FR_data.save_p, FR_data.open_p, FR_data.change_p, FR_data.settings,FR_data.bgrd],'Enable', 'off');
+            FDR_FREZ = findobj('Tag','MAIN_WINDOW');
+            FR_data = guidata(FDR_FREZ); 
+            set([FR_data.SUB,FR_data.FIR_TR, FR_data.LSS_R, FR_data.LSS_RW, FR_data.BSC, FR_data.gPPI, FR_data.save_p, FR_data.open_p, FR_data.change_p, FR_data.settings,FR_data.BGFC],'Enable', 'off');
         end
         
-        disp('LSS REGRESSION YET TO BE Connected');
-        
-        %RES_LSS = LSS_regress_resid_ts(GDR, 1);
-        %RES_LSS = LSS_regress_resid_worker(GDR, 1);
-        %{
+        disp('Starting LSS regression');
+        tmfc_LSS_after_FIR(tmfc, 1);
 
-        D = size(RES_LSS);
-
-        trial = [];
-        I = [];
-
-        for i_STO = 1:D(1) % Subject number
-
-            for j_STO = 1:D(2) % session (COLUMNS)
-
-                for k_STO = 1:D(3) % trials [ROWS}
-
-                    trial(k_STO) = RES_LSS(i_STO,j_STO,k_STO);
-
-                end
-
-                if j_STO ~= 1
-                    I = [I, trial]';
-                else
-                    I = [trial]';
-                end
-                trial = [];
-            end
-
-            Ringer = evalin('base', 'tmfc');
-            Ringer.subjects(i_STO).LSS_after_FIR = I;
-            assignin('base', 'tmfc', Ringer);
-        end
-
-        %}
    end
    
    % UnFreeze main TMFC Window
    try
-    FDR_FREZ_2 = findobj('Tag','MAIN_WINDOWS');
+    FDR_FREZ_2 = findobj('Tag','MAIN_WINDOW');
     FR2_data = guidata(FDR_FREZ_2); 
-    set([FR2_data.SUB,FR2_data.FIR_TR, FR2_data.LSS_R, FR2_data.ROI, FR2_data.BSC, FR2_data.gppi,FR2_data.save_p, FR2_data.open_p, FR2_data.change_p, FR2_data.settings,FR2_data.bgrd],'Enable', 'on');
+    set([FR2_data.SUB,FR2_data.FIR_TR, FR2_data.LSS_R, FR2_data.LSS_RW, FR2_data.BSC, FR2_data.gPPI,FR2_data.save_p, FR2_data.open_p, FR2_data.change_p, FR2_data.settings,FR2_data.BGFC],'Enable', 'on');
    end
    
 end
@@ -332,34 +304,31 @@ function LSS_H(~,~)
         close(LSS_H_W);
     end
 end
-   
-end
 
-%%
 % Function to create & generate LSS conditions for selection via GUI interface
 function [cond_list] = generate_LSS_conditions()
-    try
-    LG_C = evalin('base', 'tmfc');
-    
+    try    
         try
-        load(LG_C.subjects(1).path);
-        
-        k = 1;
-        for i = 1:length(SPM.Sess)
-            for j = 1:length({SPM.Sess(i).U(:).name})
-                cond_list(k).sess = i;
-                cond_list(k).number = j;
-                cond_list(k).name = char(SPM.Sess(i).U(j).name);
-                cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ', Cond' num2str(j) ')'];
-                k = k + 1;
-            end 
-        end
+            load(SPM);
+            
+            k = 1;
+            for i = 1:length(SPM.Sess)
+                for j = 1:length({SPM.Sess(i).U(:).name})
+                    cond_list(k).sess = i;
+                    cond_list(k).number = j;
+                    cond_list(k).name = char(SPM.Sess(i).U(j).name);
+                    cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ', Cond' num2str(j) ')'];
+                    k = k + 1;
+                end 
+            end
         catch 
             warning('Subjects, not selected, please select subjects & try again');
         end
     catch
         warning('TMFC varaible doesn''t exist, Please launch TMFC Toolbox');
     end
+end
+   
 end
 
 %%

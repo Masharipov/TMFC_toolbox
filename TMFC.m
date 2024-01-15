@@ -583,8 +583,8 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
    elseif ~isnan(L_checker.FIR_bins) & ~isnan(L_checker.FIR_window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
        warning('Please complete the FIR Regression of all elements before proceeding with LSS regression');
    else
-       disp('LSS development in progress');
-       %tmfc_LSS_GUI();
+       %disp('LSS development in progress');
+       tmfc_LSS_GUI();
    end
 end
      
