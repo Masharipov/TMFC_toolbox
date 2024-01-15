@@ -191,12 +191,7 @@ switch tmfc.defaults.parallel
                 HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
                 g1data = guidata(HBC_FIR);                                 % Creating a local refernce of the GUI's object 
                 set(g1data.FIR_TR_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
-            end
-            
-            try 
-               waitbar(i/N,handles.wp,sprintf('Subjects Processed: %d',i)); % Updating the progress of the Wait bar
-            end
-                
+            end    
         end
 
         try                                                                 % Closing the Waitbar after Sucessful execution
