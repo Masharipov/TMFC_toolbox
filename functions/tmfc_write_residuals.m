@@ -3,7 +3,7 @@ function VRes = tmfc_write_residuals(SPM,Ic)
 % This is a modification of the original 'spm_write_residuals' function.
 % Residual images are written in Float32 format instead of Float64 format
 % to save disk space and reduce computation time.
-
+%
 % Write residual images
 % FORMAT Vres = spm_write_residuals(SPM,Ic)
 % SPM    - structure containing generic analysis details
@@ -20,10 +20,10 @@ function VRes = tmfc_write_residuals(SPM,Ic)
 
 %-Get SPM.mat
 %--------------------------------------------------------------------------
- if ~nargin || isempty(SPM)
-     [SPM,sts] = spm_select(1,'^SPM\.mat$','Select SPM.mat');
-     if ~sts, VRes = ''; return; end
- end
+if ~nargin || isempty(SPM)
+    [SPM,sts] = spm_select(1,'^SPM\.mat$','Select SPM.mat');
+    if ~sts, VRes = ''; return; end
+end
 
 if ~isstruct(SPM)
     swd = spm_file(SPM,'fpath');
@@ -37,6 +37,8 @@ end
 
 try, SPM.swd; catch, SPM.swd = pwd; end
 cwd = pwd; cd(SPM.swd);
+
+disp('Saving residual images... please wait');
 
 %-Get contrast used to adjust data
 %--------------------------------------------------------------------------

@@ -1,0 +1,86 @@
+clear
+
+%% Setting up computation parameters
+
+% Sequential or parallel computing (0 or 1)
+tmfc.defaults.parallel = 0;         % Sequential
+% Store temporaty files during GLM estimation in RAM or on disk
+tmfc.defaults.resmem = true;        % RAM
+% How much RAM can be used at the same time during GLM estimation
+tmfc.defaults.maxmem = 2^31;        % 2GB
+ 
+%% Setting up paths
+
+% The path where all results will be saved
+tmfc.project_path = 'C:\TMFC_toolbox\test_data\Empirical_data\TMFC_block_project';
+
+% Paths to individual subject SPM.mat files
+% tmfc.subjects(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\Block_design\Subjects\sub_001\stat\Standard_GLM\SPM.mat';
+% tmfc.subjects(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\Block_design\Subjects\sub_002\stat\Standard_GLM\SPM.mat';
+% tmfc.subjects(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\Block_design\Subjects\sub_003\stat\Standard_GLM\SPM.mat';
+% etc
+
+% Alternativelly, use the TMFC GUI to select subjects
+SPM_check = 1;                      % Check SPM.mat files
+[paths] = tmfc_select_subjects_GUI([],SPM_check);
+
+for i = 1:length(paths)
+    tmfc.subjects(i).path = paths{i};
+end
+
+%% FIR task regression (regress out co-activations and save residual time series)
+
+% FIR window length in [s]
+tmfc.FIR_window = 10;
+% Nmber of FIR time bins
+tmfc.FIR_bins = 10;
+
+% Run FIR task regression
+start_sub = 1;                      % Start from the 1st subject
+[sub_check] = tmfc_FIR_regress(tmfc,start_sub);
+
+%% LSS regression after FIR task regression (use residual time series)
+
+% Define conditions of interest
+tmfc.LSS_after_FIR.conditions(1).sess   = 1;   
+tmfc.LSS_after_FIR.conditions(1).number = 1;
+tmfc.LSS_after_FIR.conditions(2).sess   = 1;
+tmfc.LSS_after_FIR.conditions(2).number = 2;
+tmfc.LSS_after_FIR.conditions(3).sess   = 2;
+tmfc.LSS_after_FIR.conditions(3).number = 1; 
+tmfc.LSS_after_FIR.conditions(4).sess   = 2;
+tmfc.LSS_after_FIR.conditions(4).number = 2; 
+
+% Alternatively, use the TMFC GUI to select conditions of interest
+% [conditions] = tmfc_LSS_GUI(tmfc.subject(1).path);
+% tmfc.LSS_after_FIR.conditions = conditions;
+
+% Run LSS regression
+[sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub);
+
+%% Select ROIs
+
+% Define ROI set
+tmfc.ROI_set.set.set_name = 'three_ROIs';
+tmfc.ROI_set.set.ROIs(1).name = 'ROI_001_mask';
+tmfc.ROI_set.set.ROIs(2).name = 'ROI_002_mask';
+tmfc.ROI_set.set.ROIs(3).name = 'ROI_003_mask';
+tmfc.ROI_set.set.ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_001_mask.nii';
+tmfc.ROI_set.set.ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_002_mask.nii';
+tmfc.ROI_set.set.ROIs(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_003_mask.nii';
+
+% Alternatively, use the TMFC GUI to select ROIs
+% [ROI_set] = tmfc_select_ROIs_GUI(tmfc);
+% tmfc.ROI_set = ROI_set;
+
+% The tmfc_select_ROIs_GUI function creates group binary mask based on
+% 1st-level masks (SPM.VM) and applies it to all selected ROIs. Empty ROIs
+% will be removed. Masked ROIs will be limited to only voxels which have 
+% data for all subjects. The dimensions, orientation, and voxel sizes of 
+% the masked ROI images will be adjusted according to the group binary mask
+
+
+
+
+
+
