@@ -45,7 +45,7 @@ try
         for i = 1:length(main_cond)
             LST_1 = vertcat(LST_1, main_cond(i).list_name);        
         end
-        ALL_CONDS_COPY = main_cond;
+        all_cond_copy = main_cond;
     end 
 catch
     LST_1 = {};
@@ -191,56 +191,62 @@ function action_5(~,~)
        warning('Please select areas to export');
    else
        
-       % import tmfc
-       LS_GR = evalin('base', 'tmfc');
-       EXPORT = struct;
-       for kgb = 1:length(ALL_CONDS_COPY)
+       
+              cond = struct;
+       ctr = 1;
+       for kgb = 1:length(all_cond_copy)
            for fsb = 1:length(LST_2)
                
-               MATCH = strcmp(ALL_CONDS_COPY(kgb).list_name, LST_2(fsb));
+               MATCH = strcmp(all_cond_copy(kgb).list_name, LST_2(fsb));
                if MATCH == 1
-                   EXPORT(kgb).sess = ALL_CONDS_COPY(kgb).sess;
-                   EXPORT(kgb).number = ALL_CONDS_COPY(kgb).number;
-                   EXPORT(kgb).name = ALL_CONDS_COPY(kgb).name;
-                   EXPORT(kgb).list_name = ALL_CONDS_COPY(kgb).list_name;
+                   cond(ctr).sess = all_cond_copy(kgb).sess;
+                   cond(ctr).number = all_cond_copy(kgb).number;
+                   cond(ctr).name = all_cond_copy(kgb).name;
+                   cond(ctr).list_name = all_cond_copy(kgb).list_name;
+                   ctr = ctr + 1;
                end
            end
        end
-       
-       % Assign conditions to TMFC variable in workspace
-       LS_GR.LSS_after_FIR.conditions = EXPORT;
+      
+        try 
+            % import tmfc
+            LS_GR = evalin('base', 'tmfc');
+            % Assign conditions to TMFC variable in workspace
+            LS_GR.LSS_after_FIR.conditions = cond;
+            assignin('base', 'tmfc', LS_GR);
+        end
        close(LSS_GUI);
-       assignin('base', 'tmfc', LS_GR);
+       
        disp(strcat(num2str(length(LST_2)),' areas successfully selected'));
    end
    
-   % Initiate LSS Regression 
-   GDR = evalin('base', 'tmfc');
-   
-   % Check if LSS conditions exist, then procced
-   if isstruct(GDR.LSS_after_FIR.conditions)
-
-        warning('Initiating LSS regression');
-        
-        % Freeze TMFC main window
-        try
-            FDR_FREZ = findobj('Tag','MAIN_WINDOW');
-            FR_data = guidata(FDR_FREZ); 
-            set([FR_data.SUB,FR_data.FIR_TR, FR_data.LSS_R, FR_data.LSS_RW, FR_data.BSC, FR_data.gPPI, FR_data.save_p, FR_data.open_p, FR_data.change_p, FR_data.settings,FR_data.BGFC],'Enable', 'off');
-        end
-        
-        disp('Starting LSS regression');
-        tmfc_LSS_after_FIR(tmfc, 1);
-
-   end
-   
-   % UnFreeze main TMFC Window
-   try
-    FDR_FREZ_2 = findobj('Tag','MAIN_WINDOW');
-    FR2_data = guidata(FDR_FREZ_2); 
-    set([FR2_data.SUB,FR2_data.FIR_TR, FR2_data.LSS_R, FR2_data.LSS_RW, FR2_data.BSC, FR2_data.gPPI,FR2_data.save_p, FR2_data.open_p, FR2_data.change_p, FR2_data.settings,FR2_data.BGFC],'Enable', 'on');
-   end
-   
+%    % Initiate LSS Regression 
+%    GDR = evalin('base', 'tmfc');
+%    
+%    % Check if LSS conditions exist, then procced
+%    if isstruct(GDR.LSS_after_FIR.conditions)
+% 
+%         warning('Initiating LSS regression');
+%         
+%         % Freeze TMFC main window
+%         try
+%             FDR_FREZ = findobj('Tag','MAIN_WINDOW');
+%             FR_data = guidata(FDR_FREZ); 
+%             set([FR_data.SUB,FR_data.FIR_TR, FR_data.LSS_R, FR_data.LSS_RW, FR_data.BSC, FR_data.gPPI, FR_data.save_p, FR_data.open_p, FR_data.change_p, FR_data.settings,FR_data.BGFC],'Enable', 'off');
+%         end
+%         
+%         disp('Starting LSS regression');
+%         tmfc_LSS_after_FIR(tmfc, 1);
+% 
+%    end
+%    
+%    % UnFreeze main TMFC Window
+%    try
+%     FDR_FREZ_2 = findobj('Tag','MAIN_WINDOW');
+%     FR2_data = guidata(FDR_FREZ_2); 
+%     set([FR2_data.SUB,FR2_data.FIR_TR, FR2_data.LSS_R, FR2_data.LSS_RW, FR2_data.BSC, FR2_data.gPPI,FR2_data.save_p, FR2_data.open_p, FR2_data.change_p, FR2_data.settings,FR2_data.BGFC],'Enable', 'on');
+%    end
+   conditions = cond;
 end
 %% Function to perform removal of indiviudual conditon
 
@@ -328,7 +334,8 @@ function [cond_list] = generate_LSS_conditions()
         warning('TMFC varaible doesn''t exist, Please launch TMFC Toolbox');
     end
 end
-   
+   uiwait(LSS_GUI);
+    return;
 end
 
 %%

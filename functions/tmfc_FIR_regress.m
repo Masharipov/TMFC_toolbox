@@ -258,62 +258,60 @@ switch tmfc.defaults.parallel
         end
  end
 
-% Retriving the TMFC variable from the workspace 
-FIR_E = evalin('base', 'tmfc');                                         % Creation of local copy
-
-for k = start_sub:N                                                     % Updating the status of the FIR per subject
-    FIR_E.subjects(k).FIR = sub_check(k);
-end
-
-assignin('base', 'tmfc', FIR_E);                                        % Assinging the Updated TMFC variable back to the Base workspace      
+    % Retriving the TMFC variable from the workspace 
+    FIR_E = evalin('base', 'tmfc');                                         % Creation of local copy
+    for k = start_sub:N                                                     % Updating the status of the FIR per subject
+        FIR_E.subjects(k).FIR = sub_check(k);
+    end
+    assignin('base', 'tmfc', FIR_E);                                        % Assinging the Updated TMFC variable back to the Base workspace      
     
-if FLAG_PAR == 1
-    try
-        % Find the last processed subject (i.e. not NaN)
-        N_index = 0;
-        SUB_EXT_3 = evalin('base', 'tmfc');
-        DG = length(SUB_EXT_3.subjects);
-        
-        for i = 1:DG   
-            if isnan(SUB_EXT_3.subjects(i).FIR) == 1
-                N_index = i; % INDEX of last processed subject is found
-                break;
-            else
-                N_index = DG;
-            end 
+    if FLAG_PAR == 1
+        try
+            % Find the last processed subject (i.e. not NaN)
+            N_index = 0;
+            SUB_EXT_3 = evalin('base', 'tmfc');
+            DG = length(SUB_EXT_3.subjects);
+
+            for i = 1:DG   
+                if isnan(SUB_EXT_3.subjects(i).FIR) == 1
+                    N_index = i; % INDEX of last processed subject is found
+                    break;
+                else
+                    N_index = DG;
+                end 
+            end
+        end
+
+        try 
+            HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
+            g1data = guidata(HBC_FIR);                                 % Creating a local refernce of the GUI's object 
+            set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done'), 'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
         end
     end
-    
-    try 
-        HBC_FIR = findobj('Tag','MAIN_WINDOW');                    % Finding the GUI's object via the handle
-        g1data = guidata(HBC_FIR);                                 % Creating a local refernce of the GUI's object 
-        set(g1data.FIR_TR_stat,'String', strcat(num2str(N_index), '/', num2str(N_index), ' done'), 'ForegroundColor',[0.219, 0.341, 0.137]);       % Assigning the status to the TMFC variable
+
+
+    function quitter(~,~)                                              % Function that changes the state of execution when CANCEL is pressed
+        EXIT_STATUS = 1;
     end
-end
 
 
-function quitter(~,~)                                              % Function that changes the state of execution when CANCEL is pressed
-    EXIT_STATUS = 1;
-end
+    function cleanMeUp()
+        try
+            h_FREZ_U = findobj('Tag','MAIN_WINDOW');
+            FZ_data = guidata(h_FREZ_U); 
+            set([FZ_data.SUB, FZ_data.FIR_TR, FZ_data.LSS_R, FZ_data.LSS_RW, FZ_data.BSC, FZ_data.gPPI, FZ_data.save_p, FZ_data.open_p, FZ_data.change_p, FZ_data.settings, FZ_data.BGFC],'Enable', 'on');
+            delete(findall(0,'Tag', 'W_Parallel','type', 'Figure'));
 
+            try                                                                 % Closing the Waitbar after Sucessful execution
+                del_wp = findall(0,'type','figure','Tag', 'W_Parallel');
+                delete(del_wp);
+            end       
+            % FUTURE UPDATE PENDING
+            % This is where the piece of code that checks the last
+            % processed subjects should be inserted
 
-function cleanMeUp()
-    try
-        h_FREZ_U = findobj('Tag','MAIN_WINDOW');
-        FZ_data = guidata(h_FREZ_U); 
-        set([FZ_data.SUB, FZ_data.FIR_TR, FZ_data.LSS_R, FZ_data.LSS_RW, FZ_data.BSC, FZ_data.gPPI, FZ_data.save_p, FZ_data.open_p, FZ_data.change_p, FZ_data.settings, FZ_data.BGFC],'Enable', 'on');
-        delete(findall(0,'Tag', 'W_Parallel','type', 'Figure'));
-         
-        try                                                                 % Closing the Waitbar after Sucessful execution
-            del_wp = findall(0,'type','figure','Tag', 'W_Parallel');
-            delete(del_wp);
-        end       
-        % FUTURE UPDATE PENDING
-        % This is where the piece of code that checks the last
-        % processed subjects should be inserted
-         
-    end
-end  
+        end
+    end  
 end   
 
 % Save batches in parallel mode
