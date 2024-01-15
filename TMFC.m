@@ -300,7 +300,7 @@ function Settings(ButtonH, EventData, MAIN_F)
     SET_VAR = evalin('base', 'tmfc');
 
     % Create the Main figure for settings Window
-    MAIN_F_SET = figure('Name', 'Settings', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','Tag', 'MAIN_WINDOW_Settings');%,'WindowStyle','modal'
+    MAIN_F_SET = figure('Name', 'Settings', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','Tag', 'MAIN_WINDOW_Settings','WindowStyle','modal');%,'WindowStyle','modal'
     
     % Textual Data to be displayed on the settings window
     TEXT_1 = {'Parallel computing use Parallel Computing Toolbox. The number of workers in a parallel pool can be changed in MATLAB settings.'};
@@ -627,6 +627,23 @@ function evaluate_file() % function to update the TMFC window after loading a tm
         set(handles.FIR_TR_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
         set(handles.FIR_TR_stat,'String','Not done');
     end
+    
+    switch BPL.defaults.parallel
+        case 1
+            COMPUTING = {'Parallel computing','Sequential computing',};           
+        case 0 
+           COMPUTING = {'Sequential computing','Parallel computing'};
+           
+    end
+    
+    switch BPL.defaults.resmem
+        case true
+            STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'}; 
+        case false 
+            STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
+           
+    end
+    
     
     
     V_LSS = 0;
