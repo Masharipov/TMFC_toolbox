@@ -105,8 +105,8 @@ N = length(tmfc.subjects);
 
 cond_list = tmfc.LSS_after_FIR.conditions;
 
-exit_flag = 0;
 
+EXIT_STATUS_LSS = 0;      
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
     case 1
@@ -224,7 +224,7 @@ for i = start_sub:N
         end
 
         % Variable to Exit FIR regression during execution
-        EXIT_STATUS_LSS = 0;       
+         
         
         % Parallel or sequential computing
         switch tmfc.defaults.parallel    
@@ -315,12 +315,13 @@ for i = start_sub:N
                     end
                     break;
                 end
-                if EXIT_STATUS_LSS == 1
-                    break;
-                end
+                %if EXIT_STATUS_LSS == 1
+                %    break;
+                %end
             end 
         end        
         clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number
+        % J loop
         if EXIT_STATUS_LSS == 1 
             break;
         end
@@ -352,6 +353,7 @@ for i = start_sub:N
 
     clear SPM batch
 
+    % I loop
     if EXIT_STATUS_LSS == 1 
         break;
     end
