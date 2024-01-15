@@ -315,9 +315,15 @@ for i = start_sub:N
                     end
                     break;
                 end
+                if EXIT_STATUS_LSS == 1
+                    break;
+                end
             end 
         end        
         clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number
+        if EXIT_STATUS_LSS == 1 
+            break;
+        end
     end
     
     % Update waitbar for sequential and parallel computing
@@ -345,6 +351,10 @@ for i = start_sub:N
     end
 
     clear SPM batch
+
+    if EXIT_STATUS_LSS == 1 
+        break;
+    end
 end
 
 % Deleting the wait bars after completion of LSS regression
@@ -357,15 +367,15 @@ try
 end
 
 
-lss_upd = evalin('base', 'tmfc');                                         % Creation of local copy
+lss_upd = evalin('base', 'tmfc');                                       % Creation of local copy
 for i = start_sub:N                                                     % Updating the status of the FIR per subject
-    lss_upd.subjects(i).LSS_after_FIR = sub_check(i,:,:);
+    lss_upd.subjects(i).LSS_after_FIR = squeeze(sub_check(i,:,:));
 end
 assignin('base', 'tmfc', lss_upd);      
 
 
 
-function quitter(~,~)                                                   % Function that changes the state of execution when CANCEL is pressed
+function quitter(~,~)                                                  % Function that changes the state of execution when CANCEL is pressed
     EXIT_STATUS_LSS = 1;
 end
 
