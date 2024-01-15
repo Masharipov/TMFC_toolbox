@@ -220,33 +220,34 @@ function action_5(~,~)
        disp(strcat(num2str(length(LST_2)),' areas successfully selected'));
    end
    
-%    % Initiate LSS Regression 
-%    GDR = evalin('base', 'tmfc');
-%    
-%    % Check if LSS conditions exist, then procced
-%    if isstruct(GDR.LSS_after_FIR.conditions)
-% 
-%         warning('Initiating LSS regression');
-%         
-%         % Freeze TMFC main window
-%         try
-%             FDR_FREZ = findobj('Tag','MAIN_WINDOW');
-%             FR_data = guidata(FDR_FREZ); 
-%             set([FR_data.SUB,FR_data.FIR_TR, FR_data.LSS_R, FR_data.LSS_RW, FR_data.BSC, FR_data.gPPI, FR_data.save_p, FR_data.open_p, FR_data.change_p, FR_data.settings,FR_data.BGFC],'Enable', 'off');
-%         end
-%         
-%         disp('Starting LSS regression');
-%         tmfc_LSS_after_FIR(tmfc, 1);
-% 
-%    end
-%    
-%    % UnFreeze main TMFC Window
-%    try
-%     FDR_FREZ_2 = findobj('Tag','MAIN_WINDOW');
-%     FR2_data = guidata(FDR_FREZ_2); 
-%     set([FR2_data.SUB,FR2_data.FIR_TR, FR2_data.LSS_R, FR2_data.LSS_RW, FR2_data.BSC, FR2_data.gPPI,FR2_data.save_p, FR2_data.open_p, FR2_data.change_p, FR2_data.settings,FR2_data.BGFC],'Enable', 'on');
-%    end
-   conditions = cond;
+    % Initiate LSS Regression 
+    GDR = evalin('base', 'tmfc');
+    
+    % Check if LSS conditions exist, then procced
+    if isstruct(GDR.LSS_after_FIR.conditions)
+ 
+         disp('Initiating LSS regression');
+         
+         % Freeze TMFC main window
+         try
+             FDR_FREZ = findobj('Tag','MAIN_WINDOW');
+             FR_data = guidata(FDR_FREZ); 
+             set([FR_data.SUB,FR_data.FIR_TR, FR_data.LSS_R, FR_data.LSS_RW, FR_data.BSC, FR_data.gPPI, FR_data.save_p, FR_data.open_p, FR_data.change_p, FR_data.settings,FR_data.BGFC],'Enable', 'off');
+         end
+         
+         disp('Starting LSS regression');
+         tmfc_LSS_after_FIR(GDR, 1);
+ 
+    end
+    
+    % UnFreeze main TMFC Window
+    try
+     FDR_FREZ_2 = findobj('Tag','MAIN_WINDOW');
+     FR2_data = guidata(FDR_FREZ_2); 
+     set([FR2_data.SUB,FR2_data.FIR_TR, FR2_data.LSS_R, FR2_data.LSS_RW, FR2_data.BSC, FR2_data.gPPI,FR2_data.save_p, FR2_data.open_p, FR2_data.change_p, FR2_data.settings,FR2_data.BGFC],'Enable', 'on');
+    end
+    
+    conditions = cond;
 end
 %% Function to perform removal of indiviudual conditon
 

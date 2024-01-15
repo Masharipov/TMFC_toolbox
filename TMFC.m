@@ -584,7 +584,7 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
        warning('Please complete the FIR Regression of all elements before proceeding with LSS regression');
    else
        %disp('LSS development in progress');
-       tmfc_LSS_GUI();
+       tmfc_LSS_GUI(L_checker.subjects(1).path);
    end
 end
      
