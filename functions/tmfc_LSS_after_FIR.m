@@ -286,9 +286,7 @@ for i = start_sub:N
         case 0
             for k = 1:E
                 if EXIT_STATUS_LSS ~= 1                                             % IF Cancel/X button has NOT been pressed, then contiune execution
-                    try
-                        disp("test");
-                        
+                    try       
                         spm('defaults','fmri');
                         spm_jobman('initcfg');
                         spm_get_defaults('cmdline',true);
