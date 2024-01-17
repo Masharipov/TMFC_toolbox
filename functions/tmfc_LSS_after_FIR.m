@@ -122,12 +122,13 @@ end
 
 % Loop through subjects
 for i = start_sub:N
+    tic
     % I loop
     if EXIT_STATUS_LSS == 1 
+        delete(handles.L_ws);
         break;
     end
     
-    tic
     SPM = load(tmfc.subjects(i).path);
     
     if ~isfolder([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f')])
@@ -286,6 +287,8 @@ for i = start_sub:N
             for k = 1:E
                 if EXIT_STATUS_LSS ~= 1                                             % IF Cancel/X button has NOT been pressed, then contiune execution
                     try
+                        disp("test");
+                        
                         spm('defaults','fmri');
                         spm_jobman('initcfg');
                         spm_get_defaults('cmdline',true);
@@ -310,6 +313,8 @@ for i = start_sub:N
 
                         % Remove temporal LSS directory
                         rmdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'s');
+                        
+                        pause(0.01)
 
                         sub_check(i,j,k) = 1;
                     catch
