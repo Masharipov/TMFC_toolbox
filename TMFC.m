@@ -550,12 +550,12 @@ end
         
         % Actuator Function 
         try
-        tmfc_FIR_regress(FIR_TMFC, str_sub);
+            tmfc_FIR_regress(FIR_TMFC, str_sub);
         end
         
         % Unfrezee action after completion of actuation
         set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'on');
-        disp('FIR Processing completed');
+        disp('FIR task regression completed');
     end
 
     

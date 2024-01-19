@@ -52,7 +52,7 @@ tmfc.LSS_after_FIR.conditions(4).sess   = 2;
 tmfc.LSS_after_FIR.conditions(4).number = 2; 
 
 % Alternatively, use the TMFC GUI to select conditions of interest
-[conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
+[conditions] = tmfc_LSS_GUI(tmfc.subject(1).path);
 % tmfc.LSS_after_FIR.conditions = conditions;
 
 % Run LSS regression
