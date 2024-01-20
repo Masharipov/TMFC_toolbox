@@ -55,7 +55,7 @@ end
 % FIR regression
 function FIR_regress_GUI(~,~)
 
-    FIR_1 = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off', 'Tag', 'FIR_REG_NUM', 'WindowStyle','modal'); %X Y W H
+    FIR_1 = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off', 'Tag', 'FIR_REG_NUM', 'WindowStyle','modal','CloseRequestFcn', @stable_Exit); %X Y W H
     set(gcf,'color','w');
     set(FIR_1, 'MenuBar', 'none');
     set(FIR_1, 'ToolBar', 'none');
@@ -83,6 +83,12 @@ function FIR_regress_GUI(~,~)
     set(FIR_OK, 'callback', @EXTRACT);
     set(FIR_HELP, 'callback', @FIR_1_HELP_POP);
 
+    
+    function stable_Exit(~,~)
+       h76 = findobj('Tag', 'MAIN_WINDOW');
+       setappdata(h76, 'NO_COND', 1); 
+       delete(FIR_1);
+    end
 
     % Generates the HELP WINDOW within the GUI 
     function FIR_1_HELP_POP(~,~)

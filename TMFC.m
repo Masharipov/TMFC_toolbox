@@ -475,10 +475,13 @@ end
                             tmfc_FIR_GUI(1);                                           % Enter Windows & Bins 
                             uiwait();
                             
-                            % Collect Restart state again & RUN from start
-                            h4 = findobj('Tag', 'MAIN_WINDOW');
-                            D4 = getappdata(h4, 'RESTART_FIR');
-                            if D4 == 1
+                            h19 = findobj('Tag', 'MAIN_WINDOW');
+                            h19_V = getappdata(h19, 'NO_COND');
+                            
+                            % Check if FIR_windows & bins were closed or
+                            % given by the user
+                            
+                            if h19_V ~= 1
                                 FIR_RUNNER(1);
                             end
                         end
@@ -511,9 +514,16 @@ end
                             
                         elseif D5 == 2 % Restart Computation from the first subject
                             tmfc_FIR_GUI(1);        % Enter Windows & Bins 
-                            uiwait();                            
-                            FIR_RUNNER(1);
-                            setappdata(h5,'CONTD_FIR', 0); % Reset status
+                            uiwait();     
+                            
+                            h29 = findobj('Tag', 'MAIN_WINDOW');
+                            h29_V = getappdata(h29, 'NO_COND');
+                            
+                            if h29_V ~= 1
+                                FIR_RUNNER(1);
+                                setappdata(h5,'CONTD_FIR', 0); % Reset status
+                            end
+                            
                         else
                             warning('Somethings not right here, the status of CONTD_FIR was not changed by the GUI via App data');
                         end

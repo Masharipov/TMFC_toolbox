@@ -236,7 +236,7 @@ function action_5(~,~)
          end
          
          disp('Starting LSS regression');
-         tmfc_LSS_after_FIR(GDR, 1);
+         S = tmfc_LSS_after_FIR(GDR, 1);
  
     end
     
