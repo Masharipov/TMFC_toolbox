@@ -521,9 +521,7 @@ end
                             h29_V = getappdata(h29, 'NO_COND');
                             
                             if h29_V ~= 1 | isempty(h29_V)  
-                                setappdata(h5,'CONTD_FIR', 0); % Reset status
                                 FIR_RUNNER(1);
-                                
                             end
                             
                         else
