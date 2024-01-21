@@ -258,10 +258,14 @@ end
                     LS_GR.LSS_after_FIR.conditions = cond;
                     assignin('base', 'tmfc', LS_GR);
                 end
-               close(LSS_GUI);
+               delete(LSS_GUI);
 
                disp(strcat(num2str(length(LST_2)),' conditions successfully selected'));
                conditions = cond;
+               try
+                   h99 = findobj('Tag', 'MAIN_WINDOW');
+                   setappdata(h99, 'LSS_NO_COND', 0); 
+               end
            end
             
         end
