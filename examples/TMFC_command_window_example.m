@@ -124,6 +124,8 @@ tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
 tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
 
 % Calculate contrasts
+type = 1;                           % BSC-LSS after FIR
+con = [5,6];                        % Calculate contrasts #5 and #6
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,con,ROI_set);
 [sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,con,ROI_set);
 

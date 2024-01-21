@@ -81,50 +81,40 @@ if nargin < 4
    ROI_set = 1;
 end
 
-SPM = load(tmfc.subjects(1).path);
-XYZ  = SPM.SPM.xVol.XYZ;
-iXYZ = cumprod([1,SPM.SPM.xVol.DIM(1:2)'])*XYZ - sum(cumprod(SPM.SPM.xVol.DIM(1:2)'));
-hdr.dim = SPM.SPM.Vbeta(1).dim;
-hdr.dt = SPM.SPM.Vbeta(1).dt;
-hdr.pinfo = SPM.SPM.Vbeta(1).pinfo;
-hdr.mat = SPM.SPM.Vbeta(1).mat;
+w = waitbar(0,'Please wait...','Name','Compute contrasts');
+N = length(tmfc.subjects);
+R = length(tmfc.ROI_set(ROI_set).ROIs);
 
-% im1 = [1 1 1 1 1 1];
-% im2 = [3 3 3 6 6 6];
-% im3 = [10 10 10 2 2 2];
-% im4 = [-50 -50 -50 -1 -1 -1];
-% 
-% c1 = [1 0 0 0];
-% c2 = [0 1 0 0];
-% c3 = [0 0 1 0];
-% c4 = [0 0 0 1];
-% c5 = [1 -1 0 0];
-% c6 = [1 1 0 -1];
-% c7 = [0.5 -0.5 0.5 -0.5];
-% 
-% images = [im1;im2;im3;im4];
-% 
-% con1 = c1*images;
-% con2 = c2*images;
-% con3 = c3*images;
-% con4 = c4*images;
-% con5 = c5*images;
-% con6 = c6*images;
-% con7 = c7*images;
-
-% m1 = [inf 2 3; 1 inf 3; 1 2 inf];
-% m2 = [inf 3 3; 6 inf 6; 9 9 inf];
-% m3 = [inf 10 10; 2 inf 2; 0 0 inf];
-% m4 = [inf -50 -50; -1 inf -1; -20 -20 inf];
-% 
-% R = 3;
-% 
-% matrices = [m1(:)';m2(:)';m3(:)';m4(:)'];
-% 
-% mcon1 = reshape(c1*matrices,[R,R]);
-% mcon2 = reshape(c2*matrices,[R,R]);
-% mcon3 = reshape(c3*matrices,[R,R]);
-% mcon4 = reshape(c4*matrices,[R,R]);
-% mcon5 = reshape(c5*matrices,[R,R]);
-% mcon6 = reshape(c6*matrices,[R,R]);
-% mcon7 = reshape(c7*matrices,[R,R]);
+switch type
+    case 1
+        tic
+        for i = 1:N
+            % Load default contrasts for conditions of interest
+            for j = 1:length(tmfc.LSS_after_FIR.conditions)
+                load([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
+                    'ROI_to_ROI' filesep 'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') ...
+                    '_Sess_' num2str(tmfc.LSS_after_FIR.conditions(j).sess) '_Cond_' num2str(tmfc.LSS_after_FIR.conditions(j).number) '.mat']);
+                matrices(j,:) = z_value_matrix(:)';
+                clear z_value_matrix
+            end
+            % Calculate and save contrasts
+            for j = 1:length(con)
+                z_value_matrices_contrast = reshape(tmfc.ROI_set(ROI_set).contrasts.BSC_after_FIR(con(j)).weights*matrices,[R,R]);
+                save([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
+                    'ROI_to_ROI' filesep 'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(con(j),'%04.f') ...
+                    '_' tmfc.ROI_set(ROI_set).contrasts.BSC_after_FIR(con(j)).title '.mat'],'z_value_matrices_contrast');
+                clear z_value_matrices_contrast
+            end
+            % Update waitbar
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end       
+            sub_check(i) = 1;
+            clear matrices
+        end
+        % Close waitbar
+        try
+            delete(w)
+        end
+end

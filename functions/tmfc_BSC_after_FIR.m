@@ -185,6 +185,7 @@ for i = 1:N
     clear beta_series
 end
 
+% Close waitbar
 try
     delete(w)
 end
