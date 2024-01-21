@@ -52,7 +52,7 @@ tmfc.LSS_after_FIR.conditions(4).sess   = 2;
 tmfc.LSS_after_FIR.conditions(4).number = 2; 
 
 % Alternatively, use the TMFC GUI to select conditions of interest
-[conditions] = tmfc_LSS_GUI(tmfc.subject(1).path);
+% [conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
 % tmfc.LSS_after_FIR.conditions = conditions;
 
 % Run LSS regression
@@ -61,26 +61,61 @@ tmfc.LSS_after_FIR.conditions(4).number = 2;
 %% Select ROIs
 
 % Define ROI set
-tmfc.ROI_set.set.set_name = 'three_ROIs';
-tmfc.ROI_set.set.ROIs(1).name = 'ROI_001_mask';
-tmfc.ROI_set.set.ROIs(2).name = 'ROI_002_mask';
-tmfc.ROI_set.set.ROIs(3).name = 'ROI_003_mask';
-tmfc.ROI_set.set.ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_001_mask.nii';
-tmfc.ROI_set.set.ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_002_mask.nii';
-tmfc.ROI_set.set.ROIs(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_003_mask.nii';
+tmfc.ROI_set(1).set_name = 'three_ROIs';
+tmfc.ROI_set(1).ROIs(1).name = 'ROI_002_mask';
+tmfc.ROI_set(1).ROIs(2).name = 'ROI_003_mask';
+tmfc.ROI_set(1).ROIs(3).name = 'ROI_005_mask';
+tmfc.ROI_set(1).ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_002_mask.nii';
+tmfc.ROI_set(1).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_003_mask.nii';
+tmfc.ROI_set(1).ROIs(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_005_mask.nii';
+
+tmfc.ROI_set(2).set_name = 'two_ROIs';
+tmfc.ROI_set(2).ROIs(1).name = 'ROI_005_mask';
+tmfc.ROI_set(2).ROIs(2).name = 'ROI_006_mask';
+tmfc.ROI_set(2).ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_005_mask.nii';
+tmfc.ROI_set(2).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_006_mask.nii';
 
 % Alternatively, use the TMFC GUI to select ROIs
-% [ROI_set] = tmfc_select_ROIs_GUI(tmfc);
-% tmfc.ROI_set = ROI_set;
-
+%
 % The tmfc_select_ROIs_GUI function creates group binary mask based on
 % 1st-level masks (SPM.VM) and applies it to all selected ROIs. Empty ROIs
 % will be removed. Masked ROIs will be limited to only voxels which have 
 % data for all subjects. The dimensions, orientation, and voxel sizes of 
 % the masked ROI images will be adjusted according to the group binary mask
+%
+% [ROI_set] = tmfc_select_ROIs_GUI(tmfc);
+% tmfc.ROI_set = ROI_set;
 
+%% BSC-LSS after FIR task regression (use residual time series)
 
+% Extract and correlate mean beta series for conditions of interest
+ROI_set = 1;                        % Select ROI set
+[sub_check] = tmfc_BSC_after_FIR(tmfc,ROI_set);
 
+% Define contrasts
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(1).title = 'CondA(sess1)';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).title = 'CondB(sess1)';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).title = 'CondA(sess2)';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).title = 'CondB(sess2)';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'CondA-CondB';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(1).weights = [1 0 0 0];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(1).title = 'CondA(sess1)';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).title = 'CondB(sess1)';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).title = 'CondA(sess2)';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(4).title = 'CondB(sess2)';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).title = 'CondA-CondB';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(1).weights = [1 0 0 0];
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+
+% Calculate contrasts
 
 
 
