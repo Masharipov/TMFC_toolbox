@@ -29,32 +29,41 @@ function [conditions] = tmfc_LSS_GUI(SPM,start_case,start_sub)
 %
 % Contact email: masharipov@ihb.spb.ru
 
+start_check = findobj('Tag', 'MAIN_WINDOW');
 
-% Start or restart from i-th subject
-switch (start_case)
-    
-    % GUI window to ask for LSS regression conditions 
-    case 1
-        try
-        % Generate All conditions using function
-            all_cond = generate_LSS_conditions();
-            LSS_Cond_GUI();
-        catch
-            warning('Incorrect format of subject path');
-        end
-        
-        
-    % GUI window to ask if user wants to Restart computation for all subs
-    case 2
-        LSS_restart_GUI();
-        
-    % GUI window to ask if user wants to continue from last processed or 
-    % Full restart
-    case 3
-        LSS_continue_GUI(start_sub);
-        
+if isempty(start_check)
+    try
+        all_cond = generate_LSS_conditions();
+        LSS_Cond_GUI();
+        disp("it reaches here");
+    catch
+        warning('Incorrect format of subject path');
+    end
+else    
+    switch (start_case)
+
+        % GUI window to ask for LSS regression conditions 
+        case 1
+            try
+            % Generate All conditions using function
+                all_cond = generate_LSS_conditions();
+                LSS_Cond_GUI();
+            catch
+                warning('Incorrect format of subject path');
+            end
+
+
+        % GUI window to ask if user wants to Restart computation for all subs
+        case 2
+            LSS_restart_GUI();
+
+        % GUI window to ask if user wants to continue from last processed or 
+        % Full restart
+        case 3
+            LSS_continue_GUI(start_sub);
+
+    end
 end
-
 
 % Function that extracts & produces Conditions for user selection via GUI
     function LSS_Cond_GUI(~,~)
