@@ -351,7 +351,7 @@ for i = start_sub:N
         case 0
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
             try
-                waitbar(i/N,handles.L_ws,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(double(i)/double(N),handles.L_ws,[num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
             end
 
             try                                                             % Updating the TMFC GUI window with the progress

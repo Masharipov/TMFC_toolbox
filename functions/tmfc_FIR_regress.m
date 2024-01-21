@@ -245,7 +245,7 @@ switch tmfc.defaults.parallel
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';                  % Time calculation for the wait bar
             
             try
-                waitbar(i/N,handles.ws,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']); % Updating the Wait bar
+                waitbar(double(i)/double(N), handles.ws, [num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']); % Updating the Wait bar
             end
         end
         
