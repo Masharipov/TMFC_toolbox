@@ -87,8 +87,8 @@ R = length(tmfc.ROI_set(ROI_set).ROIs);
 
 switch type
     case 1
-        tic
         for i = 1:N
+            tic
             % Load default contrasts for conditions of interest
             for j = 1:length(tmfc.LSS_after_FIR.conditions)
                 load([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...

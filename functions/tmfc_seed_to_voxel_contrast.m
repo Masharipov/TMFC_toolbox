@@ -95,8 +95,8 @@ R = length(tmfc.ROI_set(ROI_set).ROIs);
 
 switch type
     case 1
-        tic
         for i = 1:N
+            tic
             % Load default contrasts for conditions of interest
             for j = 1:length(tmfc.LSS_after_FIR.conditions)
                 for ROI_number = 1:R
