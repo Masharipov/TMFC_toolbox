@@ -35,7 +35,6 @@ if isempty(start_check)
     try
         all_cond = generate_LSS_conditions();
         LSS_Cond_GUI();
-        disp("it reaches here");
     catch
         warning('Incorrect format of subject path');
     end
@@ -89,8 +88,8 @@ end
 
 
         LST_2 = {};
-        selection_1 = {};          % Variable to store the selected list of areas in BOX 1(as INDEX)
-        selection_2 = {};          % Variable to store the selected list of areas in BOX 2(as INDEX)
+        selection_1 = {};          % Variable to store the selected list of conditions in BOX 1(as INDEX)
+        selection_2 = {};          % Variable to store the selected list of conditions in BOX 2(as INDEX)
 
         full_1 = main_cond;
 
@@ -136,8 +135,7 @@ end
                h88 = findobj('Tag', 'MAIN_WINDOW');
                setappdata(h88, 'LSS_NO_COND', 1); 
             end
-           disp("No Areas selected");
-           delete(LSS_GUI);
+            delete(LSS_GUI);
         end
         
         function action_select_1(~,~)
@@ -157,7 +155,7 @@ end
             if isempty(selection_1)
 
                 % if no selection, raise warning 
-                warning('No Areas selected');
+                warning('No conditions selected');
 
             else
 
@@ -178,9 +176,9 @@ end
 
                 % Logical condition to check if newly selected conditions have been added
                 if new_ones == 0
-                    warning('Newly selected areas are already present in the list, no new subjects added');
+                    warning('Newly selected conditions are already present in the list, no new conditions added');
                 else
-                    fprintf('New subjects selected are: %d \n', new_ones(1)); 
+                    fprintf('Conditions selected: %d \n', new_ones(1)); 
                     % Sorting of elements as per SESS & NUMBER
                     LST_2 = sorter_2(LST_2, full_1);
                 end 
@@ -198,7 +196,7 @@ end
 
             % Logical condition to check if all elements are already present
             if length(LST_2) == length(LST_1)
-                warning('All areas are already selected');
+                warning('All conditions are already selected');
             else
 
                 % Selection of all elements
@@ -215,9 +213,9 @@ end
 
                 % Logical condition to check if newly selected conditions have been added
                 if new_ones_4 == 0
-                    warning('Newly selected areas are already present in the list, no new subjects added');
+                    warning('Newly selected conditions are already present in the list, no new conditions added');
                 else
-                    fprintf('New subjects selected are: %d \n', new_ones_4(1)); 
+                    fprintf('New conditions selected: %d \n', new_ones_4(1)); 
                     % Sorting of elements as per SESS & NUMBER
                     LST_2 = sorter_2(LST_2, full_1);
                 end 
@@ -233,7 +231,7 @@ end
 
             % Logical condition to Check if there are elements selected for Export
            if isempty(LST_2)
-               warning('Please select areas to export');
+               warning('Please select conditions');
            else
 
 
@@ -262,7 +260,7 @@ end
                 end
                close(LSS_GUI);
 
-               disp(strcat(num2str(length(LST_2)),' areas successfully selected'));
+               disp(strcat(num2str(length(LST_2)),' conditions successfully selected'));
                conditions = cond;
            end
             
@@ -271,20 +269,20 @@ end
 
         function action_6(~,~)
 
-            % Logical condition to check if there are Area's present to remove
+            % Logical condition to check if there are conditions present to remove
             if isempty(LST_2)
-                warning('No areas present to remove, please add areas');
+                warning('No conditions present to remove');
 
-            % Logical condition if No areas are selected by the user for removal
+            % Logical condition if no conditions are selected by the user for removal
             elseif isempty(selection_2)
-                warning('No areas selected to remove');
+                warning('No conditions selected to remove');
 
             else
 
-               % Listing the number of Areas removed 
+               % Listing the number of conditions removed 
                LST_2(selection_2,:) = [];
                sizer = length(selection_2);
-               fprintf('Number of areas removed are: %d \n', sizer);
+               fprintf('Number of conditions removed: %d \n', sizer);
                set(LSS_E2_lst, 'Value', []);
                set(LSS_E2_lst, 'String', LST_2);
                selection_2 = {};
@@ -299,12 +297,12 @@ end
 
             % Logical condition to check if there are selected condition
             if isempty(LST_2)
-                warning('No areas present to remove');
+                warning('No conditions present to remove');
             else
                 LST_2 = {};                                             
                 set(LSS_E2_lst, 'String', []);
                 selection_2 = {};
-                warning('All selected areas have been removed');
+                warning('All selected conditions have been removed');
             end
 
         end
@@ -351,7 +349,7 @@ end
                     end 
                 end
             catch 
-                disp('Subjects not selected or incorrect format, please select subjects & try again');
+                disp('Conditions not selected or incorrect format');
             end
     end
 
