@@ -88,6 +88,9 @@ else
    if start_sub == 1
        sub_check = NaN(length(tmfc.subjects),1);
    else
+       % need to make it NAN as per trials & conditions 
+       % how do we know how many trials..?
+       % we need to have [NaN, NaN, NaN] 
        sub_check = NaN(length(tmfc.subjects),1);
        sub_check(1:start_sub) = 1;
    end
@@ -95,6 +98,7 @@ else
        SS1_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via the handle
        g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
        set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
+       set([g7data.SUB, g7data.FIR_TR, g7data.LSS_R, g7data.LSS_RW, g7data.BSC, g7data.gPPI, g7data.save_p, g7data.open_p, g7data.change_p, g7data.settings, g7data.BGFC],'Enable', 'off');
    end
 end
 
@@ -239,7 +243,6 @@ for i = start_sub:N
         
         % Parallel or sequential computing
         switch tmfc.defaults.parallel    
-        %% ASH, CHANGE PARFEVAL TO PARFOR
         % --------------------- Parallel Computing ------------------------        
             case 1
                 parfor k = 1:E
@@ -382,10 +385,15 @@ assignin('base', 'tmfc', lss_upd);
 
 function quitter(~,~)                                                  % Function that changes the state of execution when CANCEL is pressed
     EXIT_STATUS_LSS = 1;
-    disp("CHANGED");
 end
 
 function cleanMeUp()
+    
+    % Have to add code that synchronizes and returns the processed
+    % variables
+    
+    % At the moment, the function when running in parallel doesn't return
+    % variables sub_check(i,j,k) to the tmfc variable in workspace
     try
         h_FREZ_U = findobj('Tag','MAIN_WINDOW');
         FZ_data = guidata(h_FREZ_U); 
@@ -424,65 +432,3 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
         end
     end
 end
-    
-%% ASH, DELETE IF UNUSED:
-%     % Function adapted for parallel computing
-%     function [status] = Worker_LS(tmfc, batch, idi, idj, idk, paths)
-%     % idi=i , idj = j, idk = k
-% 
-%         try
-%                 spm('defaults','fmri');
-%                 spm_jobman('initcfg');
-%                 spm_get_defaults('cmdline',true);
-%                 spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-%                 spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
-%                 spm_get_defaults('stats.fmri.ufp',1);
-%                 spm_jobman('run',batch{idk});
-% 
-%                 % Save individual trial beta image
-%                 copyfile([paths{idi,1}(1:end-7) 'LSS_Sess_' num2str(idj) '_Trial_' num2str(idk) filesep 'beta_0001.nii'],...
-%                     [paths{idi,1}(1:end-7) 'LSS_after_FIR_task_regression' filesep 'Betas' filesep ...
-%                     'Beta_Sess_' num2str(idj) '_Cond_' num2str(trial.cond(idk)) '_Trial_' num2str(trial.number(idk)) '.nii']);
-% 
-%                 % Save SPM.mat file
-%                 copyfile([paths{idi,1}(1:end-7) 'LSS_Sess_' num2str(idj) '_Trial_' num2str(idk) filesep 'SPM.mat'],...
-%                     [paths{idi,1}(1:end-7) 'LSS_after_FIR_task_regression' filesep 'SPM_files' filesep ...
-%                     'SPM_Sess_' num2str(idj) '_Cond_' num2str(trial.cond(idk)) '_Trial_' num2str(trial.number(idk)) '.mat']);
-% 
-%                 % Save GLM_bactch.mat files
-%                 parsave([paths{idi,1}(1:end-7) 'LSS_after_FIR_task_regression' filesep 'GLM_batches' filesep ...
-%                     'GLM_Sess_' num2str(idj) '_Cond_' num2str(trial.cond(idk)) '_Trial_' num2str(trial.number(idk)) '.mat'],batch{idk});
-% 
-%                 % Remove temporal LSS directory
-%                 rmdir([paths{idi,1}(1:end-7) 'LSS_Sess_' num2str(idj) '_Trial_' num2str(idk)],'s');
-% 
-%                 status(idi,idj,idk) = 1;
-%             catch
-%                 status(idi,idj,idk) = 0;
-%         end
-%     end
-% 
-% 
-% 
-% 
-% end
-% 
-% 
-% 
-% % Function to monitor the counting of the Parallel Loops
-%    function setter(X, Y, F)
-% 
-%         persistent count GDS; 
-% 
-%         if nargin == 3                                                      % Intialization in the first iteration
-%             count = 0;                                                      % Reset Count to zero
-%             GDS = Y;                                                        % Dummy variable to store elements in the start
-%             G = F;
-%         else
-%             count = count + 1;
-%             HLL = findobj('Tag','MAIN_WINDOW');
-%             gLdata = guidata(HLL);
-%             set(gLdata.LSS_R_stat,"String", count+" Completed","ForegroundColor",[0.219, 0.341, 0.137]);
-%         end
-%   
-%    end

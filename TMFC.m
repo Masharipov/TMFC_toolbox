@@ -442,7 +442,7 @@ end
 
                 % Create second local copy of TMFC that collects WIN & BIN
                 SUB_EXT_2 = evalin('base', 'tmfc');
-                % Create variable to store the lenght of subjects
+                % Create variable to store the length of subjects
                 DG = length(SUB_EXT_2.subjects);
 
                 % Check condition if FIR WINDOWS & BINS is not ZERO or NaN
@@ -452,7 +452,7 @@ end
                     % CONDITION 1: When running FIR Regression for the
                     % FIRST TIME (EMPTY)
                     
-                    % Check if first subject is processed (i.e. not NaN)
+                    % Check if first subject is processed (i.e. is NaN)
                     if isnan(SUB_EXT_2.subjects(1).FIR) % 
                         FIR_RUNNER(1);
 
@@ -491,8 +491,8 @@ end
                         % THE MIDDLE OR CONTINUATION (Last processed sub)
                         
                         % Find the last procssed subject (i.e. not NaN)
+                        SUB_EXT_3 = evalin('base', 'tmfc');
                         for i = 1:DG
-                            SUB_EXT_3 = evalin('base', 'tmfc');
                             if isnan(SUB_EXT_3.subjects(i).FIR) == 1
                                 N_index = i; % INDEX of last processed subject is found
                                 break;
@@ -509,8 +509,8 @@ end
                         D5 = getappdata(h5, 'CONTD_FIR');
                         
                         if D5 == 1 % Continue computation from the Last processed index
-                            FIR_RUNNER(int32(N_index));
                             setappdata(h5,'CONTD_FIR', 0);
+                            FIR_RUNNER(int32(N_index));
                             
                         elseif D5 == 2 % Restart Computation from the first subject
                             tmfc_FIR_GUI(1);        % Enter Windows & Bins 
@@ -520,8 +520,9 @@ end
                             h29_V = getappdata(h29, 'NO_COND');
                             
                             if h29_V ~= 1
-                                FIR_RUNNER(1);
                                 setappdata(h5,'CONTD_FIR', 0); % Reset status
+                                FIR_RUNNER(1);
+                                
                             end
                             
                         else
@@ -567,19 +568,6 @@ end
         set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'on');
         disp('FIR task regression completed');
     end
-
-    
-    % Failsafe function to pervent unintended freeze of TMFC Main Window
-    try
-        h1_UNFREZ = findobj('Tag','MAIN_WINDOW');
-        F1_data = guidata(h1_UNFREZ); 
-        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
-    end
-            
-                
-    try % MAJOR CHANGE
-        guidata(handles.MAIN_F, handles);
-    end
     
     
 %% ========================[ LSS Regression ]==============================
@@ -591,14 +579,131 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
    if isnan(L_checker.FIR_bins) & isnan(L_checker.FIR_window) 
        warning('Please complete FIR Regression before proceeding with LSS regression');
    elseif ~isnan(L_checker.FIR_bins) & ~isnan(L_checker.FIR_window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
-       warning('Please complete the FIR Regression of all elements before proceeding with LSS regression');
+       warning('Please complete the FIR Regression of all subjects before proceeding with LSS regression');
+   elseif isempty(L_checker.LSS_after_FIR.conditions)
+           tmfc_LSS_GUI(L_checker.subjects(1).path, 1);
+           LSS_RUNNER(1);
    else
-       %disp('LSS development in progress');
-       tmfc_LSS_GUI(L_checker.subjects(1).path);
-   end
-end
+       LSS_Lindex = 0;
+       LSS_flag = false;
+       L_checker_2 = evalin('base', 'tmfc');
+       LSS_len_sub = length(L_checker_2.subjects);
+       dimension = size(L_checker_2.subjects(length(L_checker_2.subjects)).LSS_after_FIR);
+       
+       
+       % conditions for Start, restart & continue
+       
+       % condition 1
+       if isnan(L_checker_2.subjects(1).LSS_after_FIR)
+           LSS_RUNNER(1);
+           
+       % condition 2 - there maybe a logical error here
+       elseif L_checker_2.subjects(LSS_len_sub).LSS_after_FIR(dimension(1),dimension(2)) == 0
+           
+          tmfc_LSS_GUI(L_checker_2.subjects(1).path, 2);
+          %uiwait();
+          
+          h77 = findobj('Tag', 'MAIN_WINDOW');
+          h77_V = getappdata(h77, 'RESTART_LSS');
+          
+          if h77_V == 1
+              
+              % ask for conditions again
+              tmfc_LSS_GUI(L_checker_2.subjects(1).path, 1);
+              
+              h78 = findobj('Tag', 'MAIN_WINDOW');
+              h78_V = getappdata(h78, 'LSS_NO_COND');
+              
+              if h78_V ~= 1
+                  LSS_RUNNER(1);
+              end
+          end
+           
+       else    
+           % condition 3
+
+           for i = 1:LSS_len_sub
+
+              if LSS_flag == true
+                   break;
+              end
+
+               for j = 1:dimension(1)
+
+                   if LSS_flag == true
+                       break;
+                   end
+
+                   for k = 1:dimension(2)
+                       if L_checker_2.subjects(i).LSS_after_FIR(j,k) == 0 
+                           LSS_Lindex = [i,j,k];
+                           LSS_flag = true;
+                           break;
+                       end
+                   end
+               end
+           end
+
+           tmfc_LSS_GUI(L_checker_2.subjects(1).path, 3, LSS_Lindex(1));
+
+
+           h54 = findobj('Tag', 'MAIN_WINDOW');
+           h54_V = getappdata(h54, 'CONTD_LSS');
+
+           if h54_V == 1
+              setappdata(h54_V, 'CONTD_LSS', 0);
+              LSS_RUNNER(int32(LSS_Lindex(1)));
+
+           elseif h54_V == 2
+               setappdata(h54_V, 'CONTD_LSS', 0);
+               tmfc_LSS_GUI(L_checker_2.subjects(1).path, 1);
+
+               h53 = findobj('Tag', 'MAIN_WINDOW');
+               h53_V = getappdata(h53, 'LSS_NO_COND');
+
+               if h53_V ~= 1
+                   setappdata(h53, 'LSS_NO_COND', 0);
+                   LSS_RUNNER(1);
+               end
+           else
+               warning('Something isnt right here, contact devs for LSS reg issue');
+           end
+       end     
+   end    
+           
+end % Closing LSS regress
+
+       % FIR Function the performs computation 
+    function LSS_RUNNER(str_sub)
+        
+        % Freeze buttons on Main Window
+        LSS_TMFC = evalin('base', 'tmfc');
+        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'off');
+        
+        % Actuator Function 
+        try
+            tmfc_LSS_after_FIR(LSS_TMFC, str_sub);
+        end
+        
+        % Unfrezee action after completion of actuation
+        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'on');
+        disp('LSS task regression completed');
+    end
      
 %% =====================[ Supporting Functions ]===========================
+
+    % Failsafe function to pervent unintended freeze of TMFC Main Window
+    try
+        h1_UNFREZ = findobj('Tag','MAIN_WINDOW');
+        F1_data = guidata(h1_UNFREZ); 
+        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
+    end
+            
+                
+    try % MAJOR CHANGE
+        guidata(handles.MAIN_F, handles);
+    end
+
 
 % This function performs Independent save & returns the status
 % of saving. 0 - Success, 1 - Fail
