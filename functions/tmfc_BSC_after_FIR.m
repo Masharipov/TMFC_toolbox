@@ -126,7 +126,7 @@ for i = 1:length(SPM.SPM.Sess)
 end
 
 % Extract and correlate mean beta series from ROIs
-w = waitbar(0,'Please wait...','Name','Extract mean beta series');
+w = waitbar(0,'Please wait...','Name','Extract and correlate mean beta series');
 N = length(tmfc.subjects);
 
 for i = 1:N

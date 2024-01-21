@@ -53,7 +53,7 @@ tmfc.LSS_after_FIR.conditions(4).number = 2;
 
 % Alternatively, use the TMFC GUI to select conditions of interest
 [conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
-% tmfc.LSS_after_FIR.conditions = conditions;
+tmfc.LSS_after_FIR.conditions = conditions;
 
 % Run LSS regression
 [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub);
@@ -102,9 +102,11 @@ ROI_set = 1;                        % Select ROI set
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
-% New contrast:
+% New contrasts:
 tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
 tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
 
 % These are default contrasts (created automatically):
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(1).title = 'Sess_1_Cond_1';
@@ -115,11 +117,13 @@ tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
-% New contrast:
+% New contrasts:
 tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
 tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
 
 % Calculate contrasts
-[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,ROI_set,TMFC_analysis,contrast_number);
-[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,ROI_set,TMFC_analysis,contrast_number);
+[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,con,ROI_set);
+[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,con,ROI_set);
 
