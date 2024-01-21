@@ -129,3 +129,10 @@ con = [5,6];                        % Calculate contrasts #5 and #6
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,con,ROI_set);
 [sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,con,ROI_set);
 
+%% gPPI after FIR task regression (use residual time series)
+
+% VOI extraction
+ROI_set = 1;                        % Select ROI set
+start_sub = 1;                      % Start from the 1st subject
+[sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set,start_sub);
+

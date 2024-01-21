@@ -19,7 +19,7 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 % Run a function starting from the first subject in the list.
 %
 %   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
-%   tmfc.project_path      - The path where all results will be saved
+%   tmfc.project_path      - Path where all results will be saved
 %   tmfc.FIR_window        - FIR window length (in seconds)
 %   tmfc.FIR_bins          - Number of FIR time bins
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)

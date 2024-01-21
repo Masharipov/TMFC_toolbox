@@ -28,7 +28,7 @@ function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 % Run a function starting from the first subject in the list.
 %
 %   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
-%   tmfc.project_path      - The path where all results will be saved
+%   tmfc.project_path      - Path where all results will be saved
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
 %                            the same time during GLM estimation)
