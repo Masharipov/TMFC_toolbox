@@ -85,9 +85,10 @@ end
 if ~isfolder([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name])
     for ROI_number = 1:R
         mkdir([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
-                'seed_to_voxel' filesep tmfc.ROI_set(ROI_set).ROIs(ROI_number).name]);
+                'Seed_to_voxel' filesep tmfc.ROI_set(ROI_set).ROIs(ROI_number).name]);
     end
     mkdir([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep 'ROI_to_ROI']);
+    mkdir([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep 'Beta_series']);
 end
 
 SPM = load(tmfc.subjects(1).path);
@@ -154,7 +155,7 @@ for i = 1:N
         % Save BSC images
         for ROI_number = 1:R
             hdr.fname = [tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
-                'seed_to_voxel' filesep tmfc.ROI_set(ROI_set).ROIs(ROI_number).name filesep ...
+                'Seed_to_voxel' filesep tmfc.ROI_set(ROI_set).ROIs(ROI_number).name filesep ...
                 'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.nii'];
             hdr.descrip = ['z-value map: ' beta_series(j).condition];    
             image = NaN(SPM.SPM.xVol.DIM');
@@ -170,7 +171,8 @@ for i = 1:N
     end
 
     % Save mean beta-series
-    save([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep 'Subject_' num2str(i,'%04.f') '_seed_ROI_beta_series.mat'],'beta_series');
+    save([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
+        'Beta_series' filesep 'Subject_' num2str(i,'%04.f') '_seed_ROI_beta_series.mat'],'beta_series');
 
     % Update waitbar
     t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
