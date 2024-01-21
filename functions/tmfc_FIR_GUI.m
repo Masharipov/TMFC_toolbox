@@ -146,7 +146,9 @@ function FIR_regress_GUI(~,~)
            DMG.FIR_window = Window; 
            DMG.FIR_bins = bins;   
            assignin('base', 'tmfc', DMG); 
-           close(FIR_1);
+           h76_b = findobj('Tag', 'MAIN_WINDOW');
+           setappdata(h76_b, 'NO_COND', 0); 
+           delete(FIR_1);
        end
 
     end

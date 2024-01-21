@@ -481,9 +481,10 @@ end
                             % Check if FIR_windows & bins were closed or
                             % given by the user
                             
-                            if h19_V ~= 1
+                            if h19_V ~= 1 | isempty(h19_V)    
                                 FIR_RUNNER(1);
                             end
+                            
                         end
 
                     else
@@ -519,7 +520,7 @@ end
                             h29 = findobj('Tag', 'MAIN_WINDOW');
                             h29_V = getappdata(h29, 'NO_COND');
                             
-                            if h29_V ~= 1
+                            if h29_V ~= 1 | isempty(h29_V)  
                                 setappdata(h5,'CONTD_FIR', 0); % Reset status
                                 FIR_RUNNER(1);
                                 
