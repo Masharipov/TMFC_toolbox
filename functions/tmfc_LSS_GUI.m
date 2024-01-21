@@ -123,8 +123,10 @@ end
         %% Function to reuturn user's selection 
         
         function LSS_stable_Exit(~,~)
-           h88 = findobj('Tag', 'MAIN_WINDOW');
-           setappdata(h88, 'LSS_NO_COND', 1); 
+            try
+               h88 = findobj('Tag', 'MAIN_WINDOW');
+               setappdata(h88, 'LSS_NO_COND', 1); 
+            end
            disp("No Areas selected");
            delete(LSS_GUI);
         end
