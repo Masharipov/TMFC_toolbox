@@ -1,11 +1,12 @@
-function [sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set,start_sub)
+function [sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
-% Extracts time-series from volumes of interest (VOIs). Uses FIR model to
-% regress out co-activations.
+% Calculates psycho-physiological interactions (PPIs). Uses psychological
+% regressors from the standard model. Uses physiological regressors 
+% obtained via FIR model (residuals).
 %
-% FORMAT [sub_check] = tmfc_VOI_after_FIR(tmfc)
+% FORMAT [sub_check] = tmfc_PPI_after_FIR(tmfc)
 % Run a function starting from the first subject in the list.
 %
 %   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
@@ -27,7 +28,7 @@ function [sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set,start_sub)
 %   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
 %   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
-% FORMAT [sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set,start_sub)
+% FORMAT [sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set,start_sub)
 % Run the function starting from a specific subject in the path list for
 % the selected ROI set.
 %
@@ -68,9 +69,9 @@ SPM = load(tmfc.subjects(1).path);
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
     case 0                                      % Sequential
-        w = waitbar(0,'Please wait...','Name','VOI time-series extraction');
+        w = waitbar(0,'Please wait...','Name','PPI regressors calculation');
     case 1                                      % Parallel
-        w = waitbar(0,'Please wait...','Name','VOI time-series extraction');
+        w = waitbar(0,'Please wait...','Name','PPI regressors calculation');
         D = parallel.pool.DataQueue;            % Creation of parallel pool 
         afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
         tmfc_parfor_waitbar(w,N);     
