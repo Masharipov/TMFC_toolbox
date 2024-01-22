@@ -108,8 +108,21 @@ for i = start_sub:N
                 'VOI_' tmfc.ROI_set(ROI_set).set_name '_' tmfc.ROI_set(ROI_set).ROIs(k).name '_' num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '.mat']};
             matlabbatch{1}.spm.stats.ppi.type.ppi.u = [tmfc.gPPI_after_FIR.conditions(j).number 1 1];
             matlabbatch{1}.spm.stats.ppi.name = ['Sess_' num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '_Cond_' num2str(tmfc.gPPI_after_FIR.conditions(j).number) ...
-                '_' num2str(tmfc.ROI_set(ROI_set).ROIs(k).name)];
+                tmfc.ROI_set(ROI_set).ROIs(ROI_number).name];
             matlabbatch{1}.spm.stats.ppi.disp = 0;
+
+
+
+
+            matlabbatch{1}.spm.util.voi.spmmat = {[tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM.mat']};
+            matlabbatch{1}.spm.util.voi.adjust = NaN; % Adjust for everything 
+            matlabbatch{1}.spm.util.voi.session = j;
+            matlabbatch{1}.spm.util.voi.name = [tmfc.ROI_set(ROI_set).set_name '_' tmfc.ROI_set(ROI_set).ROIs(k).name];
+            matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {[tmfc.project_path filesep 'Masked_ROIs' filesep ...
+                tmfc.ROI_set(ROI_set).set_name filesep tmfc.ROI_set(ROI_set).ROIs(k).name '_masked.nii']};
+            matlabbatch{1}.spm.util.voi.roi{1}.mask.threshold = 0.1;
+            matlabbatch{1}.spm.util.voi.expression = 'i1';           
+            batch{k} = matlabbatch;
             clear matlabbatch
         end
         

@@ -136,6 +136,9 @@ ROI_set = 1;                        % Select ROI set
 start_sub = 1;                      % Start from the 1st subject
 [sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set,start_sub);
 
+% Define conditions of interest
+tmfc.gPPI_after_FIR.conditions = tmfc.LSS_after_FIR.conditions; % Use the same conditions as for LSS regression
+
 % PPI calculation
 [sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set,start_sub);
 
