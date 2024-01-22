@@ -18,7 +18,7 @@ DR_RESET.subjects(1).LSS_without_FIR = [];
 DR_RESET.LSS_after_FIR.conditions = [];
 DR_RESET.LSS_without_FIR.conditions = [];
 
-DR_RESET.ROIs_set = [];
+DR_RESET.ROI_set = [];
 
 assignin('base', 'tmfc', DR_RESET);
 

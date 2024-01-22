@@ -73,7 +73,7 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     tmfc.LSS_after_FIR.conditions = [];
     tmfc.LSS_without_FIR.conditions = [];
 
-    tmfc.ROIs_set = [];
+    tmfc.ROI_set = [];
     
     % Assign TMFC project variables 
     assignin('base', 'tmfc', tmfc);

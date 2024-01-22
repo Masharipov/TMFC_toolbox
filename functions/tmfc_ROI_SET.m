@@ -1,64 +1,99 @@
-function tmfc_ROI_SET(~,~)
+function tmfc_ROI_SET(CS)
 
-    ROI_1 = figure("Name", "Select ROIs", "NumberTitle", "off", "Units", "normalized", "Position", [0.62 0.50 0.16 0.14],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
+switch (CS)
     
+    case 1
+        ROI_F1;
+        
+    case 2
+        ROI_F2;
+        
+    case 3
+        ROI_F3;
+        
+    case 4
+        ROI_F4;
+
+end
+
+
+
+function ROI_F1(~,~)
+    ROI_1 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.50 0.16 0.14],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
+
     % Initializing Elements of the UI
-    ROI_S_Q = uicontrol(ROI_1,'Style','text',"String", "Enter a name for the ROI set","Units", "normalized", 'fontunits','normalized', 'fontSize', 0.40);
-    ROI_S_A = uicontrol(ROI_1,'Style','edit',"String","","Units", "normalized",'fontunits','normalized', 'fontSize', 0.45,"HorizontalAlignment","left");
+    ROI_1_S1 = uicontrol(ROI_1,'Style','text','String', 'Enter a name for the ROI set','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.40);
+    ROI_1_A1 = uicontrol(ROI_1,'Style','edit','String','','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45,'HorizontalAlignment','left');
 
-    ROI_OK= uicontrol(ROI_1,'Style','pushbutton', "String", "OK","Units", "normalized",'fontunits','normalized', 'fontSize', 0.45);
-    ROI_Help = uicontrol(ROI_1,'Style','pushbutton', "String", "Help","Units", "normalized",'fontunits','normalized', 'fontSize', 0.45);
-    
-    ROI_S_Q.Position = [0.14 0.60 0.700 0.230];
-    ROI_S_A.Position = [0.10 0.44 0.800 0.190];
-    
-    ROI_OK.Position = [0.10 0.16 0.310 0.180];
-    ROI_Help.Position = [0.59 0.16 0.310 0.180];
-    
-    set(ROI_S_Q,'backgroundcolor',get(ROI_1,'color'));
+    ROI_1_OK= uicontrol(ROI_1,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45);
+    ROI_1_Help = uicontrol(ROI_1,'Style','pushbutton', 'String', 'Help','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45);
+
+    ROI_1_S1.Position = [0.14 0.60 0.700 0.230];
+    ROI_1_A1.Position = [0.10 0.44 0.800 0.190];
+
+    ROI_1_OK.Position = [0.10 0.16 0.310 0.180];
+    ROI_1_Help.Position = [0.59 0.16 0.310 0.180];
+
+    set(ROI_1_S1,'backgroundcolor',get(ROI_1,'color'));
 
     % Assigning Functions Callbacks for each Element (button, listbox etc)
-    
-    set(ROI_OK, 'callback', @get_name);
-    set(ROI_Help, 'callback', @help_win_R);
+
+    set(ROI_1_OK, 'callback', @get_name);
+    set(ROI_1_Help, 'callback', @help_win_R);
 
 
     function get_name(~,~)
 
-        name = get(ROI_S_A, 'String');
-        
-        if name ~= "" & name ~= " "
-            GN = evalin("base", "tmfc");
-            GN.ROIs_set_name = string(name); % can be saved as Character array
-            disp("Name set """+ name+"""");
-            close(ROI_1);
-            assignin("base", "tmfc", GN);
+        name = get(ROI_1_A1, 'String');
+
+        if ~strcmp(name,'') & ~strcmp(name(1),' ')
+
+            % Check if this is the first ROI set (check the lenght of ROIs)
+            % if not, create from the first
+            % if yes, scan to the last processed subjects & the continue
+
+            % make tmfc.ROI_set into a struct
+
+            GN = evalin('base', 'tmfc');
+
+            if isempty(GN.ROI_set)
+                GN.ROI_set =  struct;
+                GN.ROI_set(1).set_name = name;
+                fprintf('Name set %s\n', name);
+                close(ROI_1);
+                assignin('base', 'tmfc', GN);
+            else
+                GN.ROI_set(length(GN.ROI_set)+1).set_name = name;
+                close(ROI_1);
+                assignin('base', 'tmfc', GN);                
+            end
         else
-            warning("Name not entered or is invalid, please re-enter");
+            warning('Name not entered or is invalid, please re-enter');
         end
-        
+
     end
 
     function help_win_R(~,~)
-        
-        RH_1 = figure("Name", "Select ROIs", "NumberTitle", "off", "Units", "normalized", "Position", [0.50 0.40 0.16 0.16],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
-        RH_TEXT = uicontrol(RH_1,'Style','text',"String", "HELP Window under development","Units", "normalized", 'fontunits','normalized', 'fontSize', 0.40);
-        RH_OK= uicontrol(RH_1,'Style','pushbutton', "String", "OK","Units", "normalized",'fontunits','normalized', 'fontSize', 0.45);
-        
+
+        ROI_1_H = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.50 0.40 0.16 0.16],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
+        RH_TEXT = uicontrol(ROI_1_H,'Style','text','String', 'HELP Window under development','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.40);
+        RH_OK= uicontrol(ROI_1_H,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45);
+
         RH_TEXT.Position = [0.16 0.60 0.700 0.230];
         RH_OK.Position = [0.35 0.14 0.310 0.180];
-        
-        set(RH_TEXT,'backgroundcolor',get(RH_1,'color'));
-        set(RH_OK, "callback", @RH_CL);
-        
+
+        set(RH_TEXT,'backgroundcolor',get(ROI_1_H,'color'));
+        set(RH_OK, 'callback', @RH_CL);
+
         function RH_CL(~,~)
-            close(RH_1);
+            close(ROI_1_H);
         end
-        
+
     end
+end
 
     
-function ROI_2(~,~)
+function ROI_F2(~,~)
 
 
     TEST_SET = {'ROI_set1 (300 ROIs)','ROI_set2 (240 ROIs)'};
@@ -87,10 +122,9 @@ function ROI_2(~,~)
 
 
 end
-
          
 
-function ROI_3(~,~)
+function ROI_F3(~,~)
 
 
     ROI_3_INFO1 = {'Warning, the following ROIs do not',...
@@ -123,7 +157,7 @@ function ROI_3(~,~)
 end
 
 
-function ROI_4(~,~)
+function ROI_F4(~,~)
 
 
     ROI_4_INFO1 = {'Remove heavily cropped ROIs with insufficient data, if necessary.'};

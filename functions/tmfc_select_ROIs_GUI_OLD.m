@@ -8,10 +8,10 @@ if ROI_ADRS(1) ~= ""
     disp(LOR+' ROIs selected');
 
     try
-    R_H = findobj('Tag','MAIN_WINDOWS');              % Find the Main GUI using its handle
-    R1data = guidata(R_H);                        % Get Handles and Data associated to Main GUI
-    set(R1data.ROI_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-    set(R1data.ROI_stat,'String',LOR+' selected');      % Assigning the variable to the Main GUI static text
+        R_H = findobj('Tag','MAIN_WINDOWS');              % Find the Main GUI using its handle
+        R1data = guidata(R_H);                        % Get Handles and Data associated to Main GUI
+        set(R1data.ROI_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
+        set(R1data.ROI_stat,'String',LOR+' selected');      % Assigning the variable to the Main GUI static text
     catch
         warning('Please close older instances of TMFC Toolbox');
     end
