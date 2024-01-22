@@ -85,7 +85,17 @@ end
 
 N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set).ROIs);
-SPM = load(tmfc.subjects(1).path);
+
+if isfolder([tmfc.project_path filesep 'gPPI_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name])
+    rmdir([tmfc.project_path filesep 'gPPI_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name],'s');
+end
+
+if ~isfolder([tmfc.project_path filesep 'gPPI_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name])
+    for ROI_number = 1:R
+        mkdir([tmfc.project_path filesep 'gPPI_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
+                'PPIs' filesep tmfc.ROI_set(ROI_set).ROIs(ROI_number).name]);
+    end
+end
 
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
@@ -99,6 +109,7 @@ switch tmfc.defaults.parallel
 end
 
 for i = start_sub:N
+    SPM = load(tmfc.subjects(i).path);
     tic
     % Conditions of interest
     for j = 1:length(tmfc.gPPI_after_FIR.conditions)
@@ -110,6 +121,7 @@ for i = start_sub:N
             matlabbatch{1}.spm.stats.ppi.name = ['Sess_' num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '_Cond_' num2str(tmfc.gPPI_after_FIR.conditions(j).number) ...
                 '_' num2str(tmfc.ROI_set(ROI_set).ROIs(k).name)];
             matlabbatch{1}.spm.stats.ppi.disp = 0;
+            batch{k} = matlabbatch;
             clear matlabbatch
         end
         
@@ -122,6 +134,11 @@ for i = start_sub:N
                     spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                     spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_jobman('run',batch{k});
+                    movefile([SPM.SPM.swd filesep 'PPI_Sess_' num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '_Cond_' ...
+                        num2str(tmfc.gPPI_after_FIR.conditions(j).number) '_' num2str(tmfc.ROI_set(ROI_set).ROIs(k).name) '.mat'],...
+                        [tmfc.project_path filesep 'gPPI_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
+                        'PPIs' filesep tmfc.ROI_set(ROI_set).ROIs(k).name filesep 'Subject_' num2str(i,'%04.f') '_PPI_Sess_' ...
+                        num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '_Cond_' num2str(tmfc.gPPI_after_FIR.conditions(j).number) '.mat']);
                 end
                 
             case 1                              % Parallel
@@ -132,12 +149,18 @@ for i = start_sub:N
                     spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                     spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_jobman('run',batch{k});
+                    movefile([SPM.SPM.swd filesep 'PPI_Sess_' num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '_Cond_' ...
+                        num2str(tmfc.gPPI_after_FIR.conditions(j).number) '_' num2str(tmfc.ROI_set(ROI_set).ROIs(k).name) '.mat'],...
+                        [tmfc.project_path filesep 'gPPI_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
+                        'PPIs' filesep tmfc.ROI_set(ROI_set).ROIs(k).name filesep 'Subject_' num2str(i,'%04.f') '_PPI_Sess_' ...
+                        num2str(tmfc.gPPI_after_FIR.conditions(j).sess) '_Cond_' num2str(tmfc.gPPI_after_FIR.conditions(j).number) '.mat']);
                 end
         end
 
         clear batch
     end
     
+    clear SPM
     sub_check(i) = 1;
     
     % Update waitbar
