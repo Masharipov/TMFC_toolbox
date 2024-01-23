@@ -118,12 +118,31 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     set(handles.FIR_TR, 'callback', {@FIR_REG, handles.MAIN_F});
     set(handles.LSS_R, 'callback', {@LSS_REG, handles.MAIN_F});
     set(handles.LSS_RW, 'callback', {@LSS_REGW, handles.MAIN_F});
+    set(handles.BGFC, 'callback', {@BGFC_EX, handles.MAIN_F});
+    set(handles.BSC, 'callback', {@BSC_EX, handles.MAIN_F});
+    set(handles.gPPI, 'callback', {@gPPI_EX, handles.MAIN_F});
     
 else
     figure(findobj('Tag', 'MAIN_WINDOW')); 
     warning('TMFC toolbox is already running');    
 end
     
+%% ====================[ Background Connectivity ]=========================
+function BGFC_EX(ButtonH, EventData, MAIN_F)
+    tmfc_select_ROIs_GUI();
+end
+
+%% =====================[ Beta Series Corelation ]=========================
+function BSC_EX(ButtonH, EventData, MAIN_F)
+    tmfc_select_ROIs_GUI();
+end
+
+%% =============================[ Close ]==================================
+function gPPI_EX(ButtonH, EventData, MAIN_F)
+    tmfc_select_ROIs_GUI();
+end
+
+
 %% =============================[ Close ]==================================
  
 % Function to peform Save & Exit from TMFC function. This function is 
