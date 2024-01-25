@@ -43,7 +43,16 @@ OPD = findobj('Tag', 'MAIN_WINDOW');
 if isempty(OPD)
     % if code is called from CUI 
     Operation_mode = 0; % Command line
-    ROI_set = tmfc.ROI_set;
+    GDR = tmfc;
+    
+    [ns_1, ns_2] = ROI_F1();
+    
+    if ns_1 == 1
+        GDR.ROI_set = struct;
+        Fitter(1);
+        ROI_set = GDR.ROI_set(1);
+    end
+    
 else
     % if the code is called from GUI 
     Operation_mode = 1; % GUI
@@ -51,7 +60,12 @@ else
     %ROI_set = GDR.ROI_set;
     
     % check for existing ROI sets
-    ROI_exist = ROI_F0();
+    %ROI_exist = ROI_F0();
+    if isempty(GDR.ROI_set)
+        ROI_exist = 0;
+    else
+        ROI_exist = 1;
+    end
     
     switch (ROI_exist)
         
@@ -66,58 +80,31 @@ else
             end
             
         case 1 % Add ROI set to existing list (Secondary addition)
-            ROI_F2();
-                        % have to create condition to check for already existing names 
-            % While loop to check for multiple same named ROIs - if entered by user
             
+            lst_4 = {};
+            for l = 1:length(GDR.ROI_set)
+                matter = {l,horzcat(GDR.ROI_set(l).set_name, ' (',num2str(length(GDR.ROI_set(l).ROIs)),' ROIs)')};
+                lst_4 = vertcat(lst_4, matter);
+            end  
+            
+            R_ans = ROI_F2(lst_4);
+            SZ_4 = size(lst_4);
+            
+            if R_ans == 1
+                
+                [ns_1, ns_2] = ROI_F1();
+                
+                if ns_1 == 1
+                    Fitter(SZ_4(1)+1);
+                    assignin('base', 'tmfc', GDR);
+                end
+            
+            end
                       
     end
-    
-    
-    
-    
-    %[ns_1, ns_2] = ROI_F1();
-    
-
-       
+          
 end
 
-
-
-
-% TEMPORARY CODE:
-
-        
-
-% !!! YOU CAN ALSO ADD ALL NECESSARY SUPPLEMENTARY CODE FROM tmfc_select_ROIs_GUI_OLD
-
-
-% 
-
-
-
-% 
-
-
-
-
-
-
-
-
-
-
-% Remove empty ROIs
-% !!! FIND EMPTY ROIs (see ROI_set.ROIs.masked_size == 0)
-% !!! ADD GUI HERE WHERE WE NOTIFY USER THAT EMPTY ROIs WILL BE REMOVED
-% !!! SHOW WHICH ROIs WILL BE REMOVED
-% !!! REMOVE EMPTY ROIs FROM THE ROI_set variable
-
-% Remove cropped ROIs
-% !!! ADD GUI HERE WHERE USER CAN REMOVW HIGHLY CROPPED IMAGES 
-% !!! REMOVE THESE ROIs FROM THE ROI_set variable
-
-% !!! UPDATE TMFC variable if function was called via TMFC GUI
 
 
 function Fitter(NUM)
@@ -209,6 +196,7 @@ function Fitter(NUM)
                     close(w)
                 end
                 
+                % Remove Empty ROIs
                 a = {};
                 in_ctr = 1;
                 for i = 1:length(GDR.ROI_set(1).ROIs)
@@ -237,175 +225,21 @@ function Fitter(NUM)
 
                     
                 end
+                disp(GDR);
+                GDR = ROI_F4(GDR, CTR);
+                disp("after");
+                disp(GDR);
+                
+                %assignin('base', 'RVP',GDR);
                 
                 
 end
 
     
-
-         
-
-
-
-
-function ROI_F4(~,~)
-
-
-    ROI_4_INFO1 = {'Remove heavily cropped ROIs with insufficient data, if necessary.'};
-    lst_1 = {};
-    lst_2 = {};
-    selection_1 = {};          % Variable to store the selected list of conditions in BOX 1(as INDEX)
-    selection_2 = {};          % Variable to store the selected list of conditions in BOX 2(as INDEX)
-    
-    TEST_SET_R4 = {'№ 1: ROI_name_1 :: 250 voxels :: 20 voxels :: 8%',...
-        '№ 2: ROI_name_2 :: 600 voxels :: 600 voxels :: 100%',...
-        '№ 3: ROI_name_3 :: 400 voxels :: 200 voxels :: 50%',...
-        '№ 4: ROI_name_3 :: 100 voxels :: 9 voxels :: 9 %'};
-    
-    TEST_SET_R42 = {'№ 1: ROI_name_1 :: 250 voxels :: 20 voxels :: 8%',...
-        '№ 4: ROI_name_3 :: 100 voxels :: 9 voxels :: 9 %'};
-    
-    ROI_4 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.32 0.48],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
-
-    ROI_4_disp_1 = uicontrol(ROI_4 , 'Style', 'listbox', 'String', TEST_SET_R4,'Max', 100,'Units', 'normalized', 'Position',[0.048 0.58 0.91 0.30],'fontunits','normalized', 'fontSize', 0.105);
-    ROI_4_disp_2 = uicontrol(ROI_4 , 'Style', 'listbox', 'String', TEST_SET_R42,'Max', 100,'Units', 'normalized', 'Position',[0.048 0.15 0.91 0.25],'fontunits','normalized', 'fontSize', 0.13);
-
-    ROI_4_S1 = uicontrol(ROI_4,'Style','text','String', ROI_4_INFO1,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.54);
-    ROI_4_S2 = uicontrol(ROI_4,'Style','text','String', '% threshold','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.44);
-    ROI_4_S3 = uicontrol(ROI_4,'Style','text','String', 'Removed ROIs:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.50);
-   
-    ROI_4_REM_SEL = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Remove selected','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
-    ROI_4_REM_THRS = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Remove ROIs under % threshold','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
-    ROI_4_OK = uicontrol(ROI_4,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
-    ROI_4_RET_SEL = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Return selected','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
-    ROI_4_RET_ALL = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Return all','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
-    ROI_4_A = uicontrol(ROI_4,'Style','edit','String','10','Units', 'normalized','fontunits','normalized', 'fontSize', 0.42,'HorizontalAlignment','center');
-    
-    
-    ROI_4_S1.Position = [0.10 0.89 0.8 0.06]; 
-    ROI_4_REM_SEL.Position = [0.048 0.49 0.24 0.07]; 
-    ROI_4_REM_THRS.Position = [0.32 0.49 0.40 0.07]; 
-    ROI_4_A.Position = [0.74 0.49 0.1 0.07]; 
-    ROI_4_S2.Position = [0.84 0.485 0.13 0.06]; 
-    ROI_4_S3.Position = [0.05 0.40 0.2 0.06]; 
-    ROI_4_OK.Position = [0.05 0.06 0.24 0.07]; 
-    ROI_4_RET_SEL.Position = [0.39 0.06 0.24 0.07]; 
-    ROI_4_RET_ALL.Position = [0.72 0.06 0.24 0.07]; 
-    
-     
-    set(ROI_4_S1,'backgroundcolor',get(ROI_4,'color'));
-    set(ROI_4_S2,'backgroundcolor',get(ROI_4,'color'));
-    set(ROI_4_S3,'backgroundcolor',get(ROI_4,'color'));
-    set(ROI_4_disp_1, 'Value', []);
-    set(ROI_4_disp_1, 'callback', @action_select_1)
-    set(ROI_4_disp_2, 'Value', []);
-    set(ROI_4_disp_2, 'callback', @action_select_2)
-    
-   
-    set(ROI_4_REM_SEL, 'callback', @action_3)
-    set(ROI_4_REM_THRS, 'callback', @action_4)
-    %set(ROI_4_A, 'callback', @action_5)
-    set(ROI_4_RET_SEL, 'callback', @action_6)
-    set(ROI_4_RET_ALL, 'callback', @action_7)
-    set(ROI_4_OK, 'callback', @action_8);
         
-    function action_select_1(~,~)
-        index = get(ROI_4_disp_1, 'Value');  % Retrieves the users selection LIVE
-        selection_1 = index;      
-    end
-
-    function action_select_2(~,~)
-        index = get(ROI_4_disp_2, 'Value');  % Retrieves the users selection LIVE
-        selection_2 = index;             
-    end
-    
-
-end
 
 
 end
-% initial sorting - maybe not needed
-function [out_list] = sorter_1(in_list)
-    [~,index] = sortrows([in_list.sess; in_list.number]');
-    out_list = in_list(index); 
-    clear index
-end
-
-
-
-
-% GUI to check if previously existing ROIs 
-function [STATS_0] = ROI_F0(~,~)
-      
-    ROI_0 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.16 0.16],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none','WindowStyle', 'modal','CloseRequestFcn', @stable_exit_ROI_0);
-    
-    % Initializing Elements of the UI
-    ROI_0_S = uicontrol(ROI_0,'Style','text','String', ['Have any ROI sets been previously selected?'],'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.38);
-    
-
-    ROI_0_YES = uicontrol(ROI_0,'Style','pushbutton', 'String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45);
-    ROI_0_NO = uicontrol(ROI_0,'Style','pushbutton', 'String', 'No','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45);
-
-    ROI_0_S.Position = [0.10 0.55 0.80 0.260];
-    ROI_0_YES.Position = [0.14 0.25 0.320 0.170];
-    ROI_0_NO.Position = [0.52 0.25 0.320 0.170];
-    
-    set(ROI_0_S,'backgroundcolor',get(ROI_0,'color'));
-
-    % Assigning Functions Callbacks for each Element (button, listbox etc)
-
-    set(ROI_0_YES, 'callback', @ROI_0_YES_ACTION);
-    set(ROI_0_NO, 'callback', @ROI_0_NO_ACTION);
-    
-    function stable_exit_ROI_0(~,~)
-       delete(ROI_0); 
-       STATS_0 = NaN;
-    end
-    
-    
-    function ROI_0_YES_ACTION(~,~)
-        delete(ROI_0);
-        STATS_0 = 1;
-    end
-
-    function ROI_0_NO_ACTION(~,~)
-        delete(ROI_0);
-        STATS_0 = 0;
-    end
-    uiwait();
-end
-
-% Secondary sorting - to use
-function [sorted_list] = sorter_2(disp_set, full_set)
-
-    temp = {};
-    k = 1;
-    for i = 1:length(disp_set)
-        for j = 1:length(full_set)
-            if strcmp(disp_set(i),full_set(j).list_name)
-                if k == 1
-                    temp = full_set(j);
-                    k = k + 1;
-                else 
-                    temp(k) = full_set(j);
-                    k = k + 1;
-                end
-            end
-        end
-    end
-
-    [~,index] = sortrows([temp.sess; temp.number]');
-    out_list = temp(index); 
-
-    sorted_list = {};
-    for x = 1:length(out_list) 
-        sorted_list = vertcat(sorted_list, out_list(x).list_name);
-    end
-
-    clear index
-
-end
-
 
 % GUI to add new ROI set
 function [RF1_flag, ret_name] = ROI_F1(~,~)
@@ -479,13 +313,11 @@ function [RF1_flag, ret_name] = ROI_F1(~,~)
     uiwait();
 end
 
-function ROI_F2(~,~)
+function [new_flag] = ROI_F2(LIST_SETS,~)
 
-
-    TEST_SET = {'ROI_set1 (300 ROIs)','ROI_set2 (240 ROIs)'};
     ROI_2 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.28 0.35],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
 
-    ROI_2_disp = uicontrol(ROI_2 , 'Style', 'listbox', 'String', TEST_SET,'Max', 100,'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09);
+    ROI_2_disp = uicontrol(ROI_2 , 'Style', 'listbox', 'String', LIST_SETS(:,2),'Max', 100,'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09);
 
     ROI_2_S1 = uicontrol(ROI_2,'Style','text','String', 'Select ROI set','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.58);
     ROI_2_S2 = uicontrol(ROI_2,'Style','text','String', 'Sets:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.64);
@@ -503,10 +335,20 @@ function ROI_F2(~,~)
     set(ROI_2_S2,'backgroundcolor',get(ROI_2,'color'));
     set(ROI_2_disp, 'Value', []);
     
-    %set(ROI_2_OK, 'callback', @function1);
-    %set(ROI_2_Select, 'callback', @function2);
+    set(ROI_2_OK, 'callback', @ROI_F2_OK);
+    set(ROI_2_Select, 'callback', @ROI_F2_SELECT);
 
+    function ROI_F2_OK(~,~)
+        new_flag = 0;
+        close(ROI_2);
+    end
 
+    function ROI_F2_SELECT(~,~)
+        new_flag = 1;
+        close(ROI_2);
+    end
+    uiwait();
+    
 end
 
 function ROI_F3(dis_data)
@@ -544,4 +386,362 @@ function ROI_F3(dis_data)
     uiwait();
 
 end
-         
+
+function [EXPORT] = ROI_F4(GDR, CTR)
+    % create full list
+    
+    builder = {};
+    
+    for i = 1:length(GDR.ROI_set(CTR).ROIs)
+        gray = {i,horzcat('№ ',num2str(i),': ',GDR.ROI_set(CTR).ROIs(i).name, ' :: ', num2str(GDR.ROI_set(CTR).ROIs(i).raw_size),' voxels', ' :: ' , num2str(GDR.ROI_set(CTR).ROIs(i).masked_size),' voxels ' , ':: ',num2str(GDR.ROI_set(CTR).ROIs(i).masked_size_percents)), GDR.ROI_set(CTR).ROIs(i).masked_size_percents};
+        builder = vertcat(builder, gray);
+    end
+    
+    lst_1 = builder;
+    lst_2 = {};
+    
+    
+    ROI_4_INFO1 = {'Remove heavily cropped ROIs with insufficient data, if necessary.'};
+
+    selection_1 = {};          % Variable to store the selected list of conditions in BOX 1(as INDEX)
+    selection_2 = {};          % Variable to store the selected list of conditions in BOX 2(as INDEX)
+    
+        
+    ROI_4 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.32 0.48],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none','Windowstyle', 'Modal');
+
+    ROI_4_disp_1 = uicontrol(ROI_4 , 'Style', 'listbox', 'String', lst_1(:,2,1),'Max', 100,'Units', 'normalized', 'Position',[0.048 0.58 0.91 0.30],'fontunits','normalized', 'fontSize', 0.100);
+    ROI_4_disp_2 = uicontrol(ROI_4 , 'Style', 'listbox', 'String', lst_2,'Max', 100,'Units', 'normalized', 'Position',[0.048 0.15 0.91 0.25],'fontunits','normalized', 'fontSize', 0.11);
+
+    ROI_4_S1 = uicontrol(ROI_4,'Style','text','String', ROI_4_INFO1,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.54);
+    ROI_4_S2 = uicontrol(ROI_4,'Style','text','String', '% threshold','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.44);
+    ROI_4_S3 = uicontrol(ROI_4,'Style','text','String', 'Removed ROIs:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.50);
+   
+    ROI_4_REM_SEL = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Remove selected','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_4_REM_THRS = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Remove ROIs under % threshold','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_4_OK = uicontrol(ROI_4,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_4_RET_SEL = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Return selected','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_4_RET_ALL = uicontrol(ROI_4,'Style','pushbutton', 'String', 'Return all','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_4_A = uicontrol(ROI_4,'Style','edit','String',[],'Units', 'normalized','fontunits','normalized', 'fontSize', 0.42,'HorizontalAlignment','center');
+    
+    
+    ROI_4_S1.Position = [0.10 0.89 0.8 0.06]; 
+    ROI_4_REM_SEL.Position = [0.048 0.49 0.24 0.07]; 
+    ROI_4_REM_THRS.Position = [0.32 0.49 0.40 0.07]; 
+    ROI_4_A.Position = [0.74 0.49 0.1 0.07]; 
+    ROI_4_S2.Position = [0.84 0.485 0.13 0.06]; 
+    ROI_4_S3.Position = [0.05 0.40 0.2 0.06]; 
+    ROI_4_OK.Position = [0.05 0.06 0.24 0.07]; 
+    ROI_4_RET_SEL.Position = [0.39 0.06 0.24 0.07]; 
+    ROI_4_RET_ALL.Position = [0.72 0.06 0.24 0.07]; 
+    
+     
+    set(ROI_4_S1,'backgroundcolor',get(ROI_4,'color'));
+    set(ROI_4_S2,'backgroundcolor',get(ROI_4,'color'));
+    set(ROI_4_S3,'backgroundcolor',get(ROI_4,'color'));
+    set(ROI_4_disp_1, 'Value', []);
+    set(ROI_4_disp_1, 'callback', @action_select_1);
+    set(ROI_4_disp_2, 'Value', []);
+    set(ROI_4_disp_2, 'callback', @action_select_2);
+    
+   
+    set(ROI_4_REM_SEL, 'callback', @action_3);
+    set(ROI_4_REM_THRS, 'callback', @action_4);
+    set(ROI_4_RET_SEL, 'callback', @action_6);
+    set(ROI_4_RET_ALL, 'callback', @action_7);
+    set(ROI_4_OK, 'callback', @action_8);
+        
+    
+    function action_select_1(~,~)
+        index = get(ROI_4_disp_1, 'Value');  % Retrieves the users selection LIVE
+        selection_1 = index;      
+    end
+
+
+    function action_select_2(~,~)
+        index = get(ROI_4_disp_2, 'Value');  % Retrieves the users selection LIVE
+        selection_2 = index;             
+    end
+    
+    
+    function action_3(~,~)
+        
+        % Checking if there is a selection from the user
+        if isempty(selection_1)
+
+            % if no selection, raise warning 
+            warning('No ROIs selected');
+
+        else
+
+            % Else continue to add selected condition to removal list
+
+            len_exst = length(lst_2);     % Find length of existing subjects in selected condition
+            NEW_ROI = {};               % Creation of empty array to store new paths
+            new_ones = 0;
+            pres_len = 0;
+            
+            % Based on the selection add variables to a selected list
+            NEW_ROI = vertcat(NEW_ROI, lst_1(selection_1,:,:)); %lst_1(j)); %lst_1(j,:)
+            
+            % check if new ROIs belong to existing list
+            if ~isempty(lst_2)
+                len_maker = size(NEW_ROI);
+                len_maker_2 = size(lst_2);
+                if len_maker(1) >= 2
+                    % in the event there is more than 1 element to be added
+                    bumper = [];
+                    cmtr = 1;
+                    for a = 1:len_maker(1)
+                        for b = 1:len_maker_2(1)
+                            if strcmp(NEW_ROI(a,2,1), lst_2(b,2,1))
+                               bumper(cmtr) = a;
+                               cmtr = cmtr+1;
+                            end
+                        end
+                    end
+                                     
+                else
+                    bumper = [];
+                    cmtr = 1;
+                    ls2_sz = size(lst_2);
+                    for b = 1:ls2_sz(1)
+                        if strcmp(NEW_ROI(1,2,1),lst_2(b,2,1))
+                            bumper(cmtr) = b;
+                            cmtr = cmtr+1;
+                        end
+                    end
+                                        
+                end
+                
+                % if there are new ROIs added to LST_2
+                if length(bumper)>=2
+                    drummer = 0;
+                    for c = 1:length(bumper)
+                        NEW_ROI(bumper(c)-drummer,:,:) = [];
+                        drummer = drummer + 1;
+                    end
+                    new_ones = size(NEW_ROI);
+                else
+                    DFR = size(NEW_ROI);
+                    for e = 1:DFR(1)
+                        if NEW_ROI{e,1,1} == bumper
+                            NEW_ROI(e,:,:) = [];
+                        end
+                    end
+                    new_ones = size(NEW_ROI);
+                end
+                
+               
+                lst_2 = sortrows(vertcat(lst_2, NEW_ROI),1);
+                
+                pres_len = len_exst - new_ones(1);
+                
+                
+            else
+                lst_2 = vertcat(lst_2, NEW_ROI); 
+                pres_len = length(lst_2);
+                new_ones = 2;
+            end
+
+
+            % Logical condition to check if newly selected conditions have been added
+            if new_ones(1) == 2
+                    g_check = size(lst_2);
+                    fprintf('ROIs selected: %d \n', g_check(1));
+            elseif new_ones(1) == 0
+                    warning('Newly selected ROIs are already present in the list, no new ROIs to remove');
+            else
+                    fprintf('New selected ROIs : %d \n', new_ones(1)); 
+            end 
+
+            % Set sorted list of conditions into GUI
+            set(ROI_4_disp_2, 'String', lst_2(:,2,1));
+
+        end
+        
+    end
+
+
+    function action_4(~,~)
+
+        lst_3 = {};
+        len_exst = size(lst_2);
+        new_ones = 0;
+        pres_len = 0;
+        name = get(ROI_4_A, 'String');
+                
+        if ~strcmp(name,'') & ~strcmp(name(1),' ')    
+            
+            thres = str2double(name);
+            
+            
+            
+            if isnan(thres)
+                
+                warning('Entered threshold should be a numeric character, please re-enter');
+                
+            elseif (thres<0) | (thres>100)
+                warning('Enetered threshold is beyond the bounds, please enter a threshold between 0 and 100%');
+                
+            else
+                
+
+                
+                sz_rd = size(lst_1);
+                bpm = [];
+                ctr_g = 1;
+                for aa = 1:sz_rd(1)
+                    if lst_1{aa,3,1} <= thres
+                        bpm(ctr_g) = aa;
+                        ctr_g = ctr_g + 1;
+                    end
+                end
+                lst_3 = lst_1(bpm, :, :);
+                
+                
+                % compiling the removal list
+                if isempty(lst_2)
+                    % if removing for the first time
+                    lst_2 = vertcat(lst_2, lst_3); 
+                    new_ones = 2;
+                else
+                    len_maker = size(lst_3);
+                    len_maker_2 = size(lst_2);
+                    
+                    if len_maker(1) >= 2
+                        % in the event there is more than 1 element to be added
+                        bumper = [];
+                        cmtr = 1;
+                        for a = 1:len_maker(1)
+                            for b = 1:len_maker_2(1)
+                                if strcmp(lst_3(a,2,1), lst_2(b,2,1))
+                                   bumper(cmtr) = a;
+                                   cmtr = cmtr+1;
+                                end
+                            end
+                        end
+
+                    else
+                        bumper = [];
+                        cmtr = 1;
+                        ls2_sz = size(lst_2);
+                        for b = 1:ls2_sz(1)
+                            if strcmp(lst_3(1,2,1),lst_2(b,2,1))
+                                bumper(cmtr) = b;
+                                cmtr = cmtr+1;
+                            end
+                        end
+
+                    end
+
+                    % if there are new ROIs added to LST_2
+                    if length(bumper)>=2
+                        drummer = 0;
+                        for c = 1:length(bumper)
+                            lst_3(bumper(c)-drummer,:,:) = [];
+                            drummer = drummer + 1;
+                        end
+                        new_ones = size(lst_3);
+                    else
+                        lst_3(bumper,:,:) = [];
+                        new_ones = size(lst_3);
+                    end
+
+
+                    lst_2 = sortrows(vertcat(lst_2, lst_3),1);
+
+          
+                end
+                set(ROI_4_disp_2, 'String', lst_2(:,2,1));
+                % Logical condition to check if newly selected conditions have been added
+                if new_ones(1) == 2
+                        g_check = size(lst_2);
+                        fprintf('ROIs selected: %d \n', g_check(1));
+                    elseif new_ones(1) == 0
+                        warning('All ROIs below this threshold have already been removed');
+                    else
+                        fprintf('%d',new_ones(1));
+                        fprintf(' ROIs selected at threshold %d ', thres); 
+                        fprintf('%% \n');
+                        
+                    end 
+                end
+                                   
+            
+        else
+            warning('Threshold not entered or is invalid, please re-enter');
+        end
+
+    end
+
+
+    function action_6(~,~)
+        
+        if isempty(lst_2)
+            warning('No ROIs present to return');
+        elseif isempty(selection_2)
+            warning('No ROIs selected to return');
+        else
+            
+            if length(selection_2) >= 2
+                hippo = 0;
+                for c = 1:length(selection_2)
+                    lst_2(selection_2(c)-hippo,:,:) = [];
+                    hippo = hippo + 1;
+                end
+                fprintf('Number of ROIs removed are %d \n', hippo);
+            else
+                lst_2(selection_2,:,:) = [];
+                fprintf('Selected ROI has been removed \n');
+            end
+            
+            if isempty(lst_2)
+                lst_2 = {};
+               set(ROI_4_disp_2, 'String', lst_2); 
+            else
+                set(ROI_4_disp_2, 'String', lst_2(:,2,1));
+                set(ROI_4_disp_2, 'Value', []);
+            end
+            
+        end
+        
+    end
+
+
+    function action_7(~,~)
+        if isempty(lst_2)
+            warning('No ROIs present to return');
+        else
+            lion = size(lst_2);
+            lst_2 = {};
+            set(ROI_4_disp_2, 'String', lst_2);
+            set(ROI_4_disp_2, 'Value', []);
+            fprintf('%d',lion(1));
+            fprintf(' ROIs have been returned \n');
+        end
+    end
+
+
+    function action_8(~,~)
+        if isempty(lst_2)
+            disp('No ROIs selected for removal, exporting existing set');
+            EXPORT = GDR;
+            close(ROI_4);
+        else
+            disp('Exporting ROIs after removal of selected cropped regions');
+            h_size = size(lst_2);
+            inder = 0;
+            for h = 1:h_size(1)
+                GDR.ROI_set(CTR).ROIs(lst_2{h,1,1} - inder) = [];
+                inder = inder + 1;
+            end
+            EXPORT = GDR;
+            close(ROI_4);
+        end
+    end
+
+
+    uiwait();
+    
+
+end
