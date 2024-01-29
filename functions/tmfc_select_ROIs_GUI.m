@@ -37,15 +37,19 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 % Enter a name for the ROI set
 % !!! PUT CODE HERE FOR ROI SET NAME (from tmfc_ROI_SET)
 
-disable_GUI();
+
 full_flag = 0;
 % check if the code is called from GUI or CUI
 OPD = findobj('Tag', 'MAIN_WINDOW');
+
 
 if isempty(OPD)
     % if code is called from CUI 
     GDR = tmfc;
     
+    if ~isempty(GDR.subjects(1).path)
+    disable_GUI();
+        
     [ns_1, ns_2] = ROI_F1();
     
     if ns_1 == 1
@@ -56,13 +60,18 @@ if isempty(OPD)
         disp('ROIs not selected');
         enable_GUI();
     end
-    
+    else
+        warning('Please select subjects to continue selection of ROIs');
+    end
     
 else
     % if the code is called from GUI 
     GDR = evalin('base', 'tmfc');  
     %ROI_set = GDR.ROI_set;
     
+    if ~isempty(GDR.subjects(1).path)
+    
+    disable_GUI();
     % check for existing ROI sets
     %ROI_exist = ROI_F0();
     if isempty(GDR.ROI_set)
@@ -135,6 +144,10 @@ else
                enable_GUI();
             end
                       
+    end
+    
+    else
+        warning('Please select subjects to continue selection of ROIs');
     end
           
 end
