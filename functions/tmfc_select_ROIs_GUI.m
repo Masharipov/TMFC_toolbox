@@ -119,7 +119,7 @@ else
                 lst_4 = vertcat(lst_4, matter);
             end  
             
-            R_ans = ROI_F2(lst_4);
+            [R_ans, pos] = ROI_F2(lst_4);
             SZ_4 = size(lst_4);
             
             if R_ans == 1
@@ -139,6 +139,10 @@ else
                     disp('ROIs have not been selected');
                     enable_GUI();
                 end
+            elseif R_ans == 0
+                fprintf('Selected ROI for processing is: %s \n', char(lst_4(pos,2)));
+                enable_GUI(); 
+                disp('Contd with processing');
             else
                disp('ROIs have not been selected');
                enable_GUI();
@@ -302,22 +306,20 @@ function Fitter(NUM)
                         if isempty(GDR.ROI_set(CTR).ROIs)
                            Flag_3 = 0;
                            disp('No eligible ROIs left for selection, Please try again');
+                           disp('check 2');
                         else
                             Flag_3 = 1;
                         end
-
                     else
-                        Flag_3 = 0;
-                        disp('No eligible ROIs left for selection, Please try again');
+                        Flag_3 = 1;
+%                         disp('No eligible ROIs left for selection, Please try again');
+%                         disp('check 1');
                     end
                     
                 end
                 
                 if Flag_1 == 1 & Flag_2 == 1 & Flag_3 == 1
-                    disp(GDR);
                     GDR = ROI_F4(GDR, CTR);
-                    disp("after");
-                    disp(GDR);
                     full_flag = 1;
                     enable_GUI();
                 end
@@ -404,13 +406,13 @@ function [RF1_flag, ret_name] = ROI_F1(~,~)
     uiwait();
 end
 
-function [new_flag] = ROI_F2(LIST_SETS,~)
-
+function [new_flag, position] = ROI_F2(LIST_SETS,~)
+    
     new_flag = 0;
     
     ROI_2 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.28 0.35],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
 
-    ROI_2_disp = uicontrol(ROI_2 , 'Style', 'listbox', 'String', LIST_SETS(:,2),'Max', 100,'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09);
+    ROI_2_disp = uicontrol(ROI_2 , 'Style', 'listbox', 'String', LIST_SETS(:,2),'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09);
 
     ROI_2_S1 = uicontrol(ROI_2,'Style','text','String', 'Select ROI set','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.58);
     ROI_2_S2 = uicontrol(ROI_2,'Style','text','String', 'Sets:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.64);
@@ -423,23 +425,38 @@ function [new_flag] = ROI_F2(LIST_SETS,~)
      
     ROI_2_OK.Position = [0.16 0.10 0.28 0.10]; % W H
     ROI_2_Select.Position = [0.56 0.10 0.28 0.10];
-     
+    
+    selection_3 = {};
+    set(ROI_2_disp, 'Value', 1);
+    selection_3 = 1;
+    
     set(ROI_2_S1,'backgroundcolor',get(ROI_2,'color'));
     set(ROI_2_S2,'backgroundcolor',get(ROI_2,'color'));
-    set(ROI_2_disp, 'Value', []);
+    set(ROI_2_disp, 'callback', @action_select_M1);
     
     set(ROI_2_OK, 'callback', @ROI_F2_OK);
     set(ROI_2_Select, 'callback', @ROI_F2_SELECT);
+    
+     
+    function action_select_M1(~,~)
+        index = get(ROI_2_disp, 'Value');  % Retrieves the users selection LIVE
+        selection_3 = index;    
+    end
 
+    
+    
     function ROI_F2_OK(~,~)
         new_flag = 0;
+        position = selection_3;
         close(ROI_2);
     end
 
     function ROI_F2_SELECT(~,~)
         new_flag = 1;
         close(ROI_2);
+        position = 0;
     end
+    position = 0;
     uiwait();
     
 end
