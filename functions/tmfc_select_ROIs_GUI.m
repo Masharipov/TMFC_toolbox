@@ -37,12 +37,13 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 % Enter a name for the ROI set
 % !!! PUT CODE HERE FOR ROI SET NAME (from tmfc_ROI_SET)
 
+disable_GUI();
+full_flag = 0;
 % check if the code is called from GUI or CUI
 OPD = findobj('Tag', 'MAIN_WINDOW');
 
 if isempty(OPD)
     % if code is called from CUI 
-    Operation_mode = 0; % Command line
     GDR = tmfc;
     
     [ns_1, ns_2] = ROI_F1();
@@ -51,11 +52,14 @@ if isempty(OPD)
         GDR.ROI_set = struct;
         Fitter(1);
         ROI_set = GDR.ROI_set(1);
+    else
+        disp('ROIs not selected');
+        enable_GUI();
     end
+    
     
 else
     % if the code is called from GUI 
-    Operation_mode = 1; % GUI
     GDR = evalin('base', 'tmfc');  
     %ROI_set = GDR.ROI_set;
     
@@ -67,6 +71,8 @@ else
         ROI_exist = 1;
     end
     
+    
+    
     switch (ROI_exist)
         
         case 0 % Add new ROI set (Primary addition)
@@ -74,9 +80,26 @@ else
             [ns_1, ns_2] = ROI_F1();
 
             if ns_1 == 1
+                
                 GDR.ROI_set = struct;
-                Fitter(1);
-                assignin('base', 'tmfc',GDR);
+                try
+                    Fitter(1);
+                    if full_flag == 1
+                        assignin('base', 'tmfc',GDR);
+                        enable_GUI();
+                    else
+                       disp('ROIs have not been selected');
+                       enable_GUI();
+                    end
+                    
+                catch 
+                    disp('ROIs have not been selected');
+                    enable_GUI();
+                end
+                
+            else
+                disp('ROIs not selected');
+                enable_GUI();
             end
             
         case 1 % Add ROI set to existing list (Secondary addition)
@@ -96,9 +119,20 @@ else
                 
                 if ns_1 == 1
                     Fitter(SZ_4(1)+1);
-                    assignin('base', 'tmfc', GDR);
+                    if full_flag == 1
+                        assignin('base', 'tmfc', GDR);
+                        enable_GUI();
+                    else
+                        disp('ROIs have not been selected');
+                        enable_GUI();
+                    end
+                else
+                    disp('ROIs have not been selected');
+                    enable_GUI();
                 end
-            
+            else
+               disp('ROIs have not been selected');
+               enable_GUI();
             end
                       
     end
@@ -109,10 +143,14 @@ end
 
 function Fitter(NUM)
       
+                Flag_1 = 0;
+                Flag_2 = 0;
+                Flag_3 = 0;
+                
                 CTR = NUM;
                 GDR.ROI_set(CTR).set_name = ns_2;
                 
-                
+                try
                 % Select ROIs
                 [paths] = spm_select(inf,'any','Select ROI masks',{},pwd);
                 for i = 1:size(paths,1)
@@ -122,114 +160,154 @@ function Fitter(NUM)
                 
                 
                 
+                
                 % Create 'Masked_ROIs' folder
                 if ~isfolder([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name])
                     mkdir([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name]);
                 end
                 
                 
-                % Create group mean binary mask
-                for i = 1:length(GDR.subjects)
-                    sub_mask{i,1} = [GDR.subjects(i).path(1:end-7) 'mask.nii'];
+                if ~isempty(paths)
+                    Flag_1 = 1;
                 end
-                group_mask = [GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep 'group_mean_mask.nii'];
-                spm_imcalc(sub_mask,group_mask,'prod(X)',{1,0,1,2});
+                
+                catch
+                    
+                    disp('ROIs not selected');
+                    close(w);
+                    enable_GUI();
+                
+                end
                 
                 
-                
-                % Calculate ROI size before masking
-                w = waitbar(0,'Please wait...','Name','Calculating raw ROI sizes');
-                group_mask = spm_vol(group_mask);
-                N = numel(GDR.ROI_set(CTR).ROIs);
-                for i = 1:N
-                    ROI_mask = spm_vol(GDR.ROI_set(CTR).ROIs(i).path);           
-                    Y = zeros(group_mask.dim(1:3));
-                    % Loop through slices
-                    for p = 1:group_mask.dim(3)
-                        % Adjust dimensions, orientation, and voxel sizes to group mask
-                        B = spm_matrix([0 0 -p 0 0 0 1 1 1]);
-                        X = zeros(1,prod(group_mask.dim(1:2))); 
-                        M = inv(B * inv(group_mask.mat) * ROI_mask.mat);
-                        d = spm_slice_vol(ROI_mask, M, group_mask.dim(1:2), 1);
-                        d(isnan(d)) = 0;
-                        X(1,:) = d(:)';
-                        Y(:,:,p) = reshape(X,group_mask.dim(1:2));
+                if Flag_1 == 1
+                    
+                    % Create group mean binary mask
+                    for i = 1:length(GDR.subjects)
+                        sub_mask{i,1} = [GDR.subjects(i).path(1:end-7) 'mask.nii'];
                     end
-                    % Raw ROI size (in voxels)
-                    GDR.ROI_set(CTR).ROIs(i).raw_size = nnz(Y);
-                    try
-                        waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
-                    end
-                end
-                
-                try
-                    close(w)
-                end
-                
-                % Mask the ROI images by the goup mean binary mask
-                w = waitbar(0,'Please wait...','Name','Masking ROIs by group mean mask');
-                input_images{1,1} = group_mask.fname;
-                for i = 1:N
-                    input_images{2,1} = GDR.ROI_set(CTR).ROIs(i).path;
-                    ROI_mask = [GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep GDR.ROI_set(CTR).ROIs(i).name '_masked.nii'];
-                    spm_imcalc(input_images,ROI_mask,'(i1>0).*(i2>0)',{0,0,1,2});
-                    try
-                        waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
-                    end
-                end
+                    group_mask = [GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep 'group_mean_mask.nii'];
+                    spm_imcalc(sub_mask,group_mask,'prod(X)',{1,0,1,2});
 
-                try
-                    close(w)
-                end
-                
-                % Calculate ROI size after masking
-                w = waitbar(0,'Please wait...','Name','Calculating masked ROI sizes');
-                for i = 1:N
-                    GDR.ROI_set(CTR).ROIs(i).masked_size = nnz(spm_read_vols(spm_vol([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep GDR.ROI_set(CTR).ROIs(i).name '_masked.nii'])));
-                    GDR.ROI_set(CTR).ROIs(i).masked_size_percents = 100*GDR.ROI_set(CTR).ROIs(i).masked_size/GDR.ROI_set(CTR).ROIs(i).raw_size;
-                    try
-                        waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
-                    end
-                end
 
-                try
-                    close(w)
-                end
-                
-                % Remove Empty ROIs
-                a = {};
-                in_ctr = 1;
-                for i = 1:length(GDR.ROI_set(1).ROIs)
-                    if GDR.ROI_set(CTR).ROIs(i).masked_size_percents == 0
-                        a{in_ctr,1} = i;
-                        a{in_ctr,2} = GDR.ROI_set(CTR).ROIs(i).name;
-                        in_ctr = in_ctr + 1;
+
+                    % Calculate ROI size before masking
+                    w = waitbar(0,'Please wait...','Name','Calculating raw ROI sizes');
+                    group_mask = spm_vol(group_mask);
+                    N = numel(GDR.ROI_set(CTR).ROIs);
+                    for i = 1:N
+                        ROI_mask = spm_vol(GDR.ROI_set(CTR).ROIs(i).path);           
+                        Y = zeros(group_mask.dim(1:3));
+                        % Loop through slices
+                        for p = 1:group_mask.dim(3)
+                            % Adjust dimensions, orientation, and voxel sizes to group mask
+                            B = spm_matrix([0 0 -p 0 0 0 1 1 1]);
+                            X = zeros(1,prod(group_mask.dim(1:2))); 
+                            M = inv(B * inv(group_mask.mat) * ROI_mask.mat);
+                            d = spm_slice_vol(ROI_mask, M, group_mask.dim(1:2), 1);
+                            d(isnan(d)) = 0;
+                            X(1,:) = d(:)';
+                            Y(:,:,p) = reshape(X,group_mask.dim(1:2));
+                        end
+                        % Raw ROI size (in voxels)
+                        GDR.ROI_set(CTR).ROIs(i).raw_size = nnz(Y);
+                        try
+                            waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
+                        end
                     end
-                end
-                
-                if ~isempty(a)
-                    constructor = {};
-                    for i = 1:length(a)
-                        biege = horzcat('№ ',num2str(a{i,1}),': ',a{i,2});
-                        disp(biege);
-                        constructor = vertcat(constructor, biege);
+
+                    try
+                        close(w);
+                    end
+
+                    % Mask the ROI images by the goup mean binary mask
+                    w = waitbar(0,'Please wait...','Name','Masking ROIs by group mean mask');
+                    input_images{1,1} = group_mask.fname;
+                    for i = 1:N
+                        input_images{2,1} = GDR.ROI_set(CTR).ROIs(i).path;
+                        ROI_mask = [GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep GDR.ROI_set(CTR).ROIs(i).name '_masked.nii'];
+                        spm_imcalc(input_images,ROI_mask,'(i1>0).*(i2>0)',{0,0,1,2});
+                        try
+                            waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
+                        end
+                    end
+
+                    try
+                        close(w)
+                    end
+
+                    % Calculate ROI size after masking
+                    w = waitbar(0,'Please wait...','Name','Calculating masked ROI sizes');
+                    for i = 1:N
+                        GDR.ROI_set(CTR).ROIs(i).masked_size = nnz(spm_read_vols(spm_vol([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep GDR.ROI_set(CTR).ROIs(i).name '_masked.nii'])));
+                        GDR.ROI_set(CTR).ROIs(i).masked_size_percents = 100*GDR.ROI_set(CTR).ROIs(i).masked_size/GDR.ROI_set(CTR).ROIs(i).raw_size;
+                        try
+                            waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
+                        end
+                    end
+
+                    try
+                        close(w)
                     end
                     
-                    ROI_F3(constructor);
+                    Flag_2 = 1;
+                end
                     
-                    s = 0;
-                    for i = 1:length(a)
-                        GDR.ROI_set(CTR).ROIs(a{i,1}-s) = [];
-                        s = s +1;
-                    end    
+                    
+                if Flag_2 == 1 & Flag_1 == 1
+                    
+                    % Remove Empty ROIs
+                    %biege = {};
+                    a = {};
+                    in_ctr = 1;
+                    for i = 1:length(GDR.ROI_set(CTR).ROIs)
+                        if GDR.ROI_set(CTR).ROIs(i).masked_size_percents == 0
+                            a{in_ctr,1} = i;
+                            a{in_ctr,2} = GDR.ROI_set(CTR).ROIs(i).name;
+                            in_ctr = in_ctr + 1;
+                        end
+                    end
+                    
 
+                    if ~isempty(a)
+                        constructor = {};
+                        for i = 1:length(a)
+                            biege = horzcat('№ ',num2str(a{i,1}),': ',a{i,2});
+                            %disp(biege);
+                            constructor = vertcat(constructor, biege);
+                        end
+
+                        ROI_F3(constructor);
+
+                        % removing the empty ROIs
+                        s = 0;
+                        for i = 1:length(a)
+                            GDR.ROI_set(CTR).ROIs(a{i,1}-s) = [];
+                            s = s +1;
+                        end    
+
+                        if isempty(GDR.ROI_set(CTR).ROIs)
+                           Flag_3 = 0;
+                           disp('No eligible ROIs left for selection, Please try again');
+                        else
+                            Flag_3 = 1;
+                        end
+
+                    else
+                        Flag_3 = 0;
+                        disp('No eligible ROIs left for selection, Please try again');
+                    end
                     
                 end
-                disp(GDR);
-                GDR = ROI_F4(GDR, CTR);
-                disp("after");
-                disp(GDR);
                 
+                if Flag_1 == 1 & Flag_2 == 1 & Flag_3 == 1
+                    disp(GDR);
+                    GDR = ROI_F4(GDR, CTR);
+                    disp("after");
+                    disp(GDR);
+                    full_flag = 1;
+                    enable_GUI();
+                end
                 %assignin('base', 'RVP',GDR);
                 
                 
@@ -315,6 +393,8 @@ end
 
 function [new_flag] = ROI_F2(LIST_SETS,~)
 
+    new_flag = 0;
+    
     ROI_2 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.28 0.35],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
 
     ROI_2_disp = uicontrol(ROI_2 , 'Style', 'listbox', 'String', LIST_SETS(:,2),'Max', 100,'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09);
@@ -382,6 +462,7 @@ function ROI_F3(dis_data)
         close(ROI_3);
     end
     fprintf('Removed %s ', num2str(length(dis_data)) ,' ROIs from the ROI set');
+    fprintf('\n');
     disp('');
     uiwait();
 
@@ -744,4 +825,21 @@ function [EXPORT] = ROI_F4(GDR, CTR)
     uiwait();
     
 
+end
+
+function enable_GUI(~,~)
+                    try
+                        h_FREZ_1 = findobj('Tag','MAIN_WINDOW');
+                        F_data_1 = guidata(h_FREZ_1); 
+                        set([F_data_1.SUB,F_data_1.FIR_TR, F_data_1.LSS_R, F_data_1.LSS_RW, F_data_1.BSC, F_data_1.gPPI,F_data_1.save_p, F_data_1.open_p, F_data_1.change_p, F_data_1.settings,F_data_1.BGFC],'Enable', 'on');
+                    end
+end
+
+function disable_GUI(~,~)
+
+                    try
+                        h_FREZ_1 = findobj('Tag','MAIN_WINDOW');
+                        F_data_1 = guidata(h_FREZ_1); 
+                        set([F_data_1.SUB,F_data_1.FIR_TR, F_data_1.LSS_R, F_data_1.LSS_RW, F_data_1.BSC, F_data_1.gPPI,F_data_1.save_p, F_data_1.open_p, F_data_1.change_p, F_data_1.settings,F_data_1.BGFC],'Enable', 'off');
+                    end
 end
