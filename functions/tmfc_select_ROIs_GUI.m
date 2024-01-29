@@ -59,9 +59,11 @@ if isempty(OPD)
     else
         disp('ROIs not selected');
         enable_GUI();
+        ROI_set = -1;
     end
     else
         warning('Please select subjects to continue selection of ROIs');
+        ROI_set = -1;
     end
     
 else
@@ -96,19 +98,23 @@ else
                     if full_flag == 1
                         assignin('base', 'tmfc',GDR);
                         enable_GUI();
+                        ROI_set = 0;
                     else
                        disp('ROIs have not been selected');
                        enable_GUI();
+                       ROI_set = -1;
                     end
                     
                 catch 
                     disp('ROIs have not been selected');
                     enable_GUI();
+                    ROI_set = -1;
                 end
                 
             else
                 disp('ROIs not selected');
                 enable_GUI();
+                ROI_set = -1;
             end
             
         case 1 % Add ROI set to existing list (Secondary addition)
@@ -131,21 +137,25 @@ else
                     if full_flag == 1
                         assignin('base', 'tmfc', GDR);
                         enable_GUI();
+                        ROI_set = 0;
                     else
                         disp('ROIs have not been selected');
                         enable_GUI();
+                        ROI_set = -1;
                     end
                 else
                     disp('ROIs have not been selected');
                     enable_GUI();
+                    ROI_set = -1;
                 end
             elseif R_ans == 0
                 fprintf('Selected ROI for processing is: %s \n', char(lst_4(pos,2)));
                 enable_GUI(); 
-                disp('Contd with processing');
+                ROI_set = pos;
             else
                disp('ROIs have not been selected');
                enable_GUI();
+               ROI_set = -1;
             end
                       
     end
@@ -504,7 +514,7 @@ function [EXPORT] = ROI_F4(GDR, CTR)
     builder = {};
     
     for i = 1:length(GDR.ROI_set(CTR).ROIs)
-        gray = {i,horzcat('№ ',num2str(i),': ',GDR.ROI_set(CTR).ROIs(i).name, ' :: ', num2str(GDR.ROI_set(CTR).ROIs(i).raw_size),' voxels', ' :: ' , num2str(GDR.ROI_set(CTR).ROIs(i).masked_size),' voxels ' , ':: ',num2str(GDR.ROI_set(CTR).ROIs(i).masked_size_percents)), GDR.ROI_set(CTR).ROIs(i).masked_size_percents};
+        gray = {i,horzcat('№ ',num2str(i),': ',GDR.ROI_set(CTR).ROIs(i).name, ' :: ', num2str(GDR.ROI_set(CTR).ROIs(i).raw_size),' voxels', ' :: ' , num2str(GDR.ROI_set(CTR).ROIs(i).masked_size),' voxels ' , ':: ',num2str(GDR.ROI_set(CTR).ROIs(i).masked_size_percents), '%'), GDR.ROI_set(CTR).ROIs(i).masked_size_percents};
         builder = vertcat(builder, gray);
     end
     

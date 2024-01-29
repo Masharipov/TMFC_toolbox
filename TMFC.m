@@ -129,17 +129,20 @@ end
     
 %% ====================[ Background Connectivity ]=========================
 function BGFC_EX(ButtonH, EventData, MAIN_F)
-    tmfc_select_ROIs_GUI();
+    D = tmfc_select_ROIs_GUI();
+    fprintf('Continue BGFC with ROI # = %d \n', D);
 end
 
 %% =====================[ Beta Series Corelation ]=========================
 function BSC_EX(ButtonH, EventData, MAIN_F)
-    tmfc_select_ROIs_GUI();
+    D = tmfc_select_ROIs_GUI();
+    fprintf('Continue BSC with ROI # = %d \n', D);
 end
 
 %% =============================[ Close ]==================================
 function gPPI_EX(ButtonH, EventData, MAIN_F)
-    tmfc_select_ROIs_GUI();
+    D = tmfc_select_ROIs_GUI();
+    fprintf('Continue gPPI with ROI # = %d \n', D);
 end
 
 
