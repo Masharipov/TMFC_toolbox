@@ -294,21 +294,20 @@ function Fitter(NUM)
                             in_ctr = in_ctr + 1;
                         end
                     end
-                    
 
                     if ~isempty(a)
                         constructor = {};
-                        for i = 1:length(a)
+                        eject = size(a);
+                        for i = 1:eject(1)
                             biege = horzcat('№ ',num2str(a{i,1}),': ',a{i,2});
                             %disp(biege);
                             constructor = vertcat(constructor, biege);
                         end
-
                         ROI_F3(constructor);
 
                         % removing the empty ROIs
                         s = 0;
-                        for i = 1:length(a)
+                        for i = 1:eject(1)
                             GDR.ROI_set(CTR).ROIs(a{i,1}-s) = [];
                             s = s +1;
                         end    
@@ -316,7 +315,6 @@ function Fitter(NUM)
                         if isempty(GDR.ROI_set(CTR).ROIs)
                            Flag_3 = 0;
                            disp('No eligible ROIs left for selection, Please try again');
-                           disp('check 2');
                         else
                             Flag_3 = 1;
                         end
@@ -485,7 +483,7 @@ function ROI_F3(dis_data)
 
     ROI_3_disp = uicontrol(ROI_3 , 'Style', 'listbox', 'String', dis_data,'Max', 100,'Units', 'normalized', 'Position',[0.048 0.22 0.91 0.40],'fontunits','normalized', 'fontSize', 0.105);
 
-    ROI_3_S1 = uicontrol(ROI_3,'Style','text','String', ROI_3_INFO1,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.24);
+    ROI_3_S1 = uicontrol(ROI_3,'Style','text','String', ROI_3_INFO1,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.22);
     ROI_3_S2 = uicontrol(ROI_3,'Style','text','String', 'Empty ROIs:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.55);
     
     ROI_3_OK = uicontrol(ROI_3,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
