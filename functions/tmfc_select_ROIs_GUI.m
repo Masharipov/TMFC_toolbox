@@ -148,7 +148,7 @@ else
                     enable_GUI();
                     ROI_set = -1;
                 end
-            elseif R_ans == 0
+            elseif R_ans == 0 & pos ~= 0
                 fprintf('Selected ROI for processing is: %s \n', char(lst_4(pos,2)));
                 enable_GUI(); 
                 ROI_set = pos;
@@ -330,8 +330,10 @@ function Fitter(NUM)
                 
                 if Flag_1 == 1 & Flag_2 == 1 & Flag_3 == 1
                     GDR = ROI_F4(GDR, CTR);
-                    full_flag = 1;
-                    enable_GUI();
+                    if ~isempty(GDR) 
+                        full_flag = 1;
+                        enable_GUI();
+                    end
                 end
                 %assignin('base', 'RVP',GDR);
                 
@@ -419,6 +421,7 @@ end
 function [new_flag, position] = ROI_F2(LIST_SETS,~)
     
     new_flag = 0;
+    position = 0;
     
     ROI_2 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.28 0.35],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
 
@@ -466,7 +469,7 @@ function [new_flag, position] = ROI_F2(LIST_SETS,~)
         close(ROI_2);
         position = 0;
     end
-    position = 0;
+    
     uiwait();
     
 end
@@ -512,9 +515,9 @@ function [EXPORT] = ROI_F4(GDR, CTR)
     % create full list
     
     builder = {};
-    
+    EXPORT = [];
     for i = 1:length(GDR.ROI_set(CTR).ROIs)
-        gray = {i,horzcat('№ ',num2str(i),': ',GDR.ROI_set(CTR).ROIs(i).name, ' :: ', num2str(GDR.ROI_set(CTR).ROIs(i).raw_size),' voxels', ' :: ' , num2str(GDR.ROI_set(CTR).ROIs(i).masked_size),' voxels ' , ':: ',num2str(GDR.ROI_set(CTR).ROIs(i).masked_size_percents), '%'), GDR.ROI_set(CTR).ROIs(i).masked_size_percents};
+        gray = {i,horzcat('№ ',num2str(i),': ',GDR.ROI_set(CTR).ROIs(i).name, ' :: ', num2str(GDR.ROI_set(CTR).ROIs(i).raw_size),' voxels', ' :: ' , num2str(GDR.ROI_set(CTR).ROIs(i).masked_size),' voxels ' , ':: ',num2str(GDR.ROI_set(CTR).ROIs(i).masked_size_percents), ' %'), GDR.ROI_set(CTR).ROIs(i).masked_size_percents};
         builder = vertcat(builder, gray);
     end
     
@@ -860,7 +863,8 @@ function [EXPORT] = ROI_F4(GDR, CTR)
             close(ROI_4);
         end
     end
-
+    
+    
 
     uiwait();
     
