@@ -751,17 +751,34 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     set(handles.SUB_stat,'String',strcat(num2str(BPL_LEN), ' selected'));
    
     V_FIR = 0;
+    V_LSS_A_FIR = 0;
     for i = 1:BPL_LEN
+        % checking status of FIR completion
         if ~isnan(BPL.subjects(i).FIR)
-        V_FIR = V_FIR + 1 ;
+            V_FIR = V_FIR + 1 ;
         end
+        % checkinf status of LSS completion
+        if ~isnan(BPL.subjects(i).LSS_after_FIR)
+            disp(BPL.subjects(i).LSS_after_FIR);
+            V_LSS_A_FIR = V_LSS_A_FIR + 1;
+        end
+        
     end
+    
     if V_FIR ~= 0
         set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
         set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
     else 
         set(handles.FIR_TR_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
         set(handles.FIR_TR_stat,'String','Not done');
+    end
+    
+    if V_LSS_A_FIR ~= 0
+        set(handles.LSS_R_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
+        set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS_A_FIR), '/', num2str(BPL_LEN), ' done'));
+    else 
+        set(handles.LSS_R_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
+        set(handles.LSS_R_stat,'String','Not done');
     end
     
     switch BPL.defaults.parallel

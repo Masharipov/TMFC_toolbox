@@ -34,12 +34,8 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 % Contact email: masharipov@ihb.spb.ru
 
 
-% Enter a name for the ROI set
-% !!! PUT CODE HERE FOR ROI SET NAME (from tmfc_ROI_SET)
-
-
 full_flag = 0;
-% check if the code is called from GUI or CUI
+% check if the code is called from GUI or CLI
 OPD = findobj('Tag', 'MAIN_WINDOW');
 
 
@@ -76,6 +72,12 @@ else
     disable_GUI();
     % check for existing ROI sets
     %ROI_exist = ROI_F0();
+    % ROI_set = -1 (ROIs not selected or ROI select window is closed)
+    % ROI_set = 0 (if ROIs are selected for the first time, then use the
+    % first ROI set)
+    % ROI_set = position (if there are many ROIs then use the position
+    % returned by the user's selection)
+    
     if isempty(GDR.ROI_set)
         ROI_exist = 0;
     else
@@ -98,7 +100,9 @@ else
                     if full_flag == 1
                         assignin('base', 'tmfc',GDR);
                         enable_GUI();
+                        % add selection of index from the whole list
                         ROI_set = 0;
+                        
                     else
                        disp('ROIs have not been selected');
                        enable_GUI();
@@ -137,6 +141,7 @@ else
                     if full_flag == 1
                         assignin('base', 'tmfc', GDR);
                         enable_GUI();
+                        % add selection of index from the whole list
                         ROI_set = 0;
                     else
                         disp('ROIs have not been selected');
