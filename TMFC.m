@@ -19,7 +19,7 @@ function TMFC
 %   tmfc.subjects.LSS_after_FIR   - 1 or 0 (completed or not)
 %   tmfc.subjects.LSS_without_FIR - 1 or 0 (completed or not)
 %
-%   tmfc.FIR_window        - FIR window length in [s]
+%   tmfc.FIR_window        - FIR window length in doc memory[s]
 %   tmfc.FIR_bins          - Number of FIR time bins
 % 
 %   tmfc.LSS_after_FIR.conditions   - Conditions of interest for LSS 
@@ -129,8 +129,12 @@ end
     
 %% ====================[ Background Connectivity ]=========================
 function BGFC_EX(ButtonH, EventData, MAIN_F)
+    % -1 = no selection or creation 
+    % 0 reutrn = NEW ROI Created and have to select it 
+    % 1 ROI selected from existing list
     D = tmfc_select_ROIs_GUI();
     fprintf('Continue BGFC with ROI # = %d \n', D);
+    tmfc_BSC_GUI(tmfc,D);
 end
 
 %% =====================[ Beta Series Corelation ]=========================
@@ -286,7 +290,7 @@ end
             warning('No file selected');
         end
         
-    end
+    end     
 
 
 %% ==========================[ Change Paths ]==============================
@@ -614,12 +618,37 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
        
        % conditions for Start, restart & continue
        
+      for i = 1:LSS_len_sub
+
+          if LSS_flag == true
+               break;
+          end
+
+           for j = 1:dimension(1)
+
+               if LSS_flag == true
+                   break;
+               end
+
+               for k = 1:dimension(2)
+                   if L_checker_2.subjects(i).LSS_after_FIR(j,k) == 0 | isnan(L_checker_2.subjects(i).LSS_after_FIR(j,k))
+                       LSS_Lindex = [i,j,k];
+                       LSS_flag = true;
+                       break;
+                   end
+               end
+           end
+       end
+       
+       
        % condition 1
        if isnan(L_checker_2.subjects(1).LSS_after_FIR)
            LSS_RUNNER(1);
            
        % condition 2 - there maybe a logical error here
-       elseif L_checker_2.subjects(LSS_len_sub).LSS_after_FIR(dimension(1),dimension(2)) == 0
+       % (LSS_Lindex == [LSS_len_sub, dimension(1), dimension(2)])
+       elseif LSS_Lindex == 0 & LSS_flag == false
+       %elseif L_checker_2.subjects(LSS_len_sub).LSS_after_FIR(dimension(1),dimension(2)) == 0 & isnan(L_checker_2.subjects(LSS_len_sub).LSS_after_FIR(1,1))
            
           tmfc_LSS_GUI(L_checker_2.subjects(1).path, 2);
           %uiwait();
@@ -657,7 +686,7 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
 
                    for k = 1:dimension(2)
                        if L_checker_2.subjects(i).LSS_after_FIR(j,k) == 0 
-                           LSS_Lindex = [i,j,k];
+                           LSS_Lindex = [i,j-1,k];
                            LSS_flag = true;
                            break;
                        end
@@ -687,7 +716,8 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
                    LSS_RUNNER(1);
                end
            else
-               warning('Something isnt right here, contact devs for LSS reg issue');
+               disp('LSS Regression not initiated');
+               %warning('Something isnt right here, contact devs for LSS reg issue');
            end
        end     
    end    
@@ -759,7 +789,6 @@ function evaluate_file() % function to update the TMFC window after loading a tm
         end
         % checkinf status of LSS completion
         if ~isnan(BPL.subjects(i).LSS_after_FIR)
-            disp(BPL.subjects(i).LSS_after_FIR);
             V_LSS_A_FIR = V_LSS_A_FIR + 1;
         end
         

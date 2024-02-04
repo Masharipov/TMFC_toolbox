@@ -360,7 +360,7 @@ end
     %% Function to generate GUI window asking user to Restart computation of all subs
     function LSS_restart_GUI()
 
-        LSS_RECOMP = figure('Name', 'LSS task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.16 0.16],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_LSS'); %X Y W H
+        LSS_RECOMP = figure('Name', 'LSS task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.16 0.16],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_LSS','CloseRequestFcn', @close_LSS_restart); %X Y W H
 
         LSS_D1 = uicontrol(LSS_RECOMP,'Style','text','String', {'Recompute LSS task','regression for all subjects.?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
 
@@ -377,23 +377,33 @@ end
         set(LSS_OK, 'callback', @ACC);
 
         % Function to close the Window
+        function close_LSS_restart(~,~)
+           h3 = findobj('Tag', 'MAIN_WINDOW');
+           setappdata(h3, 'RESTART_LSS', 0);
+           delete(LSS_RECOMP); 
+        end
+        
+        
         function CANCEL(~,~)
-            close(LSS_RECOMP);
+           h3 = findobj('Tag', 'MAIN_WINDOW');
+           setappdata(h3, 'RESTART_LSS', 0);
+           delete(LSS_RECOMP); 
         end
 
         % Function to set state of Restart in APP Data of main Window
         function ACC(~,~)
             h3 = findobj('Tag', 'MAIN_WINDOW');
             setappdata(h3, 'RESTART_LSS', 1);
-            close(LSS_RECOMP);
+            delete(LSS_RECOMP);
         end
 
+        uiwait();
     end
 
     %% Function to generate GUI window asking to Continue from a last processed subject
     function LSS_continue_GUI(INDEX)
 
-        LSS_MIDCOMP = figure('Name', 'LSS task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_LSS'); %X Y W H
+        LSS_MIDCOMP = figure('Name', 'LSS task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_LSS','CloseRequestFcn',@LSS_contd_del); %X Y W H
 
         LSS_Q1 = uicontrol(LSS_MIDCOMP,'Style','text','String', 'Start FIR task regression from','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
         LSS_Q2 = uicontrol(LSS_MIDCOMP,'Style','text','String', strcat('subject №',num2str(INDEX),'?'), 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
@@ -414,19 +424,26 @@ end
 
         % Function to set status in MAIN_WINDOW appdata (To continue from
         % last processed subject) 
+        function LSS_contd_del(~,~)
+            h96 = findobj('Tag', 'MAIN_WINDOW');
+            setappdata(h96, 'CONTD_LSS', 0);
+           delete(LSS_MIDCOMP); 
+        end
+        
+        
         function contd(~,~)
-            %h6 = findobj('Tag', 'MAIN_WINDOW');
-            %setappdata(h6, 'CONTD_LSS', 1);
-            close(LSS_MIDCOMP);
+            h6 = findobj('Tag', 'MAIN_WINDOW');
+            setappdata(h6, 'CONTD_LSS', 1);
+            delete(LSS_MIDCOMP);
         end
         % Function to set status in MAIN_WINDOW appdata (To Restart from
         % the first subject)
         function RESTART(~,~)
             h96 = findobj('Tag', 'MAIN_WINDOW');
             setappdata(h96, 'CONTD_LSS', 2);
-            close(LSS_MIDCOMP);
+            delete(LSS_MIDCOMP);
         end
-        
+        uiwait();
     end
 
 end

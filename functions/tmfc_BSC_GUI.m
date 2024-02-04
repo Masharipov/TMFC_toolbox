@@ -1,29 +1,50 @@
-function BSC_GUI()
+function tmfc_BSC_GUI(tmfc, ROI_set_number)
 
-    BSC_G1 = figure("Name", "BSC", "NumberTitle", "off", "Units", "normalized", "Position", [0.40 0.30 0.22 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
+
+D = bsc_type();
+
+disp(D);
+
+
+
+
+
+end
+
+
+function [action_BSC] = bsc_type(~,~)
+
+
+    %Creation of BASE OUTLINE for Window                                  %[startingX startingY Width Height]
+    BSC_LSS_SEL = figure("Name", "BSC LSS", "NumberTitle", "off", "Units", "normalized", "Position", [0.40 0.45 0.28 0.20],'Resize','off','MenuBar', 'none','ToolBar', 'none','color','w','CloseRequestFcn', @BSC_Sel_stable_Exit);
     
     % Initializing Elements of the UI
-    BSC_E0  = uicontrol(BSC_G1,'Style','text',"String", "Define contrasts","Units", "normalized", "Position",[0.270 0.92 0.450 0.05],'fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
+    BSC_LSS_F1 = uicontrol(BSC_LSS_SEL,'Style','pushbutton',"String", 'BSC-LSS after FIR task regression (recommended)',"Units", "normalized",'fontunits','normalized', 'fontSize', 0.22,"HorizontalAlignment", "center");%,"BackgroundColor", [0.95 0.95 0.95]);
+    BSC_LSS_F2 = uicontrol(BSC_LSS_SEL,'Style','pushbutton',"String", 'BSC-LSS without FIR task regression ',"Units", "normalized",'fontunits','normalized', 'fontSize', 0.22);
     
-    BSC_E1  = uicontrol(BSC_G1,'Style','text',"String", "All conditions:","Units", "normalized", "Position",[0.045 0.85 0.450 0.05],"HorizontalAlignment", "left",'fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-    BSC_E1_lst = uicontrol(BSC_G1 , 'Style', 'listbox', "String", ["C1 - CondA (Sess1)","C2 - CondB (Sess1)","C3 - CondA (Sess2)","C4 - CondB (Sess2)"],'Max', 100,"Units", "normalized", "Position",[0.045 0.65 0.900 0.200],'fontunits','normalized', 'fontSize', 0.15);
+    BSC_LSS_F1.Position = [0.05 0.58 0.90 0.30];
+    BSC_LSS_F2.Position = [0.05 0.18 0.90 0.30];
     
+    set(BSC_LSS_F1, "callback", @function1);
+    set(BSC_LSS_F2, "callback", @function2);
     
-    BSC_E2  = uicontrol(BSC_G1,'Style','text',"String", "Contrasts:","Units", "normalized", "Position",[0.045 0.57 0.450 0.05],"HorizontalAlignment", "left",'fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-    BSC_E2_lst_1 = uicontrol(BSC_G1 , 'Style', 'listbox', "String", "№### :: Title :: Contrast weights",'Max', 100,"Units", "normalized", "Position",[0.045 0.53 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62);
-    Contrasts_Data = ["№001 :: CondA (Sess1) :: c = [1 0 0 0]", "№002 :: CondB (Sess1) :: c = [0 1 0 0]", "№003 :: CondA (Sess2) :: c = [0 0 1 0]", "№004 :: CondB (Sess2) :: c = [0 0 0 1]", "№005 :: CondA-CondB :: c = [0.5 -0.5 0.5 -0.5]", "№006 :: Sess1-Sess2 :: c = [0.5 0.5 -0.5 -0.5]"];
+    function BSC_Sel_stable_Exit(~,~)
+        delete(BSC_LSS_SEL); 
+        action_BSC = -1;
+    end
     
-    BSC_E2_lst_2 = uicontrol(BSC_G1 , 'Style', 'listbox', "String", Contrasts_Data,'Max',100,"Units", "normalized", "Position",[0.045 0.29 0.900 0.230],'fontunits','normalized', 'fontSize', 0.12);
+    function function1(~,~)
+        disp('peforming BSC LSS after FIR task regression');
+        delete(BSC_LSS_SEL); 
+        action_BSC = 20;
+    end
     
-    BSC_ADD = uicontrol(BSC_G1,'Style','pushbutton',"String", "Add new","Units", "normalized","Position",[0.045 0.18 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    BSC_REM = uicontrol(BSC_G1,'Style','pushbutton',"String", "Remove selected","Units", "normalized","Position",[0.360 0.18 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    BSC_REVA = uicontrol(BSC_G1,'Style','pushbutton',"String", "Remove all","Units", "normalized","Position",[0.680 0.18 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    BSC_OK = uicontrol(BSC_G1,'Style','pushbutton',"String", "OK","Units", "normalized","Position",[0.045 0.08 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    BSC_HELP = uicontrol(BSC_G1,'Style','pushbutton',"String", "Help","Units", "normalized","Position",[0.680 0.08 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
+    function function2(~,~)
+        disp('peforming BSC LSS without FIR task regression');
+        delete(BSC_LSS_SEL); 
+        action_BSC = 21;
+    end
 
-    set(BSC_E1_lst, 'Value', []);
-    set(BSC_E2_lst_1, 'Value', []);
-    set(BSC_E2_lst_2, 'Value', []);
-    %set(BSC_E2_lst_1, 'Enable', "off");  
-    
+    uiwait();
 end
+

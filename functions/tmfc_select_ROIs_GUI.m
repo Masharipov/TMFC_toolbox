@@ -101,7 +101,7 @@ else
                         assignin('base', 'tmfc',GDR);
                         enable_GUI();
                         % add selection of index from the whole list
-                        ROI_set = 0;
+                        ROI_set = 1;
                         
                     else
                        disp('ROIs have not been selected');
@@ -142,7 +142,7 @@ else
                         assignin('base', 'tmfc', GDR);
                         enable_GUI();
                         % add selection of index from the whole list
-                        ROI_set = 0;
+                        ROI_set = SZ_4(1)+1;
                     else
                         disp('ROIs have not been selected');
                         enable_GUI();
