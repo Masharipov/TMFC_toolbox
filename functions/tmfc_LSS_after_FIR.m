@@ -1,4 +1,3 @@
-
 function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
@@ -20,9 +19,21 @@ function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 % and (2) confounds specified in the original SPM.mat file (e.g., motion,
 % physiological noise, etc). Using residual time-series, we control for
 % spurious inflation of functional connectivity estimates due to
-% co-activations. This function does not add confounds (e.g., motion, 
+% co-activations.
+% 
+% This function does not add confounds (e.g., motion, 
 % physiological noise, etc) to the LSS models since they have already been
 % regressed out during the FIR task regression.
+%
+% This function does not apply temporal autocorrelation modeling (AR(1) or
+% FAST models) since the residuals have already been whitened during the
+% FIR task regression.  
+%
+% This function does not apply high-pass filter (HPF) since the residuals
+% have already been filtered during the FIR task regression. 
+%
+% This function uses the binary mask created during estimation of the
+% standard GLM (specified in the SPM.mat input files) as an explicit mask. 
 %
 % FORMAT [sub_check] = tmfc_LSS_after_FIR(tmfc)
 % Run a function starting from the first subject in the list.
@@ -84,22 +95,13 @@ function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 
 if nargin == 1
    start_sub = 1;
-else
-   if start_sub == 1
-       sub_check = NaN(length(tmfc.subjects),1);
-   else
-       % need to make it NAN as per trials & conditions 
-       % how do we know how many trials..?
-       % we need to have [NaN, NaN, NaN] 
-       sub_check = NaN(length(tmfc.subjects),1);
-       sub_check(1:start_sub) = 1;
-   end
-   try
-       SS1_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via the handle
-       g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
-       set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
-       set([g7data.SUB, g7data.FIR_TR, g7data.LSS_R, g7data.LSS_RW, g7data.BSC, g7data.gPPI, g7data.save_p, g7data.open_p, g7data.change_p, g7data.settings, g7data.BGFC],'Enable', 'off');
-   end
+end
+
+try
+   SS1_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via the handle
+   g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
+   set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
+   set([g7data.SUB, g7data.FIR_TR, g7data.LSS_R, g7data.LSS_RW, g7data.BSC, g7data.gPPI, g7data.save_p, g7data.open_p, g7data.change_p, g7data.settings, g7data.BGFC],'Enable', 'off');
 end
 
 spm('defaults','fmri');
@@ -135,14 +137,13 @@ for i = start_sub:N
     
     SPM = load(tmfc.subjects(i).path);
     
-    if isfolder([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f')])
-        rmdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f')],'s');
+    if isfolder(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')]),'s');
     end
 
-    if ~isfolder([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f')])
-        mkdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'Betas']);
-        mkdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batches']);
-        mkdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM_mat_files']);
+    if ~isfolder(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')]))
+        mkdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas'));
+        mkdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches'));
     end
 
     % Loop through sessions
@@ -184,11 +185,11 @@ for i = start_sub:N
         % Loop through trials of interest
         for k = 1:E
 
-            if isfolder([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k)])
-                rmdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'s');
+            if isfolder(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]))
+                rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
             end
                    
-            matlabbatch{1}.spm.stats.fmri_spec.dir = {[tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k)]};
+            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)])};
             matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
             matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
             matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
@@ -196,7 +197,7 @@ for i = start_sub:N
                         
             % Functional images
             for image = 1:SPM.SPM.nscan(j)
-                matlabbatch{1}.spm.stats.fmri_spec.sess.scans{image,1} = [tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'Res_' num2str(SPM.SPM.Sess(j).row(image),'%.4d') '.nii,1'];
+                matlabbatch{1}.spm.stats.fmri_spec.sess.scans{image,1} = fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],['Res_' num2str(SPM.SPM.Sess(j).row(image),'%.4d') '.nii,1']);
             end
     
             % Current trial vs all other trials (of interest and no interrest)
@@ -226,20 +227,22 @@ for i = start_sub:N
             matlabbatch{1}.spm.stats.fmri_spec.sess.multi_reg = {''};
     
             % HPF, HRF, mask 
-            matlabbatch{1}.spm.stats.fmri_spec.sess.hpf = SPM.SPM.xX.K(j).HParam;    
+            matlabbatch{1}.spm.stats.fmri_spec.sess.hpf = Inf;    
             matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
             matlabbatch{1}.spm.stats.fmri_spec.bases.hrf.derivs = [0 0];
             matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
-            matlabbatch{1}.spm.stats.fmri_spec.global = 'None';
+            matlabbatch{1}.spm.stats.fmri_spec.global = SPM.SPM.xGX.iGXcalc;
             matlabbatch{1}.spm.stats.fmri_spec.mthresh = -Inf;           
-            matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
-            matlabbatch{1}.spm.stats.fmri_spec.cvi = SPM.SPM.xVi.form;
-            matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = cfg_dep('fMRI model specification: SPM.mat File', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
-            matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
-            matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
+            matlabbatch{1}.spm.stats.fmri_spec.mask = {fullfile(SPM.SPM.swd,'mask.nii')};
+            matlabbatch{1}.spm.stats.fmri_spec.cvi = 'None';
+
+            matlabbatch_2{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat')};
+            matlabbatch_2{1}.spm.stats.fmri_est.write_residuals = 0;
+            matlabbatch_2{1}.spm.stats.fmri_est.method.Classical = 1;
             
             batch{k} = matlabbatch;
-            clear matlabbatch current* other*
+            batch_2{k} = matlabbatch_2;
+            clear matlabbatch matlabbatch_2 current* other*
         end
 
         % Variable to Exit FIR regression during execution
@@ -251,6 +254,7 @@ for i = start_sub:N
             case 1
                 parfor k = 1:E
                     try
+                        % Specify LSS GLM
                         spm('defaults','fmri');
                         spm_jobman('initcfg');
                         spm_get_defaults('cmdline',true);
@@ -259,24 +263,37 @@ for i = start_sub:N
                         spm_get_defaults('stats.fmri.ufp',1);
                         spm_jobman('run',batch{k});
 
-                        % Save individual trial beta image
-                        copyfile([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k) filesep 'beta_0001.nii'],...
-                            [tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'Betas' filesep ...
-                            'Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']);
+                        % Use explicit mask
+                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'));
+                        SPM_LSS.SPM.xM.TH = -Inf(size(SPM_LSS.SPM.xM.TH));
+                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
 
-                        % Save GLM_bactch.mat files
-                        tmfc_parsave([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batches' filesep ...
-                            'GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat'],batch{k});
+                        % Estimate LSS GLM
+                        spm_jobman('run',batch_2{k});
+
+                        % Save individual trial beta image
+                        copyfile(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                            fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
+                            ['Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']));
+
+                        % Save GLM_batch.mat files
+                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
+                            ['GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat']),batch{k});
 
                         % Remove temporal LSS directory
-                        rmdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'s');
-
-                        sub_check(i,j,k) = 1;
+                        rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+                        
+                        trials(k) = 1;
                     catch
-                        sub_check(i,j,k) = 0;
+                        trials(k) = 0;
                     end
                     
                 end
+
+                for k = 1:E
+                    condition(trial.cond(k)).trials(trial.number(k)) = trials(k);
+                end
+                clear trials
                 
 %                     try %STOPs Minimimizing of the waitbar
 %                     DG = guidata(findobj('Tag', 'MAIN_WINDOW'));
@@ -288,7 +305,8 @@ for i = start_sub:N
         case 0
             for k = 1:E
                 if EXIT_STATUS_LSS ~= 1                                             % IF Cancel/X button has NOT been pressed, then contiune execution
-                    try       
+                    try
+                        % Specify LSS GLM
                         spm('defaults','fmri');
                         spm_jobman('initcfg');
                         spm_get_defaults('cmdline',true);
@@ -297,23 +315,31 @@ for i = start_sub:N
                         spm_get_defaults('stats.fmri.ufp',1);
                         spm_jobman('run',batch{k});
 
-                        % Save individual trial beta image
-                        copyfile([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k) filesep 'beta_0001.nii'],...
-                            [tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'Betas' filesep ...
-                            'Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']);
+                        % Use explicit mask
+                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'));
+                        SPM_LSS.SPM.xM.TH = -Inf(size(SPM_LSS.SPM.xM.TH));
+                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
 
-                        % Save GLM_bactch.mat files
-                        tmfc_parsave([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batches' filesep ...
-                            'GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat'],batch{k});
+                        % Estimate LSS GLM
+                        spm_jobman('run',batch_2{k});
+
+                        % Save individual trial beta image
+                        copyfile(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                            fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
+                            ['Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']));
+
+                        % Save GLM_batch.mat files
+                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
+                            ['GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat']),batch{k});
 
                         % Remove temporal LSS directory
-                        rmdir([tmfc.project_path filesep 'LSS_after_FIR' filesep 'Subject_' num2str(i,'%04.f') filesep 'LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'s');
+                        rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
                         
                         pause(0.01)
 
-                        sub_check(i,j,k) = 1;
+                        condition(trial.cond(k)).trials(trial.number(k)) = 1;
                     catch
-                        sub_check(i,j,k) = 0;
+                        condition(trial.cond(k)).trials(trial.number(k)) = 0;
                     end
                 else
                     waitbar(N,handles.L_ws, sprintf('Cancelling Operation'));
@@ -326,8 +352,11 @@ for i = start_sub:N
                     break;
                 end
             end 
-        end        
-        clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number
+        end
+
+        sub_check(i).session(j).condition = condition;
+
+        clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number condition 
 
     end
     
@@ -371,7 +400,7 @@ end
 
 lss_upd = evalin('base', 'tmfc');                                       % Creation of local copy
 for i = start_sub:N                                                     % Updating the status of the FIR per subject
-    lss_upd.subjects(i).LSS_after_FIR = squeeze(sub_check(i,:,:));
+    lss_upd.subjects(i).LSS_after_FIR = sub_check(i);
 end
 assignin('base', 'tmfc', lss_upd);      
 
@@ -403,8 +432,13 @@ end
 end
 
 % Save batches in parallel mode
-function tmfc_parsave(fname,matlabbatch)
+function tmfc_parsave_batch(fname,matlabbatch)
   save(fname, 'matlabbatch')
+end
+
+% Save SPM.mat files in parallel mode
+function tmfc_parsave_SPM(fname,SPM)
+  save(fname, 'SPM')
 end
 
 % Waitbar for parallel mode
