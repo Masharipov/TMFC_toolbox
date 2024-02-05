@@ -31,9 +31,9 @@ end
 %% FIR task regression (regress out co-activations and save residual time series)
 
 % FIR window length in [s]
-tmfc.FIR_window = 10;
+tmfc.FIR_window = 10; %24
 % Nmber of FIR time bins
-tmfc.FIR_bins = 10;
+tmfc.FIR_bins = 10; %24
 
 % Run FIR task regression
 start_sub = 1;                      % Start from the 1st subject
@@ -141,4 +141,7 @@ tmfc.gPPI_after_FIR.conditions = tmfc.LSS_after_FIR.conditions; % Use the same c
 
 % PPI calculation
 [sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set,start_sub);
+
+% gPPI calculation
+[sub_check] = tmfc_gPPI_after_FIR(tmfc,ROI_set,start_sub);
 
