@@ -134,13 +134,16 @@ function BGFC_EX(ButtonH, EventData, MAIN_F)
     % 1 ROI selected from existing list
     D = tmfc_select_ROIs_GUI();
     fprintf('Continue BGFC with ROI # = %d \n', D);
-    tmfc_BSC_GUI(tmfc,D);
+    
 end
 
 %% =====================[ Beta Series Corelation ]=========================
 function BSC_EX(ButtonH, EventData, MAIN_F)
-    D = tmfc_select_ROIs_GUI();
-    fprintf('Continue BSC with ROI # = %d \n', D);
+    BSC_entry = tmfc_select_ROIs_GUI();
+    fprintf('Continue BSC with ROI # = %d \n', BSC_entry);
+    if BSC_entry ~= -1
+        tmfc_BSC_GUI(tmfc,BSC_entry);
+    end
 end
 
 %% =============================[ Close ]==================================

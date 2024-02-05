@@ -1,9 +1,37 @@
 function tmfc_BSC_GUI(tmfc, ROI_set_number)
 
+ROI_set_num = ROI_set_number;
 
 D = bsc_type();
 
-disp(D);
+
+
+
+if D == 20
+    R = evalin('base', 'tmfc');
+    valuator = R;
+    L = tmfc_BSC_after_FIR(R,ROI_set_num );
+    sub_size = size(R.subjects);
+    
+    for i = 1:sub_size(2)
+        valuator.ROI_set(ROI_set_num).subjects(i).BSC_after_FIR = L(i);
+    end
+    
+    assignin('base', 'tmfc', valuator);
+    
+elseif D == 21
+    
+    disp('under progress');
+    %tmfc_BSC_without_FIR(tmfc,ROI_set_number);
+    
+    
+else
+    disp('incorrect entry');
+    
+    
+end
+
+
 
 
 

@@ -181,6 +181,7 @@ function Fitter(NUM)
                 
                 CTR = NUM;
                 GDR.ROI_set(CTR).set_name = ns_2;
+                GDR.ROI_set(CTR).subjects = struct;
                 
                 try
                 % Select ROIs

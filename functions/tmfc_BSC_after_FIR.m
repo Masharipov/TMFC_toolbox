@@ -71,12 +71,14 @@ function [sub_check] = tmfc_BSC_after_FIR(tmfc,ROI_set)
 %
 % Contact email: masharipov@ihb.spb.ru
     
-
-if nargin == 1
-   ROI_set = 1;
-end
+% 
+% if nargin == 1
+%    ROI_set = 1;
+% end
 
 R = length(tmfc.ROI_set(ROI_set).ROIs);
+
+
 
 if isfolder([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name])
     rmdir([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name],'s');
