@@ -1,13 +1,14 @@
-function [sub_check] = tmfc_BSC_after_FIR(tmfc,ROI_set)
+function [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
 % Extracts mean beta series from selected ROIs. Correlates beta series for
 % conditions of interest. Saves individual correlational matrices 
 % (ROI-to-ROI analysis) and correlational images (seed-to-voxel analysis)
-% for each condition of interest.
+% for each condition of interest. These refer to default contrasts, which 
+% can then be multiplied by linear contrast weights.
 %
-% FORMAT [sub_check] = tmfc_BSC_after_FIR(tmfc)
+% FORMAT [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc)
 %
 %   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
 %   tmfc.project_path      - Path where all results will be saved
@@ -46,7 +47,7 @@ function [sub_check] = tmfc_BSC_after_FIR(tmfc,ROI_set)
 %   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
 %   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
-% FORMAT [sub_check] = tmfc_BSC_after_FIR(tmfc,ROI_set)
+% FORMAT [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set)
 % Run the function for the selected ROI set.
 %
 %   tmfc                   - As above
@@ -185,6 +186,15 @@ for i = 1:N
     sub_check(i) = 1;
 
     clear beta_series
+end
+
+% Default contrasts info
+for j = 1:length(tmfc.LSS_after_FIR.conditions)
+    sess = tmfc.LSS_after_FIR.conditions(j).sess;
+    cond = tmfc.LSS_after_FIR.conditions(j).number;
+    contrasts(j).title = [char(SPM.SPM.Sess(sess).U(cond).name) ' (Sess' num2str(sess) ', Cond' num2str(cond) ')'];
+    contrasts(j).weights = zeros(1,length(tmfc.LSS_after_FIR.conditions));
+    contrasts(j).weights(1,j) = 1;
 end
 
 % Close waitbar

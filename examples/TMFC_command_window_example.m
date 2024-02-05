@@ -90,10 +90,12 @@ tmfc.ROI_set = ROI_set;
 
 % Extract and correlate mean beta series for conditions of interest
 ROI_set = 1;                        % Select ROI set
-[sub_check] = tmfc_BSC_after_FIR(tmfc,ROI_set);
+[sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set);
 
-% Define contrasts
-% These are default contrasts (created automatically):
+% Update contrasts info
+tmfc.ROI_set(1).contrasts.BSC_after_FIR = contrasts;
+
+% These are default contrasts (will be created automatically):
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(1).title = 'Sess_1_Cond_1';
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).title = 'Sess_1_Cond_2';
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).title = 'Sess_2_Cond_1';
@@ -102,13 +104,7 @@ ROI_set = 1;                        % Select ROI set
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
-% New contrasts:
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
 
-% These are default contrasts (created automatically):
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(1).title = 'Sess_1_Cond_1';
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).title = 'Sess_1_Cond_2';
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).title = 'Sess_2_Cond_1';
@@ -117,7 +113,13 @@ tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
 % tmfc.ROI_set(2).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
+
 % New contrasts:
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
+
 tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
 tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
 tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
