@@ -2,18 +2,26 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
+% Estimates FIR GLM and saves residual time-series images in Float32 format
+% instead of Float64 to save disk space and reduce computation time.
+%
 % FIR task regression task regression are used to remove co-activations 
 % from BOLD time-series. Co-activations are simultaneous (de)activations 
 % without communication between brain regions. 
 %
 % This function uses SPM.mat file (which contains the specification of the
-% 1st-level GLM with canonical HRF) to specify and estimate 1st-level GLM
-% with FIR basis functions. FIR model regress out: (1) co-activations with
-% any possible hemodynamic response shape and (2) confounds specified in 
-% the original SPM.mat file (e.g., motion, physiological noise, etc).
-% Residual time-series (Res_*.nii images stored in FIR_GLM subfolders) can
-% be further used for TMFC analysis to control for spurious inflation of
-% functional connectivity estimates1 due to co-activations.
+% 1st-level GLM) to specify and estimate 1st-level GLM with FIR basis
+% functions.
+% 
+% FIR model regress out: (1) co-activations with any possible hemodynamic
+% response shape and (2) confounds specified in the original SPM.mat file
+% (e.g., motion, physiological noise, etc).
+%
+% Residual time-series (Res_*.nii images stored in FIR_regression folder)
+% can be further used for FC analysis to control for spurious inflation of
+% FC estimates due to co-activations. TMFC toolbox uses residual images in
+% two cases: (1) to calculate background connectivity (BGFC), (2) to
+% calculate LSS GLMs after FIR regression and use them for BSC after FIR.
 %
 % FORMAT [sub_check] = FIR_regress(tmfc)
 % Run a function starting from the first subject in the list.
@@ -99,7 +107,7 @@ for i = start_sub:length(tmfc.subjects)
         for cond = 1:length(SPM.SPM.Sess(j).U)
             matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).name = SPM.SPM.Sess(j).U(cond).name{1};
             matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).onset = SPM.SPM.Sess(j).U(cond).ons;
-            matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).duration = SPM.SPM.Sess(j).U(cond).dur;
+            matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).duration = 0;
             matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).tmod = 0;
             matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).pmod = struct('name', {}, 'param', {}, 'poly', {});
             matlabbatch{1}.spm.stats.fmri_spec.sess(j).cond(cond).orth = 1;
@@ -120,7 +128,7 @@ for i = start_sub:length(tmfc.subjects)
     matlabbatch{1}.spm.stats.fmri_spec.bases.fir.length = tmfc.FIR_window;
     matlabbatch{1}.spm.stats.fmri_spec.bases.fir.order = tmfc.FIR_bins;
     matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
-    matlabbatch{1}.spm.stats.fmri_spec.global = 'None';
+    matlabbatch{1}.spm.stats.fmri_spec.global = SPM.SPM.xGX.iGXcalc;
     matlabbatch{1}.spm.stats.fmri_spec.mthresh = SPM.SPM.xM.gMT;
 
     try
