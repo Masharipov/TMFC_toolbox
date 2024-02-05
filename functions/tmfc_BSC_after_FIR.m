@@ -153,7 +153,7 @@ for i = 1:N
         end
 
         % ROI-to-ROI correlation
-        z_value_matrix = atanh(corr(beta_series(j).ROI_mean));
+        z_matrix = atanh(corr(beta_series(j).ROI_mean));
         
         % Save BSC images
         for ROI_number = 1:R
@@ -168,9 +168,9 @@ for i = 1:N
 
         % Save BSC matrices
         save([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep 'ROI_to_ROI' filesep ...
-            'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.mat'],'z_value_matrix');
+            'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.mat'],'z_matrix');
 
-        clear betas BSC_image z_value_matrix
+        clear betas BSC_image z_matrix
     end
 
     % Save mean beta-series

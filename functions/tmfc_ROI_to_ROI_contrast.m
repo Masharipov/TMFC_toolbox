@@ -94,16 +94,16 @@ switch type
                 load([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
                     'ROI_to_ROI' filesep 'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') ...
                     '_Sess_' num2str(tmfc.LSS_after_FIR.conditions(j).sess) '_Cond_' num2str(tmfc.LSS_after_FIR.conditions(j).number) '.mat']);
-                matrices(j,:) = z_value_matrix(:)';
-                clear z_value_matrix
+                matrices(j,:) = z_matrix(:)';
+                clear z_matrix
             end
             % Calculate and save contrasts
             for j = 1:length(con)
-                z_value_matrices_contrast = reshape(tmfc.ROI_set(ROI_set).contrasts.BSC_after_FIR(con(j)).weights*matrices,[R,R]);
+                z_matrix = reshape(tmfc.ROI_set(ROI_set).contrasts.BSC_after_FIR(con(j)).weights*matrices,[R,R]);
                 save([tmfc.project_path filesep 'BSC_LSS_after_FIR' filesep tmfc.ROI_set(ROI_set).set_name filesep ...
                     'ROI_to_ROI' filesep 'Subject_' num2str(i,'%04.f') '_Contrast_' num2str(con(j),'%04.f') ...
-                    '_' tmfc.ROI_set(ROI_set).contrasts.BSC_after_FIR(con(j)).title '.mat'],'z_value_matrices_contrast');
-                clear z_value_matrices_contrast
+                    '_' tmfc.ROI_set(ROI_set).contrasts.BSC_after_FIR(con(j)).title '.mat'],'z_matrix');
+                clear z_matrix
             end
             % Update waitbar
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
