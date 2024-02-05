@@ -31,9 +31,9 @@ end
 %% FIR task regression (regress out co-activations and save residual time series)
 
 % FIR window length in [s]
-tmfc.FIR_window = 10; %24
+tmfc.FIR_window = 24;
 % Nmber of FIR time bins
-tmfc.FIR_bins = 10; %24
+tmfc.FIR_bins = 24;
 
 % Run FIR task regression
 start_sub = 1;                      % Start from the 1st subject
@@ -82,9 +82,9 @@ tmfc.ROI_set(2).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\RO
 % will be removed. Masked ROIs will be limited to only voxels which have 
 % data for all subjects. The dimensions, orientation, and voxel sizes of 
 % the masked ROI images will be adjusted according to the group binary mask
-%
-% [ROI_set] = tmfc_select_ROIs_GUI(tmfc);
-% tmfc.ROI_set = ROI_set;
+
+[ROI_set] = tmfc_select_ROIs_GUI(tmfc);
+tmfc.ROI_set = ROI_set;
 
 %% BSC-LSS after FIR task regression (use residual time series)
 
