@@ -1,6 +1,6 @@
-function BSC_MINI()
+function tmfc_BSC_MINI()
 
-BSC_G2 = figure("Name", "BSC", "NumberTitle", "off", "Units", "normalized", "Position", [0.40 0.30 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
+BSC_G2 = figure("Name", "BSC", "NumberTitle", "off", "Units", "normalized", "Position", [0.4 0.45 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
 
 BSC_G2_E0  = uicontrol(BSC_G2,'Style','text',"String", "Define contrast title and contrast weights","Units", "normalized", "Position",[0.115 0.82 0.800 0.12],'fontunits','normalized', 'fontSize', 0.70,'backgroundcolor','w');
 

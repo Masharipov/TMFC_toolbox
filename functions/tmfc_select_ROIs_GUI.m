@@ -182,6 +182,19 @@ function Fitter(NUM)
                 CTR = NUM;
                 GDR.ROI_set(CTR).set_name = ns_2;
                 GDR.ROI_set(CTR).subjects = struct;
+                GDR.ROI_set(CTR).subjects = struct;
+                
+                GDR.ROI_set(CTR).contrasts.BSC_after_FIR(1).title = '';
+                GDR.ROI_set(CTR).contrasts.BSC_after_FIR(1).weights = [];
+                GDR.ROI_set(CTR).contrasts.BSC_without_FIR(1).title = '';
+                GDR.ROI_set(CTR).contrasts.BSC_without_FIR(1).weights = [];
+                
+                GDR.ROI_set(CTR).contrasts.gPPI_after_FIR(1).title = '';
+                GDR.ROI_set(CTR).contrasts.gPPI_after_FIR(1).weights = [];
+                GDR.ROI_set(CTR).contrasts.gPPI_without_FIR(1).title = '';
+                GDR.ROI_set(CTR).contrasts.gPPI_without_FIR(1).weights = [];
+                
+                
                 
                 try
                 % Select ROIs
