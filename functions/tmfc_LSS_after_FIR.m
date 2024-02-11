@@ -137,13 +137,13 @@ for i = start_sub:N
     
     SPM = load(tmfc.subjects(i).path);
     
-    if isfolder(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')]))
-        rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')]),'s');
+    if isfolder(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')]),'s');
     end
 
-    if ~isfolder(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')]))
-        mkdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas'));
-        mkdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches'));
+    if ~isfolder(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')]))
+        mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas'));
+        mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches'));
     end
 
     % Loop through sessions
@@ -185,11 +185,11 @@ for i = start_sub:N
         % Loop through trials of interest
         for k = 1:E
 
-            if isfolder(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]))
-                rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+            if isfolder(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]))
+                rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
             end
                    
-            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)])};
+            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)])};
             matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
             matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
             matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
@@ -236,7 +236,7 @@ for i = start_sub:N
             matlabbatch{1}.spm.stats.fmri_spec.mask = {fullfile(SPM.SPM.swd,'mask.nii')};
             matlabbatch{1}.spm.stats.fmri_spec.cvi = 'None';
 
-            matlabbatch_2{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat')};
+            matlabbatch_2{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat')};
             matlabbatch_2{1}.spm.stats.fmri_est.write_residuals = 0;
             matlabbatch_2{1}.spm.stats.fmri_est.method.Classical = 1;
             
@@ -264,24 +264,24 @@ for i = start_sub:N
                         spm_jobman('run',batch{k});
 
                         % Use explicit mask
-                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'));
+                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'));
                         SPM_LSS.SPM.xM.TH = -Inf(size(SPM_LSS.SPM.xM.TH));
-                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
+                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
 
                         % Estimate LSS GLM
                         spm_jobman('run',batch_2{k});
 
                         % Save individual trial beta image
-                        copyfile(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
-                            fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
+                        copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                            fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
                             ['Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']));
 
                         % Save GLM_batch.mat files
-                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
+                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
                             ['GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat']),batch{k});
 
                         % Remove temporal LSS directory
-                        rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+                        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
                         
                         trials(k) = 1;
                     catch
@@ -316,24 +316,24 @@ for i = start_sub:N
                         spm_jobman('run',batch{k});
 
                         % Use explicit mask
-                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'));
+                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'));
                         SPM_LSS.SPM.xM.TH = -Inf(size(SPM_LSS.SPM.xM.TH));
-                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
+                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
 
                         % Estimate LSS GLM
                         spm_jobman('run',batch_2{k});
 
                         % Save individual trial beta image
-                        copyfile(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
-                            fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
+                        copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                            fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
                             ['Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']));
 
                         % Save GLM_batch.mat files
-                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
+                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
                             ['GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat']),batch{k});
 
                         % Remove temporal LSS directory
-                        rmdir(fullfile(tmfc.project_path,'LSS_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+                        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
                         
                         pause(0.01)
 

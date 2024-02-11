@@ -235,7 +235,7 @@ function Fitter(NUM)
                     for i = 1:length(GDR.subjects)
                         sub_mask{i,1} = [GDR.subjects(i).path(1:end-7) 'mask.nii'];
                     end
-                    group_mask = fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name,'group_mean_mask.nii');
+                    group_mask = fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name,'Group_mask.nii');
                     spm_imcalc(sub_mask,group_mask,'prod(X)',{1,0,1,2});
 
                     % Calculate ROI size before masking

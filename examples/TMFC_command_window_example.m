@@ -64,14 +64,14 @@ start_sub = 1;                      % Start from the 1st subject
 %% LSS regression after FIR task regression (use residual time series)
 
 % Define conditions of interest
-tmfc.LSS_after_FIR.conditions(1).sess   = 1;   
-tmfc.LSS_after_FIR.conditions(1).number = 1;
-tmfc.LSS_after_FIR.conditions(2).sess   = 1;
-tmfc.LSS_after_FIR.conditions(2).number = 2;
-tmfc.LSS_after_FIR.conditions(3).sess   = 2;
-tmfc.LSS_after_FIR.conditions(3).number = 1; 
-tmfc.LSS_after_FIR.conditions(4).sess   = 2;
-tmfc.LSS_after_FIR.conditions(4).number = 2; 
+% tmfc.LSS_after_FIR.conditions(1).sess   = 1;   
+% tmfc.LSS_after_FIR.conditions(1).number = 1;
+% tmfc.LSS_after_FIR.conditions(2).sess   = 1;
+% tmfc.LSS_after_FIR.conditions(2).number = 2;
+% tmfc.LSS_after_FIR.conditions(3).sess   = 2;
+% tmfc.LSS_after_FIR.conditions(3).number = 1; 
+% tmfc.LSS_after_FIR.conditions(4).sess   = 2;
+% tmfc.LSS_after_FIR.conditions(4).number = 2; 
 
 % Alternatively, use the TMFC GUI to select conditions of interest
 [conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
@@ -79,8 +79,6 @@ tmfc.LSS_after_FIR.conditions = conditions;
 
 % Run LSS regression
 [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub);
-
-
 
 %% BSC-LSS after FIR task regression (use residual time series)
 
