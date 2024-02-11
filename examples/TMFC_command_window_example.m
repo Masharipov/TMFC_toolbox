@@ -32,16 +32,7 @@ end
 
 %% Select ROIs
 
-% Define ROI set
-% tmfc.ROI_set(1).set_name = 'three_ROIs';
-% tmfc.ROI_set(1).ROIs(1).name = 'ROI_002_mask';
-% tmfc.ROI_set(1).ROIs(2).name = 'ROI_003_mask';
-% tmfc.ROI_set(1).ROIs(3).name = 'ROI_005_mask';
-% tmfc.ROI_set(1).ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_002_mask.nii';
-% tmfc.ROI_set(1).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_003_mask.nii';
-% tmfc.ROI_set(1).ROIs(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_005_mask.nii';
-
-% Alternatively, use the TMFC GUI to select ROIs
+% Use tmfc_select_ROIs_GUI to select ROIs
 %
 % The tmfc_select_ROIs_GUI function creates group binary mask based on
 % 1st-level masks (SPM.VM) and applies it to all selected ROIs. Empty ROIs
@@ -97,8 +88,8 @@ tmfc.LSS_after_FIR.conditions = tmfc.LSS.conditions; % Use the same conditions a
 %% BSC-LSS after FIR task regression (use residual time series)
 
 % Extract and correlate mean beta series for conditions of interest
-ROI_set = 1;                        % Select ROI set
-[sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set);
+ROI_set_number = 1;                        % Select ROI set
+[sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number);
 
 % Update contrasts info
 tmfc.ROI_set(1).contrasts.BSC_after_FIR = contrasts;
@@ -112,15 +103,6 @@ tmfc.ROI_set(1).contrasts.BSC_after_FIR = contrasts;
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
 % tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
-
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(1).title = 'Sess_1_Cond_1';
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).title = 'Sess_1_Cond_2';
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).title = 'Sess_2_Cond_1';
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(4).title = 'Sess_2_Cond_2';
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(1).weights = [1 0 0 0];
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
-% tmfc.ROI_set(2).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
 
 % New contrasts:
 tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
@@ -136,22 +118,22 @@ tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
 % Calculate contrasts
 type = 1;                           % BSC-LSS after FIR
 con = [5,6];                        % Calculate contrasts #5 and #6
-[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,con,ROI_set);
-[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,con,ROI_set);
+[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,con,ROI_set_number);
+[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,con,ROI_set_number);
 
 %% gPPI-FIR (gPPI model with psychological regressors defined by FIR functions)
 
 % VOI extraction
-ROI_set = 1;                        % Select ROI set
+ROI_set_number = 1;                 % Select ROI set
 start_sub = 1;                      % Start from the 1st subject
-[sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set,start_sub);
+[sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set_number,start_sub);
 
 % Define conditions of interest
 tmfc.gPPI_after_FIR.conditions = tmfc.LSS_after_FIR.conditions; % Use the same conditions as for LSS regression
 
 % PPI calculation
-[sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set,start_sub);
+[sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set_number,start_sub);
 
 % gPPI calculation
-[sub_check] = tmfc_gPPI_after_FIR(tmfc,ROI_set,start_sub);
+[sub_check] = tmfc_gPPI_after_FIR(tmfc,ROI_set_number,start_sub);
 

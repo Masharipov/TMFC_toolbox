@@ -33,7 +33,7 @@ start_check = findobj('Tag', 'MAIN_WINDOW');
 
 if isempty(start_check)
     try
-        all_cond = generate_LSS_conditions();
+        all_cond = generate_LSS_conditions(SPM);
         LSS_Cond_GUI();
     catch
         warning('Incorrect format of subject path');
@@ -45,7 +45,7 @@ else
         case 1
             try
             % Generate All conditions using function
-                all_cond = generate_LSS_conditions();
+                all_cond = generate_LSS_conditions(SPM);
                 LSS_Cond_GUI();
             catch
                 warning('Incorrect format of subject path');
@@ -337,8 +337,8 @@ end
     end
 
 
-% Function to create & generate LSS conditions for selection via GUI interface
-    function [cond_list] = generate_LSS_conditions()
+    % Function to create & generate LSS conditions for selection via GUI interface
+    function [cond_list] = generate_LSS_conditions(SPM)
             try
                 load(SPM);
 
