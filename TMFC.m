@@ -70,8 +70,8 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     tmfc.subjects(1).LSS = [];
     tmfc.subjects(1).LSS_after_FIR = [];
     
+    tmfc.LSS.conditions = [];
     tmfc.LSS_after_FIR.conditions = [];
-    tmfc.LSS_without_FIR.conditions = [];
 
     tmfc.ROI_set = [];
     
