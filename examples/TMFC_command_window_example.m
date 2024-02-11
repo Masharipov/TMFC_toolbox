@@ -3,11 +3,11 @@ clear
 %% Setting up computation parameters
 
 % Sequential or parallel computing (0 or 1)
-tmfc.defaults.parallel = 0;         % Sequential
+tmfc.defaults.parallel = 1;         % Parallel
 % Store temporaty files during GLM estimation in RAM or on disk
 tmfc.defaults.resmem = true;        % RAM
 % How much RAM can be used at the same time during GLM estimation
-tmfc.defaults.maxmem = 2^31;        % 2GB
+tmfc.defaults.maxmem = 2^32;        % 4GB
  
 %% Setting up paths
 
@@ -22,11 +22,33 @@ tmfc.project_path = 'C:\TMFC_toolbox\test_data\Empirical_data\TMFC_block_project
 
 % Alternativelly, use the TMFC GUI to select subjects
 SPM_check = 1;                      % Check SPM.mat files
-[paths] = tmfc_select_subjects_GUI([],SPM_check);
+[paths] = tmfc_select_subjects_GUI(SPM_check);
 
 for i = 1:length(paths)
     tmfc.subjects(i).path = paths{i};
 end
+
+%% Select ROIs
+
+% Define ROI set
+% tmfc.ROI_set(1).set_name = 'three_ROIs';
+% tmfc.ROI_set(1).ROIs(1).name = 'ROI_002_mask';
+% tmfc.ROI_set(1).ROIs(2).name = 'ROI_003_mask';
+% tmfc.ROI_set(1).ROIs(3).name = 'ROI_005_mask';
+% tmfc.ROI_set(1).ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_002_mask.nii';
+% tmfc.ROI_set(1).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_003_mask.nii';
+% tmfc.ROI_set(1).ROIs(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_005_mask.nii';
+
+% Alternatively, use the TMFC GUI to select ROIs
+%
+% The tmfc_select_ROIs_GUI function creates group binary mask based on
+% 1st-level masks (SPM.VM) and applies it to all selected ROIs. Empty ROIs
+% will be removed. Masked ROIs will be limited to only voxels which have 
+% data for all subjects. The dimensions, orientation, and voxel sizes of 
+% the masked ROI images will be adjusted according to the group binary mask
+
+[ROI_set] = tmfc_select_ROIs_GUI(tmfc);
+tmfc.ROI_set(1) = ROI_set;
 
 %% FIR task regression (regress out co-activations and save residual time series)
 
@@ -58,33 +80,7 @@ tmfc.LSS_after_FIR.conditions = conditions;
 % Run LSS regression
 [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub);
 
-%% Select ROIs
 
-% Define ROI set
-tmfc.ROI_set(1).set_name = 'three_ROIs';
-tmfc.ROI_set(1).ROIs(1).name = 'ROI_002_mask';
-tmfc.ROI_set(1).ROIs(2).name = 'ROI_003_mask';
-tmfc.ROI_set(1).ROIs(3).name = 'ROI_005_mask';
-tmfc.ROI_set(1).ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_002_mask.nii';
-tmfc.ROI_set(1).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_003_mask.nii';
-tmfc.ROI_set(1).ROIs(3).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_005_mask.nii';
-
-tmfc.ROI_set(2).set_name = 'two_ROIs';
-tmfc.ROI_set(2).ROIs(1).name = 'ROI_005_mask';
-tmfc.ROI_set(2).ROIs(2).name = 'ROI_008_mask';
-tmfc.ROI_set(2).ROIs(1).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_005_mask.nii';
-tmfc.ROI_set(2).ROIs(2).path = 'C:\TMFC_toolbox\test_data\Empirical_data\ROIs\ROI_008_mask.nii';
-
-% Alternatively, use the TMFC GUI to select ROIs
-%
-% The tmfc_select_ROIs_GUI function creates group binary mask based on
-% 1st-level masks (SPM.VM) and applies it to all selected ROIs. Empty ROIs
-% will be removed. Masked ROIs will be limited to only voxels which have 
-% data for all subjects. The dimensions, orientation, and voxel sizes of 
-% the masked ROI images will be adjusted according to the group binary mask
-
-[ROI_set] = tmfc_select_ROIs_GUI(tmfc);
-tmfc.ROI_set = ROI_set;
 
 %% BSC-LSS after FIR task regression (use residual time series)
 

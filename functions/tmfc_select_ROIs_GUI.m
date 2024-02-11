@@ -181,35 +181,38 @@ function Fitter(NUM)
                 
                 CTR = NUM;
                 GDR.ROI_set(CTR).set_name = ns_2;
-                GDR.ROI_set(CTR).subjects = struct;
-                GDR.ROI_set(CTR).subjects = struct;
-                
-                GDR.ROI_set(CTR).contrasts.BSC_after_FIR(1).title = '';
-                GDR.ROI_set(CTR).contrasts.BSC_after_FIR(1).weights = [];
-                GDR.ROI_set(CTR).contrasts.BSC_without_FIR(1).title = '';
-                GDR.ROI_set(CTR).contrasts.BSC_without_FIR(1).weights = [];
-                
-                GDR.ROI_set(CTR).contrasts.gPPI_after_FIR(1).title = '';
-                GDR.ROI_set(CTR).contrasts.gPPI_after_FIR(1).weights = [];
-                GDR.ROI_set(CTR).contrasts.gPPI_without_FIR(1).title = '';
-                GDR.ROI_set(CTR).contrasts.gPPI_without_FIR(1).weights = [];
-                
+%                 GDR.ROI_set(CTR).subjects.BGFC = [];
+%                 GDR.ROI_set(CTR).subjects.BSC = [];
+%                 GDR.ROI_set(CTR).subjects.BSC_after_FIR = [];
+%                 
+%                 GDR.ROI_set(CTR).contrasts.BSC_after_FIR(1).title = '';
+%                 GDR.ROI_set(CTR).contrasts.BSC_after_FIR(1).weights = [];
+%                 GDR.ROI_set(CTR).contrasts.BSC_without_FIR(1).title = '';
+%                 GDR.ROI_set(CTR).contrasts.BSC_without_FIR(1).weights = [];
+%                 
+%                 GDR.ROI_set(CTR).contrasts.gPPI_after_FIR(1).title = '';
+%                 GDR.ROI_set(CTR).contrasts.gPPI_after_FIR(1).weights = [];
+%                 GDR.ROI_set(CTR).contrasts.gPPI_without_FIR(1).title = '';
+%                 GDR.ROI_set(CTR).contrasts.gPPI_without_FIR(1).weights = [];
                 
                 
                 try
                 % Select ROIs
                 [paths] = spm_select(inf,'any','Select ROI masks',{},pwd);
                 for i = 1:size(paths,1)
-                    GDR.ROI_set(CTR).ROIs(i).path = deblank(paths(i,:));
                     [~, GDR.ROI_set(CTR).ROIs(i).name, ~] = fileparts(deblank(paths(i,:)));
+                    GDR.ROI_set(CTR).ROIs(i).path = deblank(paths(i,:));
+                    GDR.ROI_set(CTR).ROIs(i).path_masked = fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name,'Masked_ROIs',[GDR.ROI_set(CTR).ROIs(i).name '_masked.nii']);
                 end
+                               
                 
-                
-                
-                
-                % Create 'Masked_ROIs' folder
-                if ~isfolder([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name])
-                    mkdir([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name]);
+                % Clear & create 'Masked_ROIs' folder
+                if isfolder(fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name))
+                    rmdir(fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name),'s');
+                end
+
+                if ~isfolder(fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name,'Masked_ROIs'))
+                    mkdir(fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name,'Masked_ROIs'));
                 end
                 
                 
@@ -232,10 +235,8 @@ function Fitter(NUM)
                     for i = 1:length(GDR.subjects)
                         sub_mask{i,1} = [GDR.subjects(i).path(1:end-7) 'mask.nii'];
                     end
-                    group_mask = [GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep 'group_mean_mask.nii'];
+                    group_mask = fullfile(GDR.project_path,'ROI_sets',GDR.ROI_set(CTR).set_name,'group_mean_mask.nii');
                     spm_imcalc(sub_mask,group_mask,'prod(X)',{1,0,1,2});
-
-
 
                     % Calculate ROI size before masking
                     w = waitbar(0,'Please wait...','Name','Calculating raw ROI sizes');
@@ -271,7 +272,7 @@ function Fitter(NUM)
                     input_images{1,1} = group_mask.fname;
                     for i = 1:N
                         input_images{2,1} = GDR.ROI_set(CTR).ROIs(i).path;
-                        ROI_mask = [GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep GDR.ROI_set(CTR).ROIs(i).name '_masked.nii'];
+                        ROI_mask = GDR.ROI_set(CTR).ROIs(i).path_masked;
                         spm_imcalc(input_images,ROI_mask,'(i1>0).*(i2>0)',{0,0,1,2});
                         try
                             waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);
@@ -285,7 +286,7 @@ function Fitter(NUM)
                     % Calculate ROI size after masking
                     w = waitbar(0,'Please wait...','Name','Calculating masked ROI sizes');
                     for i = 1:N
-                        GDR.ROI_set(CTR).ROIs(i).masked_size = nnz(spm_read_vols(spm_vol([GDR.project_path filesep 'Masked_ROIs' filesep GDR.ROI_set(CTR).set_name filesep GDR.ROI_set(CTR).ROIs(i).name '_masked.nii'])));
+                        GDR.ROI_set(CTR).ROIs(i).masked_size = nnz(spm_read_vols(spm_vol(GDR.ROI_set(CTR).ROIs(i).path_masked)));
                         GDR.ROI_set(CTR).ROIs(i).masked_size_percents = 100*GDR.ROI_set(CTR).ROIs(i).masked_size/GDR.ROI_set(CTR).ROIs(i).raw_size;
                         try
                             waitbar(i/N,w,['ROI № ' num2str(i,'%.f')]);

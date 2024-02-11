@@ -67,8 +67,8 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     tmfc.FIR_bins = NaN;
     
     tmfc.subjects(1).FIR = [];
+    tmfc.subjects(1).LSS = [];
     tmfc.subjects(1).LSS_after_FIR = [];
-    tmfc.subjects(1).LSS_without_FIR = [];
     
     tmfc.LSS_after_FIR.conditions = [];
     tmfc.LSS_without_FIR.conditions = [];
