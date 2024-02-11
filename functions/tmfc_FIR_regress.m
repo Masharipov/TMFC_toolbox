@@ -86,11 +86,11 @@ for i = start_sub:length(tmfc.subjects)
     
     SPM = load(tmfc.subjects(i).path);
 
-    if isfolder([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f')])
-        rmdir([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f')],'s');
+    if isfolder(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')]),'s');
     end
     
-    matlabbatch{1}.spm.stats.fmri_spec.dir = {[tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f')]};
+    matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')])};
     matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
     matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
     matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
@@ -186,8 +186,8 @@ switch tmfc.defaults.parallel
                 spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                 spm_get_defaults('stats.fmri.ufp',1);
                 spm_jobman('run',batch{i});
-                tmfc_write_residuals([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM.mat'],NaN);
-                tmfc_parsave([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batch.mat'],batch{i});
+                tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat'),NaN);
+                tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'GLM_batch.mat'),batch{i});
                 sub_check(i) = 1;
             catch
                 sub_check(i) = 0;
@@ -227,8 +227,8 @@ switch tmfc.defaults.parallel
                     spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_get_defaults('stats.fmri.ufp',1);
                     spm_jobman('run', batch{i});
-                    tmfc_write_residuals([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM.mat'],NaN);
-                    tmfc_parsave([tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'GLM_batch.mat'],batch{i});
+                    tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat'),NaN);
+                    tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'GLM_batch.mat'),batch{i});
                     sub_check(i) = 1;
                 catch
                     sub_check(i) = 0;
