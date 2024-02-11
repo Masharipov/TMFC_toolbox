@@ -19,8 +19,8 @@ function TMFC
 %   tmfc.subjects.LSS_after_FIR   - 1 or 0 (completed or not)
 %   tmfc.subjects.LSS_without_FIR - 1 or 0 (completed or not)
 %
-%   tmfc.FIR_window        - FIR window length in doc memory[s]
-%   tmfc.FIR_bins          - Number of FIR time bins
+%   tmfc.FIR.window        - FIR window length in doc memory[s]
+%   tmfc.FIR.bins          - Number of FIR time bins
 % 
 %   tmfc.LSS_after_FIR.conditions   - Conditions of interest for LSS 
 %                                     regression after FIR regression
@@ -63,8 +63,8 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     tmfc.project_path = '';
     tmfc.subjects(1).path = '';
     
-    tmfc.FIR_window = NaN;
-    tmfc.FIR_bins = NaN;
+    tmfc.FIR.window = NaN;
+    tmfc.FIR.bins = NaN;
     
     tmfc.subjects(1).FIR = [];
     tmfc.subjects(1).LSS = [];

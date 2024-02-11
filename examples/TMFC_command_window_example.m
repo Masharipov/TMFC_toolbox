@@ -53,9 +53,9 @@ tmfc.ROI_set(1) = ROI_set;
 %% FIR task regression (regress out co-activations and save residual time series)
 
 % FIR window length in [s]
-tmfc.FIR_window = 24;
+tmfc.FIR.window = 24;
 % Nmber of FIR time bins
-tmfc.FIR_bins = 24;
+tmfc.FIR.bins = 24;
 
 % Run FIR task regression
 start_sub = 1;                      % Start from the 1st subject

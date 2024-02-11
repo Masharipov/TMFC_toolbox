@@ -143,8 +143,8 @@ function FIR_regress_GUI(~,~)
            warning('Please eneter the number of bins');
        else
            DMG = evalin('base', 'tmfc');
-           DMG.FIR_window = Window; 
-           DMG.FIR_bins = bins;   
+           DMG.FIR.window = Window; 
+           DMG.FIR.bins = bins;   
            assignin('base', 'tmfc', DMG); 
            h76_b = findobj('Tag', 'MAIN_WINDOW');
            setappdata(h76_b, 'NO_COND', 0); 

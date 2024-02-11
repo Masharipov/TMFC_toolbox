@@ -28,8 +28,8 @@ function [sub_check] = tmfc_FIR_regress(tmfc,start_sub)
 %
 %   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
 %   tmfc.project_path      - Path where all results will be saved
-%   tmfc.FIR_window        - FIR window length (in seconds)
-%   tmfc.FIR_bins          - Number of FIR time bins
+%   tmfc.FIR.window        - FIR window length (in seconds)
+%   tmfc.FIR.bins          - Number of FIR time bins
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
 %                            the same time during GLM estimation)
@@ -125,8 +125,8 @@ for i = start_sub:length(tmfc.subjects)
     end
 
     matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
-    matlabbatch{1}.spm.stats.fmri_spec.bases.fir.length = tmfc.FIR_window;
-    matlabbatch{1}.spm.stats.fmri_spec.bases.fir.order = tmfc.FIR_bins;
+    matlabbatch{1}.spm.stats.fmri_spec.bases.fir.length = tmfc.FIR.window;
+    matlabbatch{1}.spm.stats.fmri_spec.bases.fir.order = tmfc.FIR.bins;
     matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
     matlabbatch{1}.spm.stats.fmri_spec.global = SPM.SPM.xGX.iGXcalc;
     matlabbatch{1}.spm.stats.fmri_spec.mthresh = SPM.SPM.xM.gMT;
