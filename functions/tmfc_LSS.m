@@ -89,7 +89,17 @@ spm_jobman('initcfg');
 N = length(tmfc.subjects);
 
 cond_list = tmfc.LSS.conditions;
+sess = []; sess_num = []; N_sess = []; N_cond = [];
+for i = 1:length(cond_list)
+    sess(i) = cond_list(i).sess;
+end
 
+sess_num = unique(sess);
+N_sess = length(sess_num);
+
+for i = 1:N_sess
+    N_cond(i) = sum(sess == sess_num(i));
+end
 
 EXIT_STATUS_LSS = 0;
 
@@ -108,7 +118,7 @@ end
 % Loop through subjects
 for i = start_sub:N
     tic
-    % I loop
+
     if EXIT_STATUS_LSS == 1 
         delete(handles.L_ws);
         break;
@@ -126,12 +136,12 @@ for i = start_sub:N
     end
 
     % Loop through sessions
-    for j = 1:length(SPM.SPM.Sess)       
+    for j = 1:N_sess       
         
-        % J loop
         if EXIT_STATUS_LSS == 1 
             break;
         end
+        
         % Trials of interest
         E = 0;
         ons_of_int = [];
@@ -140,49 +150,49 @@ for i = start_sub:N
         trial.cond = [];
         trial.number = [];
         for k = 1:length(cond_list)
-            if cond_list(k).sess == j
-                E = E + length(SPM.SPM.Sess(j).U(cond_list(k).number).ons);
-                ons_of_int = [ons_of_int; SPM.SPM.Sess(j).U(cond_list(k).number).ons];
-                dur_of_int = [dur_of_int; SPM.SPM.Sess(j).U(cond_list(k).number).dur];
+            if cond_list(k).sess == sess_num(j)
+                E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
+                ons_of_int = [ons_of_int; SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons];
+                dur_of_int = [dur_of_int; SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).dur];
                 cond_of_int = [cond_of_int cond_list(k).number];
-                trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(j).U(cond_list(k).number).ons),1)];
-                trial.number = [trial.number; (1:length(SPM.SPM.Sess(j).U(cond_list(k).number).ons))'];
+                trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
+                trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
             end
         end
 
         all_trials_number = (1:E)';  
 
         % Trials of no interest
-        cond_of_no_int = setdiff([1:length(SPM.SPM.Sess(j).U)],cond_of_int);
+        cond_of_no_int = setdiff((1:length(SPM.SPM.Sess(sess_num(j)).U)),cond_of_int);
         ons_of_no_int = [];
         dur_of_no_int = [];
         for k = 1:length(cond_of_no_int)
-            ons_of_no_int = [ons_of_no_int; SPM.SPM.Sess(j).U(cond_of_no_int(k)).ons];
-            dur_of_no_int = [dur_of_no_int; SPM.SPM.Sess(j).U(cond_of_no_int(k)).dur];
+            ons_of_no_int = [ons_of_no_int; SPM.SPM.Sess(sess_num(j)).U(cond_of_no_int(k)).ons];
+            dur_of_no_int = [dur_of_no_int; SPM.SPM.Sess(sess_num(j)).U(cond_of_no_int(k)).dur];
         end
         
         % Loop through trials of interest
         for k = 1:E
 
-            if isfolder(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]))
-                rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+            if isfolder(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]))
+                rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
             end
                    
-            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)])};
+            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)])};
             matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
             matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
             matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
             matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = SPM.SPM.xBF.T0;
                         
             % Functional images
-            for image = 1:SPM.SPM.nscan(j)
-                matlabbatch{1}.spm.stats.fmri_spec.sess.scans{image,1} = SPM.SPM.xY.VY(SPM.SPM.Sess(j).row(image)).fname;
+            for image = 1:SPM.SPM.nscan(sess_num(j))
+                matlabbatch{1}.spm.stats.fmri_spec.sess.scans{image,1} = SPM.SPM.xY.VY(SPM.SPM.Sess(sess_num(j)).row(image)).fname;
             end
     
             % Current trial vs all other trials (of interest and no interrest)
             current_trial_ons = ons_of_int(k);
             current_trial_dur = dur_of_int(k);
-            other_trials = all_trials_number(find(all_trials_number~=k));
+            other_trials = all_trials_number(all_trials_number~=k);
             other_trials_ons = [ons_of_int(other_trials); ons_of_no_int];
             other_trials_dur = [dur_of_int(other_trials); dur_of_no_int];
             
@@ -201,16 +211,16 @@ for i = start_sub:N
             matlabbatch{1}.spm.stats.fmri_spec.sess.cond(2).orth = 1;
 
             % Confounds       
-            for conf = 1:length(SPM.SPM.Sess(j).C.name)
-                matlabbatch{1}.spm.stats.fmri_spec.sess.regress(conf).name = SPM.SPM.Sess(j).C.name{1,conf};
-                matlabbatch{1}.spm.stats.fmri_spec.sess.regress(conf).val = SPM.SPM.Sess(j).C.C(:,conf);
+            for conf = 1:length(SPM.SPM.Sess(sess_num(j)).C.name)
+                matlabbatch{1}.spm.stats.fmri_spec.sess.regress(conf).name = SPM.SPM.Sess(sess_num(j)).C.name{1,conf};
+                matlabbatch{1}.spm.stats.fmri_spec.sess.regress(conf).val = SPM.SPM.Sess(sess_num(j)).C.C(:,conf);
             end   
 
             matlabbatch{1}.spm.stats.fmri_spec.sess.multi = {''};
             matlabbatch{1}.spm.stats.fmri_spec.sess.multi_reg = {''};
     
             % HPF, HRF, mask 
-            matlabbatch{1}.spm.stats.fmri_spec.sess.hpf = SPM.SPM.xX.K(j).HParam;    
+            matlabbatch{1}.spm.stats.fmri_spec.sess.hpf = SPM.SPM.xX.K(sess_num(j)).HParam;    
             matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
             matlabbatch{1}.spm.stats.fmri_spec.bases.hrf.derivs = [0 0];
             matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
@@ -251,16 +261,16 @@ for i = start_sub:N
                         spm_jobman('run',batch{k});
 
                         % Save individual trial beta image
-                        copyfile(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                        copyfile(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'beta_0001.nii'),...
                             fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                            ['Beta_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
+                            ['Beta_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
 
                         % Save GLM_batch.mat files
                         tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                            ['GLM_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
+                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
 
                         % Remove temporal LSS directory
-                        rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+                        rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
                         
                         trials(k) = 1;
                     catch
@@ -295,16 +305,16 @@ for i = start_sub:N
                         spm_jobman('run',batch{k});
 
                         % Save individual trial beta image
-                        copyfile(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                        copyfile(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'beta_0001.nii'),...
                             fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                            ['Beta_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
+                            ['Beta_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
 
                         % Save GLM_batch.mat files
                         tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                            ['GLM_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
+                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
 
                         % Remove temporal LSS directory
-                        rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
+                        rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
                         
                         pause(0.01)
 
@@ -325,7 +335,7 @@ for i = start_sub:N
             end 
         end
 
-        sub_check(i).session(j).condition = condition;
+        sub_check(i).session(sess_num(j)).condition = condition;
 
         clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number condition 
 
