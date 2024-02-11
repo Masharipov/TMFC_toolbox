@@ -8,6 +8,7 @@ tmfc.defaults.parallel = 1;         % Parallel
 tmfc.defaults.resmem = true;        % RAM
 % How much RAM can be used at the same time during GLM estimation
 tmfc.defaults.maxmem = 2^32;        % 4GB
+
  
 %% Setting up paths
 
@@ -27,6 +28,7 @@ SPM_check = 1;                      % Check SPM.mat files
 for i = 1:length(paths)
     tmfc.subjects(i).path = paths{i};
 end
+
 
 %% Select ROIs
 
@@ -50,6 +52,7 @@ end
 [ROI_set] = tmfc_select_ROIs_GUI(tmfc);
 tmfc.ROI_set(1) = ROI_set;
 
+
 %% FIR task regression (regress out co-activations and save residual time series)
 
 % FIR window length in [s]
@@ -59,26 +62,37 @@ tmfc.FIR.bins = 24;
 
 % Run FIR task regression
 start_sub = 1;                      % Start from the 1st subject
-[sub_check] = tmfc_FIR_regress(tmfc,start_sub);
+[sub_check] = tmfc_FIR(tmfc,start_sub);
+
+
+%% LSS regression
+
+% Define conditions of interest
+% tmfc.LSS.conditions(1).sess   = 1;   
+% tmfc.LSS.conditions(1).number = 1;
+% tmfc.LSS.conditions(2).sess   = 1;
+% tmfc.LSS.conditions(2).number = 2;
+% tmfc.LSS.conditions(3).sess   = 2;
+% tmfc.LSS.conditions(3).number = 1; 
+% tmfc.LSS.conditions(4).sess   = 2;
+% tmfc.LSS.conditions(4).number = 2; 
+
+% Alternatively, use the TMFC GUI to select conditions of interest
+[conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
+tmfc.LSS.conditions = conditions;
+
+% Run LSS regression
+[sub_check] = tmfc_LSS(tmfc,start_sub);
+
 
 %% LSS regression after FIR task regression (use residual time series)
 
 % Define conditions of interest
-% tmfc.LSS_after_FIR.conditions(1).sess   = 1;   
-% tmfc.LSS_after_FIR.conditions(1).number = 1;
-% tmfc.LSS_after_FIR.conditions(2).sess   = 1;
-% tmfc.LSS_after_FIR.conditions(2).number = 2;
-% tmfc.LSS_after_FIR.conditions(3).sess   = 2;
-% tmfc.LSS_after_FIR.conditions(3).number = 1; 
-% tmfc.LSS_after_FIR.conditions(4).sess   = 2;
-% tmfc.LSS_after_FIR.conditions(4).number = 2; 
-
-% Alternatively, use the TMFC GUI to select conditions of interest
-[conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
-tmfc.LSS_after_FIR.conditions = conditions;
+tmfc.LSS_after_FIR.conditions = tmfc.LSS.conditions; % Use the same conditions as for LSS regression
 
 % Run LSS regression
 [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub);
+
 
 %% BSC-LSS after FIR task regression (use residual time series)
 

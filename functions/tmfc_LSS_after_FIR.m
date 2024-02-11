@@ -274,11 +274,11 @@ for i = start_sub:N
                         % Save individual trial beta image
                         copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
                             fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                            ['Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']));
+                            ['Beta_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
 
                         % Save GLM_batch.mat files
                         tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                            ['GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat']),batch{k});
+                            ['GLM_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
 
                         % Remove temporal LSS directory
                         rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
@@ -326,11 +326,11 @@ for i = start_sub:N
                         % Save individual trial beta image
                         copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)],'beta_0001.nii'),...
                             fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                            ['Beta_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.nii']));
+                            ['Beta_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
 
                         % Save GLM_batch.mat files
                         tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                            ['GLM_Sess_' num2str(j) '_Cond_' num2str(trial.cond(k)) '_Trial_' num2str(trial.number(k)) '.mat']),batch{k});
+                            ['GLM_[Sess_' num2str(j) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(j).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
 
                         % Remove temporal LSS directory
                         rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(j) '_Trial_' num2str(k)]),'s');
