@@ -99,6 +99,49 @@ R = length(tmfc.ROI_set(ROI_set_number).ROIs);
 SPM = load(tmfc.subjects(1).path); 
 
 switch type
+
+    %===============================BSC-LSS================================
+    case 3
+        for i = 1:N
+            tic
+            % Load default contrasts for conditions of interest
+            cond_list = tmfc.LSS.conditions;
+            for j = 1:length(cond_list)
+                cond_name = [];
+                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                for ROI_number = 1:R
+                    images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii'])),'xyz',XYZ);
+                end
+            end
+            % Calculate and save contrasts
+            for j = 1:length(contrast_number)
+                for ROI_number = 1:R
+                    contrast = tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).weights*images(ROI_number).seed;
+
+                    hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS', ...
+                        'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') '_[' ...
+                        regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).title,' ','_') '].nii']);
+                    hdr.descrip = ['Linear contrast of z-value maps: ' tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).title];    
+                    image = NaN(SPM.SPM.xVol.DIM');
+                    image(iXYZ) = contrast;
+                    spm_write_vol(hdr,image);
+                    clear contrast
+                end
+            end
+            % Update waitbar
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end       
+            sub_check(i) = 1;
+            clear images
+        end
+
+    %==========================BSC-LSS after FIR===========================
     case 4
         for i = 1:N
             tic
@@ -138,8 +181,9 @@ switch type
             sub_check(i) = 1;
             clear images
         end
-        % Close waitbar
-        try
-            delete(w)
-        end
+end
+
+% Close waitbar
+try
+    delete(w)
 end

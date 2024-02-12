@@ -68,25 +68,20 @@ tmfc.LSS.conditions = conditions;
 
 % Extract and correlate mean beta series for conditions of interest
 ROI_set_number = 1;                        % Select ROI set
-[sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number);
+[sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number);
 
 % Update contrasts info
-tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR = contrasts;
+tmfc.ROI_set(ROI_set_number).contrasts.BSC = contrasts;
 
 % Define new contrasts:
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
-
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
+tmfc.ROI_set(1).contrasts.BSC(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(1).contrasts.BSC(6).title = 'Cond2_vs_Cond1';
+tmfc.ROI_set(1).contrasts.BSC(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(1).contrasts.BSC(6).weights = [-0.5 0.5 -0.5 0.5];
 
 % Calculate contrasts
-type = 1;                           % BSC-LSS after FIR
-contrast_number = [5,6];                        % Calculate contrasts #5 and #6
+type = 3;                           % BSC-LSS
+contrast_number = [5,6];            % Calculate contrasts #5 and #6
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
 [sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI_set_number);
 

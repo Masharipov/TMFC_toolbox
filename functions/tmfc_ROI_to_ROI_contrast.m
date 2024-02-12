@@ -91,6 +91,42 @@ R = length(tmfc.ROI_set(ROI_set_number).ROIs);
 SPM = load(tmfc.subjects(1).path); 
 
 switch type
+
+    %===============================BSC-LSS================================
+    case 3
+        for i = 1:N
+            tic
+            % Load default contrasts for conditions of interest
+            cond_list = tmfc.LSS.conditions;
+            for j = 1:length(cond_list)               
+                cond_name = [];
+                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
+    
+                load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+    
+                matrices(j,:) = z_matrix(:)';
+                clear z_matrix
+            end
+            % Calculate and save contrasts
+            for j = 1:length(contrast_number)
+                z_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).weights*matrices,[R,R]);
+                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).title,' ','_') '].mat']),'z_matrix');
+                clear z_matrix
+            end
+            % Update waitbar
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end       
+            sub_check(i) = 1;
+            clear matrices
+        end 
+    
+    %==========================BSC-LSS after FIR===========================
     case 4
         for i = 1:N
             tic
@@ -122,9 +158,10 @@ switch type
             end       
             sub_check(i) = 1;
             clear matrices
-        end
-        % Close waitbar
-        try
-            delete(w)
-        end
+        end    
+end
+
+% Close waitbar
+try
+    delete(w)
 end
