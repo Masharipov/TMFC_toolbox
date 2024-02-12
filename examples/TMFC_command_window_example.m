@@ -79,7 +79,8 @@ tmfc.LSS.conditions = conditions;
 %% LSS regression after FIR task regression (use residual time series)
 
 % Define conditions of interest
-tmfc.LSS_after_FIR.conditions = tmfc.LSS.conditions; % Use the same conditions as for LSS regression
+[conditions] = tmfc_LSS_GUI(tmfc.subjects(1).path);
+tmfc.LSS_after_FIR.conditions = conditions;
 
 % Run LSS regression
 [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub);

@@ -118,10 +118,6 @@ end
 sess_num = unique(sess);
 N_sess = length(sess_num);
 
-for i = 1:N_sess
-    N_cond(i) = sum(sess == sess_num(i));
-end
-
 EXIT_STATUS_LSS = 0;
 
 % Initialize waitbar for parallel or sequential computing
