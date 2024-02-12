@@ -44,18 +44,6 @@ end
 tmfc.ROI_set(1) = ROI_set;
 
 
-%% FIR task regression (regress out co-activations and save residual time series)
-
-% FIR window length in [s]
-tmfc.FIR.window = 24;
-% Nmber of FIR time bins
-tmfc.FIR.bins = 24;
-
-% Run FIR task regression
-start_sub = 1;                      % Start from the 1st subject
-[sub_check] = tmfc_FIR(tmfc,start_sub);
-
-
 %% LSS regression
 
 % Define conditions of interest
@@ -76,6 +64,45 @@ tmfc.LSS.conditions = conditions;
 [sub_check] = tmfc_LSS(tmfc,start_sub);
 
 
+%% BSC-LSS
+
+% Extract and correlate mean beta series for conditions of interest
+ROI_set_number = 1;                        % Select ROI set
+[sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number);
+
+% Update contrasts info
+tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR = contrasts;
+
+% Define new contrasts:
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
+
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
+
+% Calculate contrasts
+type = 1;                           % BSC-LSS after FIR
+contrast_number = [5,6];                        % Calculate contrasts #5 and #6
+[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
+[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI_set_number);
+
+
+%% FIR task regression (regress out co-activations and save residual time series)
+
+% FIR window length in [s]
+tmfc.FIR.window = 24;
+% Nmber of FIR time bins
+tmfc.FIR.bins = 24;
+
+% Run FIR task regression
+start_sub = 1;                      % Start from the 1st subject
+[sub_check] = tmfc_FIR(tmfc,start_sub);
+
+
 %% LSS regression after FIR task regression (use residual time series)
 
 % Define conditions of interest
@@ -93,34 +120,17 @@ ROI_set_number = 1;                        % Select ROI set
 [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number);
 
 % Update contrasts info
-tmfc.ROI_set(1).contrasts.BSC_after_FIR = contrasts;
+tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR = contrasts;
 
-% These are default contrasts (will be created automatically):
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(1).title = 'Sess_1_Cond_1';
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).title = 'Sess_1_Cond_2';
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).title = 'Sess_2_Cond_1';
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).title = 'Sess_2_Cond_2';
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(1).weights = [1 0 0 0];
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(2).weights = [0 1 0 0];
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(3).weights = [0 0 1 0];
-% tmfc.ROI_set(1).contrasts.BSC_after_FIR(4).weights = [0 0 0 1];
-
-% New contrasts:
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
-tmfc.ROI_set(1).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
-
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).title = 'Cond1_vs_Cond2';
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).title = 'Cond2_vs_Cond1';
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
-tmfc.ROI_set(2).contrasts.BSC_after_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
+% Define new contrast:
+tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(2).title = 'Reverse contrast';
+tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(2).weights = [-1];
 
 % Calculate contrasts
-type = 1;                           % BSC-LSS after FIR
-con = [5,6];                        % Calculate contrasts #5 and #6
-[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,con,ROI_set_number);
-[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,con,ROI_set_number);
+type = 4;                           % BSC-LSS after FIR
+contrast_number = 2;                % Calculate contrast #2
+[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
+[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI_set_number);
 
 %% gPPI-FIR (gPPI model with psychological regressors defined by FIR functions)
 

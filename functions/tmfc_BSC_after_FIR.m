@@ -182,7 +182,7 @@ for i = 1:N
 
     sub_check(i) = 1;
 
-    clear beta_series SPM
+    clear beta_series E_C SPM
 end
 
 % Default contrasts info
@@ -190,7 +190,8 @@ SPM = load(tmfc.subjects(1).path);
 for j = 1:length(cond_list)
     sess = cond_list(j).sess;
     cond = cond_list(j).number;
-    contrasts(j).title = [char(SPM.SPM.Sess(sess).U(cond).name) ' (Sess' num2str(sess) ', Cond' num2str(cond) ')'];
+    contrasts(j).title = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
     contrasts(j).weights = zeros(1,length(cond_list));
     contrasts(j).weights(1,j) = 1;
 end
