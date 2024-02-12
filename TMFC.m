@@ -464,7 +464,7 @@ end
             if ~strcmp(SUB_EXT.subjects(1).path, '')
                 
                 % Check if FIR WINDOWS is not NaN, enter WIN & BIN
-                if isnan(SUB_EXT.FIR_window)
+                if isnan(SUB_EXT.FIR.window)
                    tmfc_FIR_GUI(1);               
                    uiwait();
                 end
@@ -475,7 +475,7 @@ end
                 DG = length(SUB_EXT_2.subjects);
 
                 % Check condition if FIR WINDOWS & BINS is not ZERO or NaN
-                if SUB_EXT_2.FIR_window ~= 0 & SUB_EXT_2.FIR_bins ~= 0 & isnan(SUB_EXT_2.FIR_window) == 0 & isnan(SUB_EXT_2.FIR_bins) == 0 %HERE
+                if SUB_EXT_2.FIR.window ~= 0 & SUB_EXT_2.FIR.bins ~= 0 & isnan(SUB_EXT_2.FIR.window) == 0 & isnan(SUB_EXT_2.FIR.bins) == 0 %HERE
 
                     
                     % CONDITION 1: When running FIR Regression for the
@@ -589,7 +589,7 @@ end
         
         % Actuator Function 
         try
-            tmfc_FIR_regress(FIR_TMFC, str_sub);
+            tmfc_FIR(FIR_TMFC, str_sub);
         end
         
         % Unfrezee action after completion of actuation
@@ -604,9 +604,9 @@ function LSS_REG(ButtonH, EventData, MAIN_F)
     
    L_checker = evalin('base', 'tmfc');
    
-   if isnan(L_checker.FIR_bins) & isnan(L_checker.FIR_window) 
+   if isnan(L_checker.FIR.bins) & isnan(L_checker.FIR.window) 
        warning('Please complete FIR Regression before proceeding with LSS regression');
-   elseif ~isnan(L_checker.FIR_bins) & ~isnan(L_checker.FIR_window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
+   elseif ~isnan(L_checker.FIR.bins) & ~isnan(L_checker.FIR.window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
        warning('Please complete the FIR Regression of all subjects before proceeding with LSS regression');
    elseif isempty(L_checker.LSS_after_FIR.conditions)
            tmfc_LSS_GUI(L_checker.subjects(1).path, 1);
