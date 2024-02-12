@@ -23,14 +23,15 @@ function [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_se
 %   tmfc.ROI_set.ROIs.path - Path to the selected ROI image
 %
 %   tmfc.gPPI.conditions        - List of conditions of interest for gPPI
-%                                 analysis (rename gPPI field to gPPI_FIR,
-%                                 BSC_LSS or BSC_after_FIR to perform
-%                                 the corresponsing TMFC analysis)
+%                                 and gPPI-FIR analyses
+%                                 (rename the gPPI field to BSC_LSS or
+%                                 BSC_after_FIR to perform the
+%                                 corresponsing TMFC analysis)
 %
 %   tmfc.gPPI.conditions.sess   - Session number
-%                                          (as specified in SPM.Sess)
+%                                 (as specified in SPM.Sess)
 %   tmfc.gPPI.conditions.number - Condition number
-%                                          (as specified in SPM.Sess.U)
+%                                 (as specified in SPM.Sess.U)
 %
 % Session number and condition number must match the original SPM.mat file.
 % Consider, for example, a task design with two sessions. Both sessions 

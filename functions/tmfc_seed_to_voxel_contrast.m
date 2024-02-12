@@ -23,9 +23,10 @@ function [sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI
 %   tmfc.ROI_set.ROIs.path - Path to the selected ROI image
 %
 %   tmfc.gPPI.conditions        - List of conditions of interest for gPPI
-%                                 analysis (rename gPPI field to gPPI_FIR,
-%                                 BSC_LSS or BSC_after_FIR to perform
-%                                 the corresponsing TMFC analysis)
+%                                 and gPPI-FIR analyses
+%                                 (rename the gPPI field to BSC_LSS or
+%                                 BSC_after_FIR to perform the
+%                                 corresponsing TMFC analysis)
 %    
 %   tmfc.gPPI.conditions.sess   - Session number
 %                                          (as specified in SPM.Sess)
