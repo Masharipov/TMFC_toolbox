@@ -127,6 +127,10 @@ contrast_number = 2;                % Calculate contrast #2
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
 [sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI_set_number);
 
+%% BGFC
+
+% Calculate background functional connectivity (BGFC)
+[sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub);
 
 %% gPPI
 
