@@ -153,6 +153,7 @@ for i = 1:N
 
         % ROI-to-ROI correlation
         z_matrix = atanh(corr(beta_series(j).ROI_mean));
+        z_matrix(1:size(z_matrix,1)+1:end) = nan;
         
         % Save BSC images
         for ROI_number = 1:R

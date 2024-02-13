@@ -136,20 +136,15 @@ tmfc.gPPI.conditions = tmfc.LSS.conditions;
 % VOI extraction
 [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 
+% PPI calculation
+[sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub);
+
+% gPPI-FIR calculation
+[sub_check] = tmfc_gPPI(tmfc,ROI_set_number,start_sub);
+
 
 %% gPPI-FIR (gPPI model with psychological regressors defined by FIR functions)
 
-% VOI extraction
-ROI_set_number = 1;                 % Select ROI set
-start_sub = 1;                      % Start from the 1st subject
-[sub_check] = tmfc_VOI_after_FIR(tmfc,ROI_set_number,start_sub);
-
-% Define conditions of interest
-tmfc.gPPI_after_FIR.conditions = tmfc.LSS_after_FIR.conditions; % Use the same conditions as for LSS regression
-
-% PPI calculation
-[sub_check] = tmfc_PPI_after_FIR(tmfc,ROI_set_number,start_sub);
-
-% gPPI calculation
-[sub_check] = tmfc_gPPI_after_FIR(tmfc,ROI_set_number,start_sub);
+% gPPI-FIR calculation
+[sub_check] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub);
 
