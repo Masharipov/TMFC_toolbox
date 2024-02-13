@@ -11,7 +11,7 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 %
 % FORMAT [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 %
-%   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
+%   tmfc.subjects.path     - Paths to individual SPM.mat files
 %   tmfc.project_path      - The path where all results will be saved
 %
 % =========================================================================

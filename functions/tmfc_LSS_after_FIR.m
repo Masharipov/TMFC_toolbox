@@ -110,11 +110,10 @@ spm_jobman('initcfg');
 N = length(tmfc.subjects);
 
 cond_list = tmfc.LSS_after_FIR.conditions;
-sess = []; sess_num = []; N_sess = []; N_cond = [];
+sess = []; sess_num = []; N_sess = [];
 for i = 1:length(cond_list)
     sess(i) = cond_list(i).sess;
 end
-
 sess_num = unique(sess);
 N_sess = length(sess_num);
 

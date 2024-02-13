@@ -2,22 +2,22 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
-% Extracts time-series from volumes of interest (VOIs). Regress out
-% conditions of no interest and confounds.
+% Extracts time-series from volumes of interest (VOIs). Calculates 
+% F-contrast for all conditions of interest. Regresses out conditions of no
+% interest and confounds. Applies whitening and high-pass filtering.
 %
 % FORMAT [sub_check] = tmfc_VOI(tmfc)
 % Run a function starting from the first subject in the list.
 %
-%   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
-%   tmfc.project_path      - Path where all results will be saved
-%   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
-%   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used)
-%   tmfc.defaults.resmem   - true or false (store temporaty files in RAM)
+%   tmfc.subjects.path            - Paths to individual SPM.mat files
+%   tmfc.project_path             - Path where all results will be saved
+%   tmfc.defaults.parallel        - 0 or 1 (sequential/parallel computing)
 %
-%   tmfc.ROI_set           - List of selected ROIs
-%   tmfc.ROI_set.set_name  - Name of the ROI set
-%   tmfc.ROI_set.ROIs.name - Name of the selected ROI
-%   tmfc.ROI_set.ROIs.path - Path to the selected ROI image
+%   tmfc.ROI_set                  - List of selected ROIs
+%   tmfc.ROI_set.set_name         - Name of the ROI set
+%   tmfc.ROI_set.ROIs.name        - Name of the selected ROI
+%   tmfc.ROI_set.ROIs.path_masked - Paths to the ROI images masked by group
+%                                   mean binary mask 
 %
 %   tmfc.gPPI.conditions                  - List of conditions of interest
 %   tmfc.gPPI.conditions.sess             - Session number
@@ -45,8 +45,8 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
+%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
 % FORMAT [sub_check] = tmfc_VOI(tmfc,ROI_set,start_sub)
 % Run the function starting from a specific subject in the path list for
@@ -84,7 +84,13 @@ end
 
 N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
-SPM = load(tmfc.subjects(1).path);
+cond_list = tmfc.gPPI.conditions;
+sess = []; sess_num = []; N_sess = [];
+for i = 1:length(cond_list)
+    sess(i) = cond_list(i).sess;
+end
+sess_num = unique(sess);
+N_sess = length(sess_num);
 
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
@@ -103,25 +109,39 @@ spm_jobman('initcfg');
 for i = start_sub:N
     tic
     % Calculate F-contrast for all conditions of interest
+    SPM = load(tmfc.subjects(i).path);
     matlabbatch{1}.spm.stats.con.spmmat = {tmfc.subjects(i).path};
     matlabbatch{1}.spm.stats.con.consess{1}.fcon.name = 'F_conditions_of_interest';
-    matlabbatch{1}.spm.stats.con.consess{1}.fcon.weights = [0 0 1];
+    weights = zeros(length(cond_list),size(SPM.SPM.xX.X,2));
+    for j = 1:length(cond_list)
+        weights(j,SPM.SPM.Sess(cond_list(j).sess).col(cond_list(j).number)) = 1;
+    end
+    matlabbatch{1}.spm.stats.con.consess{1}.fcon.weights = weights;
     matlabbatch{1}.spm.stats.con.consess{1}.fcon.sessrep = 'none';
     matlabbatch{1}.spm.stats.con.delete = 0;
     spm_get_defaults('cmdline',true);
     spm_jobman('run',matlabbatch);
     clear matlabbatch
+    SPM = load(tmfc.subjects(i).path);
+
+    if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]),'s');
+    end
+
+    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]))
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]));
+    end
     
-    for j = 1:length(SPM.SPM.Sess)
+    for j = 1:N_sess
         for k = 1:R
-            matlabbatch{1}.spm.util.voi.spmmat = {[tmfc.project_path filesep 'FIR_regression' filesep 'Subject_' num2str(i,'%04.f') filesep 'SPM.mat']};
-            matlabbatch{1}.spm.util.voi.adjust = NaN; % Adjust for everything 
-            matlabbatch{1}.spm.util.voi.session = j;
-            matlabbatch{1}.spm.util.voi.name = [tmfc.ROI_set(ROI_set_number).set_name '_' tmfc.ROI_set(ROI_set_number).ROIs(k).name];
-            matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {[tmfc.project_path filesep 'Masked_ROIs' filesep ...
-                tmfc.ROI_set(ROI_set_number).set_name filesep tmfc.ROI_set(ROI_set_number).ROIs(k).name '_masked.nii']};
+            matlabbatch{1}.spm.util.voi.spmmat = {tmfc.subjects(i).path};
+            matlabbatch{1}.spm.util.voi.adjust = length(SPM.SPM.xCon);
+            matlabbatch{1}.spm.util.voi.session = sess_num(j);
+            matlabbatch{1}.spm.util.voi.name = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ... 
+                ['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(k).name);
+            matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {tmfc.ROI_set(ROI_set_number).ROIs(k).path_masked};
             matlabbatch{1}.spm.util.voi.roi{1}.mask.threshold = 0.1;
-            matlabbatch{1}.spm.util.voi.expression = 'i1';           
+            matlabbatch{1}.spm.util.voi.expression = 'i1';    
             batch{k} = matlabbatch;
             clear matlabbatch
         end
@@ -132,8 +152,6 @@ for i = start_sub:N
                     spm('defaults','fmri');
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
-                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_jobman('run',batch{k});
                 end
                 
@@ -142,8 +160,6 @@ for i = start_sub:N
                     spm('defaults','fmri');
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
-                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_jobman('run',batch{k});
                 end
         end

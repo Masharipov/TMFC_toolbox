@@ -10,13 +10,15 @@ function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number)
 %
 % FORMAT [sub_check,contrasts] = tmfc_BSC(tmfc)
 %
-%   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
-%   tmfc.project_path      - Path where all results will be saved
-%   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
-%   tmfc.ROI_set           - List of selected ROIs
-%   tmfc.ROI_set.set_name  - Name of the ROI set
-%   tmfc.ROI_set.ROIs.name - Name of the selected ROI
-%   tmfc.ROI_set.ROIs.path - Path to the selected ROI image
+%   tmfc.subjects.path            - Paths to individual SPM.mat files
+%   tmfc.project_path             - Path where all results will be saved
+%   tmfc.defaults.parallel        - 0 or 1 (sequential/parallel computing)
+%
+%   tmfc.ROI_set                  - List of selected ROIs
+%   tmfc.ROI_set.set_name         - Name of the ROI set
+%   tmfc.ROI_set.ROIs.name        - Name of the selected ROI
+%   tmfc.ROI_set.ROIs.path_masked - Paths to the ROI images masked by group
+%                                   mean binary mask 
 %
 %   tmfc.LSS.conditions                  - List of conditions of interest
 %   tmfc.LSS.conditions.sess             - Session number
@@ -44,8 +46,8 @@ function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number)
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
+%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
 % FORMAT [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number)
 % Run the function for the selected ROI set.
