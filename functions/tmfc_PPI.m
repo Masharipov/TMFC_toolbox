@@ -83,12 +83,6 @@ end
 N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
 cond_list = tmfc.gPPI.conditions;
-% sess = []; sess_num = []; N_sess = [];
-% for i = 1:length(cond_list)
-%     sess(i) = cond_list(i).sess;
-% end
-% sess_num = unique(sess);
-% N_sess = length(sess_num);
 
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
