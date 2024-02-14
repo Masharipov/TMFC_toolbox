@@ -30,7 +30,7 @@ function [sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
 %   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
-% FORMAT [sub_check] = tmfc_BGFC(tmfc,ROI_set,start_sub)
+% FORMAT [sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for
 % the selected ROI set.
 %

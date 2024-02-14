@@ -138,7 +138,7 @@ contrast_number = 2;                % Calculate contrast #2
 tmfc.gPPI.conditions = tmfc.LSS.conditions;
 
 % VOI extraction
-[sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
+[sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub);
 
 % PPI calculation
 [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub);
