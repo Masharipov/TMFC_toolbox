@@ -85,5 +85,115 @@ elseif nargin == 2
    start_sub = 1;
 end
 
+N = length(tmfc.subjects);
+R = length(tmfc.ROI_set(ROI_set_number).ROIs);
+cond_list = tmfc.gPPI.conditions;
+sess = []; sess_num = []; N_sess = [];
+for i = 1:length(cond_list)
+    sess(i) = cond_list(i).sess;
+end
+sess_num = unique(sess);
+N_sess = length(sess_num);
 
+% Initialize waitbar for parallel or sequential computing
+switch tmfc.defaults.parallel
+    case 0                                      % Sequential
+        w = waitbar(0,'Please wait...','Name','gPPI GLM estimation');
+    case 1                                      % Parallel
+        w = waitbar(0,'Please wait...','Name','gPPI GLM estimation');
+        D = parallel.pool.DataQueue;            % Creation of parallel pool 
+        afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
+        tmfc_parfor_waitbar(w,N);     
+end
 
+if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI'))
+    mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches'));
+    mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI'));
+    mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel'));
+end
+
+spm('defaults','fmri');
+spm_jobman('initcfg');
+
+% Loop through subjects
+for i = start_sub:N
+    tic
+    SPM = load(tmfc.subjects(i).path);
+    % Loop through ROIs
+    for j = 1:R
+        if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name))
+            rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name),'s');
+        end
+        % Loop through conditions of interest
+        for k = 1:length(cond_list)
+            PPI(k) = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'PPIs',['Subject_' num2str(i,'%04.f')], ...
+                            ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(j).name,' ','_') ...
+                            ']_[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                            regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') '].mat']));
+        end
+
+        for j = 1:N_sess
+            
+        end
+
+        batch{j} = matlabbatch;
+        clear matlabbatch PPI   
+    end
+
+    switch tmfc.defaults.parallel
+        case 0                              % Sequential
+            for j = 1:R
+                spm('defaults','fmri');
+                spm_jobman('initcfg');
+                spm_get_defaults('cmdline',true);
+                spm_jobman('run',batch{j});
+            end
+            
+        case 1                              % Parallel
+            parfor j = 1:R
+                spm('defaults','fmri');
+                spm_jobman('initcfg');
+                spm_get_defaults('cmdline',true);
+                spm_jobman('run',batch{j});
+            end
+    end
+
+    clear batch
+    
+    sub_check(i) = 1;
+    
+    % Update waitbar
+    switch tmfc.defaults.parallel
+        case 0                              % Sequential
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end
+        case 1                              % Parallel
+            send(D,[]);
+    end
+end
+try
+    close(w)
+end
+end
+
+% Waitbar for parallel mode
+function tmfc_parfor_waitbar(waitbarHandle,iterations)
+    persistent count h N start
+
+    if nargin == 2
+        count = 0;
+        h = waitbarHandle;
+        N = iterations;
+        start = tic;
+        
+    else
+        if isvalid(h)         
+            count = count + 1;
+            time = toc(start);
+            t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
+            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+        end
+    end
+end
