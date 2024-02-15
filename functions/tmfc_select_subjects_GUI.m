@@ -42,7 +42,7 @@ end
                        
 
 % Creation of Figure for the Window
-f = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'Tag', 'Select_SUBS','WindowStyle', 'modal','CloseRequestFcn', @Closeaction);
+f = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'Tag', 'Select_SUBS','CloseRequestFcn', @Closeaction);%'WindowStyle', 'modal',
 
 % Initializing Elements of the UI (Buttons, Stats, Boxes etc) 
 b1 = uicontrol(f,'Style','pushbutton', 'String', 'Select subject folders','Units', 'normalized', 'Position',[0.033 0.850 0.455 0.095]);
