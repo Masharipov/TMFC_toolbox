@@ -33,40 +33,34 @@ function [paths] = tmfc_select_subjects_GUI(SPM_check)
 %
 % Contact email: masharipov@ihb.spb.ru
 
-
-try
-    h_FREZ = findobj('Tag','MAIN_WINDOW');
-    F_data = guidata(h_FREZ); 
-    set([F_data.SUB, F_data.FIR_TR, F_data.LSS_R, F_data.LSS_RW, F_data.BSC, F_data.gPPI, F_data.save_p, F_data.open_p, F_data.change_p, F_data.settings, F_data.BGFC], 'Enable', 'off');
+if nargin == 0
+    SPM_check = 1;
 end
-                       
 
+% Freeze Main TMFC window
+MW_Freeze(1);
+                      
 % Creation of Figure for the Window
-f = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'Tag', 'Select_SUBS','CloseRequestFcn', @Closeaction);%'WindowStyle', 'modal',
-
-% Initializing Elements of the UI (Buttons, Stats, Boxes etc) 
-b1 = uicontrol(f,'Style','pushbutton', 'String', 'Select subject folders','Units', 'normalized', 'Position',[0.033 0.850 0.455 0.095]);
-b1_Stat = uicontrol(f,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.820 0.450 0.095],'backgroundcolor','w');
-
-b2 = uicontrol(f,'Style','pushbutton', 'String', 'Select SPM.mat file for Subject №1','Units', 'normalized', 'Position',[0.033 0.750 0.455 0.095]);
-b2_Stat = uicontrol(f,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.720 0.450 0.095],'backgroundcolor','w');
-
-b3 = uicontrol(f,'Style','pushbutton', 'String', 'Add new subject','Units', 'normalized', 'Position',[0.033 0.14 0.300 0.095]);
-b4 = uicontrol(f,'Style','pushbutton', 'String', 'Remove selected subject','Units', 'normalized', 'Position',[0.346 0.14 0.300 0.095]);
-b5 = uicontrol(f,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.390 0.04 0.200 0.080]);
-
-lst = uicontrol(f, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position',[0.033 0.250 0.920 0.490]);
-clr = uicontrol(f,'Style','pushbutton', 'String', 'Clear all subjects','Units', 'normalized', 'Position',[0.660 0.14 0.300 0.095]);
+TMFC_SS = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.36 0.25 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'Tag', 'TMFC_SelSub','CloseRequestFcn', @Closeaction);
+TMFC_SS_B1 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Select subject folders','Units', 'normalized', 'Position',[0.033 0.850 0.455 0.095]);
+TMFC_SS_B2 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Select SPM.mat file for Subject №1','Units', 'normalized', 'Position',[0.033 0.750 0.455 0.095]);
+TMFC_SS_B3 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Add new subject','Units', 'normalized', 'Position',[0.033 0.14 0.300 0.095]);
+TMFC_SS_B4 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Remove selected subject','Units', 'normalized', 'Position',[0.346 0.14 0.300 0.095]);
+TMFC_SS_B5 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.390 0.04 0.200 0.080]);
+TMFC_SS_B6 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Clear all subjects','Units', 'normalized', 'Position',[0.660 0.14 0.300 0.095]);
+TMFC_SS_S1 = uicontrol(TMFC_SS,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.820 0.450 0.095],'backgroundcolor','w');
+TMFC_SS_S2 = uicontrol(TMFC_SS,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.720 0.450 0.095],'backgroundcolor','w');
+TMFC_SS_lst = uicontrol(TMFC_SS, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position',[0.033 0.250 0.920 0.490]);
 
 % Assigning Functions Callbacks for each Element (button, listbox etc)
-set(b1, 'callback', @action_1)
-set(b2, 'callback', @action_2)
-set(clr, 'callback', @action_clr)
-set(lst, 'callback', @action_select)
-set(b3, 'callback', @action_3)
-set(b4, 'callback', @action_4)
-set(b5, 'callback', @action_5)
-set(lst, 'Value', []);
+set(TMFC_SS_B1, 'callback', @action_1)
+set(TMFC_SS_B2, 'callback', @action_2)
+set(TMFC_SS_B3, 'callback', @action_3)
+set(TMFC_SS_B4, 'callback', @action_4)
+set(TMFC_SS_B5, 'callback', @action_5)
+set(TMFC_SS_B6, 'callback', @action_clr)
+set(TMFC_SS_lst, 'callback', @action_select)
+set(TMFC_SS_lst, 'Value', []);
 
 % Local Variables that work throughout the RunTime upto checking stage
 main_subjects = {};      % Variable to store Subject Addresses
@@ -79,7 +73,7 @@ add_subs = {};           % Variable used to create & merge new subjects
 %% Select subjects
 function action_1(~,~)
     
-    set(lst, 'String', '');                   % Intializing display list in the GUI 
+    set(TMFC_SS_lst, 'String', '');           % Intializing display list in the GUI 
     main_subjects = sub_folder();             % Prompt for SPM_DIR select 
     main_subjects = unique(main_subjects);    % Filtering new selection for repetitions
     len_subs_A1 = size(main_subjects);        % Calculation of Size of added subjects
@@ -87,15 +81,15 @@ function action_1(~,~)
     % Logical & Warning Conditions
     if isempty(main_subjects)
         disp('0 Subjects selected');
-        set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
-        set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+        set(TMFC_SS_S1,'String', 'Not selected','ForegroundColor','red');
+        set(TMFC_SS_S2,'String', 'Not selected','ForegroundColor','red');
         mm_add = '';
         file_address = '';
     else
         fprintf('Subjects selected are: %d \n', len_subs_A1(1));
         disp('Proceed to Select SPM.mat file');
-        set(b1_Stat,'String', strcat(num2str(len_subs_A1(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);    
-        set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+        set(TMFC_SS_S1,'String', strcat(num2str(len_subs_A1(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);    
+        set(TMFC_SS_S2,'String', 'Not selected','ForegroundColor','red');
         mm_add = '';
         file_address = '';
     end
@@ -105,8 +99,8 @@ function action_1(~,~)
         mm_add = ''; 
         file_address = ''; 
         main_subjects = ''; 
-        set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
-        set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
+        set(TMFC_SS_S1,'String', 'Not selected','ForegroundColor','red');
+        set(TMFC_SS_S2,'String', 'Not selected','ForegroundColor','red');
     end 
 end
 
@@ -120,15 +114,15 @@ function action_2(~,~)
         
     elseif strcmp(file_address,'') & strcmp(main_subjects,'')
         warning('Please select subject folders');
-        set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
-        set(lst, 'String', '');
+        set(TMFC_SS_S2,'String', 'Not selected','ForegroundColor','red');
+        set(TMFC_SS_lst, 'String', '');
         
     else
-        [file_address, mm_add] = mat_file(main_subjects);              % Creation of full list of Subs with .FILE extension
+        [file_address, mm_add] = mat_file(main_subjects);                      % Creation of full list of Subs with .FILE extension
         if ~strcmp(mm_add, '')
-            set(lst, 'String', file_address);                          % Display Full Address of Subs in the GUI
+            set(TMFC_SS_lst, 'String', file_address);                          % Display Full Address of Subs in the GUI
             disp('The SPM.mat file has been succesfully selected');
-            set(b2_Stat,'String', 'Selected','ForegroundColor',[0.219, 0.341, 0.137]);
+            set(TMFC_SS_S2,'String', 'Selected','ForegroundColor',[0.219, 0.341, 0.137]);
         end 
     end
 end
@@ -144,18 +138,18 @@ function action_clr(~,~)
         main_subjects = {};
         file_address = {};
         mm_add = {};
-        set(lst, 'String', '');                                         % Clearing Display
+        set(TMFC_SS_lst, 'String', '');                % Clearing Display 
         disp('All selected subjects have been cleared');
-        set(b1_Stat,'String', 'None selected','ForegroundColor','red');
-        set(b2_Stat,'String', 'None selected','ForegroundColor','red');
+        set(TMFC_SS_S1,'String', 'None selected','ForegroundColor','red');
+        set(TMFC_SS_S2,'String', 'None selected','ForegroundColor','red');
     end 
 end
 
 
 %% Select subjects from the list
 function action_select(~,~)
-    index = get(lst, 'Value');                                          % Retrieves the users selection LIVE
-    selection = index;                                                  % variable for full selection
+    index = get(TMFC_SS_lst, 'Value');% Retrieves the users selection LIVE
+    selection = index;                % Variable for full selection
 end
 
 
@@ -171,14 +165,14 @@ function action_3(~,~)
 
     else
         
-        add_subs = mid_sub_folder();                                    % Addition Function
+        add_subs = mid_sub_folder();              % Addition Function
         
         if isempty(add_subs)
             warning('No newly selected subjects');
         else
-            len_exst = size(file_address);                              % Size of existing subjects
-            len_subs_3 = size(add_subs);                                % Length of Size of new subjects
-            NEW_paths = {};                                             % Creation of empty array
+            len_exst = size(file_address); % Size of existing subjects
+            len_subs_3 = size(add_subs);   % Length of Size of new subjects
+            NEW_paths = {};                % Creation of empty array
 
             
             % Loop to append .FILE Extension to the Newly selected subjects
@@ -198,9 +192,9 @@ function action_3(~,~)
             end   
         end 
         
-        set(lst, 'String', file_address);                               % Updating display with new Subjects
+        set(TMFC_SS_lst, 'String', file_address);                               % Updating display with new Subjects
         len_subs = size(file_address);
-        set(b1_Stat,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
+        set(TMFC_SS_S1,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
         
     end
 end
@@ -213,20 +207,20 @@ function action_4(~,~)
     if isempty(selection)
         warning('There are no selected subjects to remove from the list, please select subjects once again');
     else
-        file_address(selection,:) = [];                                 % Nullifying the Indexs selected as per the user
+        file_address(selection,:) = [];                                          % Nullifying the Indexs selected as per the user
         holder = size(selection);
         fprintf('Number of subjects removed are: %d \n', holder(2));
         
-        set(lst,'Value',[]);                                             % Setting Min select value to 1 since it gives a warning of dynamic mismatch
+        set(TMFC_SS_lst,'Value',[]);                                             % Setting Min select value to 1 since it gives a warning of dynamic mismatch
         
-        set(lst, 'String', file_address);                               % Updating the display with the new list of subjects after removal 
+        set(TMFC_SS_lst, 'String', file_address);                                % Updating the display with the new list of subjects after removal 
         selection ={};
         
         if size(file_address) < 1
-            set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
+            set(TMFC_SS_S1,'String', 'Not selected','ForegroundColor','red');
         else
             len_subs = size(file_address);
-            set(b1_Stat,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137])
+            set(TMFC_SS_S1,'String', strcat(num2str(len_subs(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137])
         end
     end
 end 
@@ -245,6 +239,7 @@ function file_func = action_5(~,~)
     file_func = {};
     file_no_func = {};
       
+    
     % Pre conditions to verify existence of subujects 
     if isempty(main_subjects)
         warning('There are no selected subjects, please select subjects and SPM.mat files');
@@ -258,100 +253,49 @@ function file_func = action_5(~,~)
         warning('Please Re-select the subjects and the SPM.mat file if required');
 
     else
-        close(f);                               % Close Select Subjects GUI    
+        close(TMFC_SS);                               % Close Select Subjects GUI    
         
+        MW_Freeze(1);
         % Check SPM.mat files
         if SPM_check == 1
-    
-            try
-                D_FREZ = findobj('Tag','MAIN_WINDOW');
-                DF_data = guidata(D_FREZ); 
-                set([DF_data.SUB,DF_data.FIR_TR, DF_data.LSS_R, DF_data.LSS_RW, DF_data.BSC, DF_data.gPPI, DF_data.save_p, DF_data.open_p, DF_data.change_p, DF_data.settings, DF_data.BGFC],'Enable', 'off');
-            end
-            
+                
             % Stage 1 - Check SPM.mat files existence
             [file_exist,file_not_exist] = SPM_EXT_CHK(file_address);        
     
             if size(file_address) == size(file_not_exist) | strcmp(file_exist, '')
-                warning('STAGE 1 CHECK FAILED: All files are missing from the directories, Please try again');
+                warning('STAGE 1 CHECK FAILED: Selected files are missing from the directories, Please try again');
                 Royal_Reset();
             else
                 % Stage 2 - Check conditions
                 [file_correct, file_incorrect] = SPM_COND(file_exist);          
     
                 if size(file_incorrect) == size(file_exist) | strcmp(file_correct,'')
-                    warning('STAGE 2 CHECK FAILED: All files have incorrect conditions, Please try again');
+                    warning('STAGE 2 CHECK FAILED: Selected files have incorrect conditions, Please try again');
                     Royal_Reset();
                 else
                     % Stage 3 - Check output directories 
                     [file_dir,file_no_dir] = CHECK_DIR(file_correct);
             
                     if size(file_no_dir) == size(file_correct) | strcmp(file_dir,'')
-                        warning('STAGE 3 CHECK FAILED: The directories are missing from All selected Files, Please try again');
+                        warning('STAGE 3 CHECK FAILED: Directories are missing from selected Files, Please try again');
                         Royal_Reset();
                     else
                         % Stage 4 - Check functional files
                         [file_func,file_no_func] = CHECK_FUNCTION(file_dir);
                 
                         if size(file_no_func) == size(file_dir) | strcmp(file_func, '')
-                            warning('STAGE 4 CHECK FAILED: Files are missing from All directories, Please try again');
+                            warning('STAGE 4 CHECK FAILED: Selected files are missing from all directories, Please try again');
                             Royal_Reset();
                         else
-                            % Update the tmfc structure and main GUI window
-                            h = findobj('Tag','MAIN_WINDOW');
-            
-                            if ~isempty(h)         
-                                try
-                                    tmfc_major_reset();                         % Function to reset & Clear all prior calculated data
-                                    g1data = guidata(h);                        % Get Handles and Data associated to Main GUI
-                                    ADRS = size(file_func);                     % Variable with the size of the final subjects after all checking    
-                                    set(g1data.SUB_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-                                    set(g1data.SUB_stat,'String',strcat(num2str(ADRS(1)),' selected'));      % Assigning the variable to the Main GUI static text
-                                    set([g1data.SUB,g1data.FIR_TR, g1data.LSS_R, g1data.LSS_RW, g1data.BSC, g1data.gPPI,g1data.save_p, g1data.open_p, g1data.change_p, g1data.settings,g1data.BGFC],'Enable', 'on');
-                                catch 
-                                    warning('Please close older instances of TMFC toolbox'); 
-                                end
-                                
-                                % Select project path
-                                disp('Please Select a folder for the new TMFC project');    
-                                proj_path(ADRS(1));
-                                    
-                                project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
-
-                                if strcmp(project_path, '')
-                                    warning('Project Path Not selected, Subjects not saved');
-                                    try
-                                        h1_UNFREZ = findobj('Tag','MAIN_WINDOW');
-                                        F1_data = guidata(h1_UNFREZ); 
-                                        set([F1_data.SUB, F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI, F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings, F1_data.BGFC], 'Enable', 'on');
-                                    end
-                                    return
-                                end
-                                
-                                % Update tmfc structure
-                                try
-                                    FD = evalin('base', 'tmfc');                % Creating a local copy of the TMFC variable from the base workspace
-                            
-                                    for i = 1:length(file_func)                 % Assigning the subject paths to the respective structure variable
-                                        FD.subjects(i).path = char(file_func(i));
-                                        FD.subjects(i).FIR = NaN;
-                                        FD.subjects(i).LSS_after_FIR = NaN;
-                                        FD.subjects(i).LSS_without_FIR = NaN;
-                                    end
-                            
-                                    disp(strcat(num2str(ADRS(1)),' selected'));
-                                    FD.project_path = project_path;            % Assigning the project path to the respective structure variable 
-                                    assignin('base', 'tmfc', FD);              % Updating the TMFC variable to the base workspace after performing all modifications to its local copy    
-                                end
-                            else
-                                paths = file_address;
-                            end 
+                            paths = file_func;
                         end
                     end 
                 end
             end
         end
-        paths = file_address;
+        if SPM_check == 0
+            paths = file_address; 
+        end
     end                                                                 
 end      
 
@@ -361,50 +305,20 @@ function Royal_Reset(~,~)
     main_subjects = {};
     file_address = {};
     mm_add = {};
-    %set(lst, 'String', ""); %Intializing list in GUI workspace
-    set(b1_Stat,'String', 'Not selected','ForegroundColor','red');
-    set(b2_Stat,'String', 'Not selected','ForegroundColor','red');
-    h_UNFREZ = findobj('Tag','MAIN_WINDOW');
-    UF_data = guidata(h_UNFREZ); 
-    set([UF_data.SUB,UF_data.FIR_TR, UF_data.LSS_R, UF_data.LSS_RW, UF_data.BSC, UF_data.gPPI,UF_data.save_p, UF_data.open_p, UF_data.change_p, UF_data.settings,UF_data.BGFC],'Enable', 'on');
 end
-
-
-function proj_path(S)
-    proj_path_gui = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.40 0.20 0.10],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'Proj_path');
-    details = {'Next, select the project path where all results and temporary files will be stored'};
-    stat_1 = uicontrol(proj_path_gui,'Style','text','String',strcat(num2str(S), ' subjects selected'),'Units', 'normalized', 'Position',[0.35 0.70 0.30 0.17],'backgroundcolor','w','fontunits','normalized','fontSize', 0.55,'ForegroundColor',[0.219, 0.341, 0.137]);
-    stat_2 = uicontrol(proj_path_gui,'Style','text','String',details,'Units', 'normalized', 'Position',[0.05 0.38 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.34);
-    OK = uicontrol(proj_path_gui,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.14 0.2 0.2]);
-    set(OK, 'callback', @OKAY);
-    
-    function OKAY(~,~)
-        delete(proj_path_gui);
-    end
-    uiwait();
-end
-
-
-
-
-
-
-
-
-
 
 
 %% Close select subjects GUI window
-function Closeaction(~,~)
-    try
-        h1_UNFREZ = findobj('Tag','MAIN_WINDOW');
-        F1_data = guidata(h1_UNFREZ); 
-        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
-    end
-    delete(f);
+function Closeaction(~,~) 
+    delete(TMFC_SS);
+    if exist('paths', 'var') == 0
+        paths = [];
+        MW_Freeze(0);
+    end   
 end
 
-uiwait(f);
+
+uiwait(TMFC_SS);
 return;
 
 end
@@ -494,7 +408,7 @@ function [file_exist,file_not_exist] = SPM_EXT_CHK(Y_1)
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_1, 'String', file_not_exist);                 
         set(G1, 'Callback', @action_close_GUI_1);
-        waitforbuttonpress;
+        uiwait();
         set(lst_1, 'String', '');  
     end
     
@@ -579,7 +493,7 @@ function [file_correct, file_incorrect] = SPM_COND(Y_2)
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_2, 'String', file_incorrect);  
         set(G2, 'callback', @action_close_GUI_2)
-        waitforbuttonpress;
+        uiwait();
         
     end
     
@@ -640,7 +554,7 @@ function [file_dir,file_no_dir] = CHECK_DIR(Y_3)
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_3, 'String', file_no_dir);  
         set(G3, 'callback', @action_close_GUI_3)
-        waitforbuttonpress;
+        uiwait();
     end
     
     function action_close_GUI_3(~,~)
@@ -705,11 +619,34 @@ function [file_func,file_no_func] = CHECK_FUNCTION(Y_4)
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_4, 'String', file_no_func);  
         set(G4, 'callback', @action_close_GUI_4)
-        waitforbuttonpress;
+        uiwait();
     end
     
     function action_close_GUI_4(~,~)
         close(f_4);
     end
 
+end
+
+
+%% Freezing & Unfreezing main TMFC window
+function MW_Freeze(STATE)
+
+    switch(STATE)
+        case 0 
+            STATE = 'on';
+        case 1
+            STATE = 'off';
+    end
+
+    try
+        WIN = findobj('Tag','TMFC_MW');
+        WIN_Data = guidata(WIN); 
+        set([WIN_Data.TMFC_MW_B1, WIN_Data.TMFC_MW_B2, WIN_Data.TMFC_MW_B3, WIN_Data.TMFC_MW_B4,...
+            WIN_Data.TMFC_MW_B5a, WIN_Data.TMFC_MW_B5b, WIN_Data.TMFC_MW_B6, WIN_Data.TMFC_MW_B7,...
+            WIN_Data.TMFC_MW_B8, WIN_Data.TMFC_MW_B9, WIN_Data.TMFC_MW_B10, WIN_Data.TMFC_MW_B11,...
+            WIN_Data.TMFC_MW_B12,WIN_Data.TMFC_MW_B13a,WIN_Data.TMFC_MW_B13b,WIN_Data.TMFC_MW_B14a...
+            WIN_Data.TMFC_MW_B14b], 'Enable', STATE);
+    end       
+     
 end

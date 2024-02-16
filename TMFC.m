@@ -53,31 +53,27 @@ function TMFC
 
 %% ==================[ Set up GUI and TMFC structure ]=====================
 
-if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1  
+if isempty(findobj('Tag', 'TMFC_MW')) == 1  
     
     % Set up TMFC structure
-    tmfc.defaults.parallel = 0;      
-    tmfc.defaults.maxmem = 2^31;
-    tmfc.defaults.resmem = true;
+    %tmfc.defaults.parallel = 0;      
+    %tmfc.defaults.maxmem = 2^31;
+    %tmfc.defaults.resmem = true;
 
-    tmfc.project_path = '';
-    tmfc.subjects(1).path = '';
+    %tmfc.project_path = '';
+    %tmfc.subjects(1).path = '';
     
-    tmfc.FIR.window = NaN;
-    tmfc.FIR.bins = NaN;
+    %tmfc.FIR.window = NaN;
+    %tmfc.FIR.bins = NaN;
     
-    tmfc.subjects(1).FIR = [];
-    tmfc.subjects(1).LSS = [];
-    tmfc.subjects(1).LSS_after_FIR = [];
+    %tmfc.subjects(1).FIR = [];
+    %tmfc.subjects(1).LSS = [];
+    %tmfc.subjects(1).LSS_after_FIR = [];
     
-    tmfc.LSS.conditions = [];
-    tmfc.LSS_after_FIR.conditions = [];
-
-    tmfc.ROI_set = [];
-    
-    % Assign TMFC project variables 
-    assignin('base', 'tmfc', tmfc);
-
+    %tmfc.LSS.conditions = [];
+    %tmfc.LSS_after_FIR.conditions = [];
+    %tmfc.ROI_set = [];
+       
 %     % Initializing handles & elements of the GUI    
 %     handles.MAIN_F = figure('Name', 'TMFC Toolbox', 'NumberTitle', 'off', 'Units', 'norm', 'Position', [0.40 0.26 0.205 0.575], 'MenuBar', 'none', 'ToolBar', 'none', 'color', 'w', 'Tag', 'MAIN_WINDOW');%'Resize', 'off', 
 %     
@@ -107,16 +103,19 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
 %     handles.open_p = uicontrol('Style', 'pushbutton', 'String', 'Open project', 'Units', 'normalized', 'Position', [0.536 0.130 0.40 0.0715]);
 %     handles.change_p = uicontrol('Style', 'pushbutton', 'String', 'Change paths', 'Units', 'normalized', 'Position', [0.06 0.038 0.40 0.0715]);
 %     handles.settings = uicontrol('Style', 'pushbutton', 'String', 'Settings', 'Units', 'normalized', 'Position', [0.536 0.038 0.40 0.0715]);
-
-    handles.TMFC_MW = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.115 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'MAIN_WINDOW');%'Resize', 'off', 
     
+    tmfc = struct;
+    
+    % Main TMFC Window
+    handles.TMFC_MW = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.115 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'TMFC_MW');
+    
+    % Box Panels
     handles.MP1 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.85 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.MP2 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.65 0.94 0.19],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.MP3 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.511 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.MP4 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.37 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.MP5 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.23 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
-    handles.MP6 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.01 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
-    
+    handles.MP6 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.01 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');    
     handles.SP1 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.922 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.SP2 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.863 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.SP3 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.782 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
@@ -125,56 +124,46 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
     handles.SP8 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.442 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     handles.SP9 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.302 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     
-    
-    
-handles.TMFC_MW_B1 = uicontrol('Style', 'pushbutton', 'String', 'Subjects', 'Units', 'normalized', 'Position', [0.06 0.92 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S1 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.555 0.926 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
-    
+    % Buttons
+    handles.TMFC_MW_B1 = uicontrol('Style', 'pushbutton', 'String', 'Subjects', 'Units', 'normalized', 'Position', [0.06 0.92 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_MW_B2 = uicontrol('Style', 'pushbutton', 'String', 'ROI set', 'Units', 'normalized', 'Position', [0.06 0.86 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S2 = uicontrol('Style', 'text', 'String', 'ROI_set_1 (300 ROIs)', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.867 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
- 
-    
     handles.TMFC_MW_B3 = uicontrol('Style', 'pushbutton', 'String', 'VOIs', 'Units', 'normalized', 'Position', [0.06 0.78 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S3 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.787 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
-    
     handles.TMFC_MW_B4 = uicontrol('Style', 'pushbutton', 'String', 'PPIs', 'Units', 'normalized', 'Position', [0.06 0.72 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S4 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.727 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
-    
     handles.TMFC_MW_B5a = uicontrol('Style', 'pushbutton', 'String', 'gPPI', 'Units', 'normalized', 'Position', [0.06 0.66 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_B5b = uicontrol('Style', 'pushbutton', 'String', 'gPPI FIR', 'Units', 'normalized', 'Position', [0.54 0.66 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    
-    
+    handles.TMFC_MW_B5b = uicontrol('Style', 'pushbutton', 'String', 'gPPI FIR', 'Units', 'normalized', 'Position', [0.54 0.66 0.40 0.05],'FontUnits','normalized','FontSize',0.33);    
     handles.TMFC_MW_B6 = uicontrol('Style', 'pushbutton', 'String', 'LSS GLM', 'Units', 'normalized', 'Position', [0.06 0.58 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S6 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.587 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_MW_B7 = uicontrol('Style', 'pushbutton', 'String', 'BSC LSS', 'Units', 'normalized', 'Position', [0.06 0.52 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
-    
-    
     handles.TMFC_MW_B8 = uicontrol('Style', 'pushbutton', 'String', 'FIR task regression', 'Units', 'normalized', 'Position', [0.06 0.44 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S8 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.447 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_MW_B9 = uicontrol('Style', 'pushbutton', 'String', 'Background connectivity', 'Units', 'normalized', 'Position', [0.06 0.38 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
-    
-    
     handles.TMFC_MW_B10 = uicontrol('Style', 'pushbutton', 'String', 'LSS GLM after FIR', 'Units', 'normalized', 'Position', [0.06 0.30 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S10 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.307 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_MW_B11 = uicontrol('Style', 'pushbutton', 'String', 'BSC LSS after FIR', 'Units', 'normalized', 'Position', [0.06 0.24 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
-    
-    
     handles.TMFC_MW_B12 = uicontrol('Style', 'pushbutton', 'String', 'Results', 'Units', 'normalized', 'Position', [0.06 0.16 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
-    
-    
     handles.TMFC_MW_B13a = uicontrol('Style', 'pushbutton', 'String', 'Open project', 'Units', 'normalized', 'Position', [0.06 0.08 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_MW_B13b = uicontrol('Style', 'pushbutton', 'String', 'Save project', 'Units', 'normalized', 'Position', [0.54 0.08 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_MW_B14a = uicontrol('Style', 'pushbutton', 'String', 'Change paths', 'Units', 'normalized', 'Position', [0.06 0.02 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_MW_B14b = uicontrol('Style', 'pushbutton', 'String', 'Settings', 'Units', 'normalized', 'Position', [0.54 0.02 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     
+    % String counters
+    % red = 'red'
+    % green = [0.219, 0.341, 0.137]
+    % orange = [0.773, 0.353, 0.067]
+    handles.TMFC_MW_S1 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.555 0.926 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S2 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.555 0.867 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S3 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.787 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S4 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.727 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S6 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.587 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S8 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.447 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S10 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.307 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     
     % CallBack functions corresponding to each button
     set(handles.TMFC_MW, 'CloseRequestFcn', {@Close_TMFC, handles.TMFC_MW}); 
+    set(handles.TMFC_MW_B1, 'callback', {@Action_SUB_SEL, handles.TMFC_MW});
+    
 %     set(handles.save_p, 'callback', {@SAVE_PROJ, handles.TMFC_MW});
 %     set(handles.open_p, 'callback', {@LOAD_PROJ, handles.TMFC_MW});
 %     set(handles.change_p, 'callback', {@CP_GUI, handles.TMFC_MW});
 %     set(handles.settings, 'callback', {@Settings, handles.TMFC_MW});
-     set(handles.TMFC_MW_B1, 'callback', {@SUB_SEL, handles.TMFC_MW});
+     
 %     set(handles.FIR_TR, 'callback', {@FIR_REG, handles.TMFC_MW});
 %     set(handles.LSS_R, 'callback', {@LSS_REG, handles.TMFC_MW});
 %     set(handles.LSS_RW, 'callback', {@LSS_REGW, handles.TMFC_MW});
@@ -183,10 +172,44 @@ handles.TMFC_MW_B1 = uicontrol('Style', 'pushbutton', 'String', 'Subjects', 'Uni
 %     set(handles.gPPI, 'callback', {@gPPI_EX, handles.TMFC_MW});
     
 else
-    figure(findobj('Tag', 'MAIN_WINDOW')); 
+    figure(findobj('Tag', 'TMFC_MW')); 
     warning('TMFC toolbox is already running');    
 end
     
+%% ========================[ Select Subjects ]=============================
+
+% Select subjects and check SPM.mat files
+function Action_SUB_SEL(ButtonH, EventData, TMFC_MW)
+    MW_Freeze(1);
+    sel_paths = tmfc_select_subjects_GUI(1);
+    if isempty(sel_paths)
+        MW_Freeze(0);
+        disp('Subjects not selected');
+    else 
+       L_paths = size(sel_paths);
+       for SS_i = 1:L_paths(1) 
+           tmfc.subjects(SS_i).path = char(sel_paths(SS_i));       
+       end
+       
+       disp('Please Select a folder for the new TMFC project');    % Select project path
+       TMFC_SS_select_proj_path(L_paths(1));
+       project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
+        if strcmp(project_path, '')
+            warning('Project Path Not selected, Subjects not saved');
+            try
+                MW_Freeze(0);
+            end
+            return;
+        else
+            fprintf('%d subjects have been selected \n', L_paths(1));
+            set(handles.TMFC_MW_S1,'String', strcat(num2str(L_paths(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
+            tmfc.project_path = project_path;
+            MW_Freeze(0);
+        end
+    end
+    disp(tmfc);
+end
+
 %% ====================[ Background Connectivity ]=========================
 function BGFC_EX(ButtonH, EventData, TMFC_MW)
     % -1 = no selection or creation 
@@ -486,12 +509,7 @@ function Settings(ButtonH, EventData, MAIN_F)
     
 end
 
-%% ========================[ Select Subjects ]=============================
 
-% Select subjects and check SPM.mat files
-function SUB_SEL(~, ~, TMFC_MW)
-    tmfc_select_subjects_GUI(1);
-end
 
 %% ========================[ FIR Regression ]==============================
 
@@ -503,7 +521,7 @@ end
         
     % Freezing the Main window
     try
-        h_FREZ = findobj('Tag','MAIN_WINDOW');
+        h_FREZ = findobj('Tag','TMFC_MW');
         F_data = guidata(h_FREZ); 
         set([F_data.SUB,F_data.FIR_TR, F_data.LSS_R, F_data.LSS_RW, F_data.BSC, F_data.gPPI,F_data.save_p, F_data.open_p, F_data.change_p, F_data.settings,F_data.BGFC],'Enable', 'off');
     end
@@ -554,7 +572,7 @@ end
                         uiwait();
                         
                         % Obtain status of Restart from User (0/1)
-                        h18 = findobj('Tag', 'MAIN_WINDOW');
+                        h18 = findobj('Tag', 'TMFC_MW');
                         h18_V = getappdata(h18, 'RESTART_FIR');
                         
                         % If Restart is allowed, proceed
@@ -564,7 +582,7 @@ end
                             tmfc_FIR_GUI(1);                                           % Enter Windows & Bins 
                             uiwait();
                             
-                            h19 = findobj('Tag', 'MAIN_WINDOW');
+                            h19 = findobj('Tag', 'TMFC_MW');
                             h19_V = getappdata(h19, 'NO_COND');
                             
                             % Check if FIR_windows & bins were closed or
@@ -595,7 +613,7 @@ end
                         uiwait();
                         
                         % Get Status of Continuation
-                        h5 = findobj('Tag', 'MAIN_WINDOW');
+                        h5 = findobj('Tag', 'TMFC_MW');
                         D5 = getappdata(h5, 'CONTD_FIR');
                         
                         if D5 == 1 % Continue computation from the Last processed index
@@ -606,7 +624,7 @@ end
                             tmfc_FIR_GUI(1);        % Enter Windows & Bins 
                             uiwait();     
                             
-                            h29 = findobj('Tag', 'MAIN_WINDOW');
+                            h29 = findobj('Tag', 'TMFC_MW');
                             h29_V = getappdata(h29, 'NO_COND');
                             
                             if h29_V ~= 1 | isempty(h29_V)  
@@ -716,7 +734,7 @@ function LSS_REG(ButtonH, EventData, TMFC_MW)
           tmfc_LSS_GUI(L_checker_2.subjects(1).path, 2);
           %uiwait();
           
-          h77 = findobj('Tag', 'MAIN_WINDOW');
+          h77 = findobj('Tag', 'TMFC_MW');
           h77_V = getappdata(h77, 'RESTART_LSS');
           
           if h77_V == 1
@@ -724,7 +742,7 @@ function LSS_REG(ButtonH, EventData, TMFC_MW)
               % ask for conditions again
               tmfc_LSS_GUI(L_checker_2.subjects(1).path, 1);
               
-              h78 = findobj('Tag', 'MAIN_WINDOW');
+              h78 = findobj('Tag', 'TMFC_MW');
               h78_V = getappdata(h78, 'LSS_NO_COND');
               
               if h78_V ~= 1
@@ -760,7 +778,7 @@ function LSS_REG(ButtonH, EventData, TMFC_MW)
            tmfc_LSS_GUI(L_checker_2.subjects(1).path, 3, LSS_Lindex(1));
 
 
-           h54 = findobj('Tag', 'MAIN_WINDOW');
+           h54 = findobj('Tag', 'TMFC_MW');
            h54_V = getappdata(h54, 'CONTD_LSS');
 
            if h54_V == 1
@@ -771,7 +789,7 @@ function LSS_REG(ButtonH, EventData, TMFC_MW)
                setappdata(h54_V, 'CONTD_LSS', 0);
                tmfc_LSS_GUI(L_checker_2.subjects(1).path, 1);
 
-               h53 = findobj('Tag', 'MAIN_WINDOW');
+               h53 = findobj('Tag', 'TMFC_MW');
                h53_V = getappdata(h53, 'LSS_NO_COND');
 
                if h53_V ~= 1
@@ -808,7 +826,7 @@ end % Closing LSS regress
 
     % Failsafe function to pervent unintended freeze of TMFC Main Window
     try
-        h1_UNFREZ = findobj('Tag','MAIN_WINDOW');
+        h1_UNFREZ = findobj('Tag','TMFC_MW');
         F1_data = guidata(h1_UNFREZ); 
         set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
     end
@@ -911,4 +929,36 @@ function evaluate_file() % function to update the TMFC window after loading a tm
     
 end
 
+%% Freeze Window
+function MW_Freeze(STATE)
+
+    switch(STATE)
+        case 0 
+            STATE = 'on';
+        case 1
+            STATE = 'off';
+    end
+    set([handles.TMFC_MW_B1, handles.TMFC_MW_B2, handles.TMFC_MW_B3, handles.TMFC_MW_B4,...
+                handles.TMFC_MW_B5a, handles.TMFC_MW_B5b, handles.TMFC_MW_B6, handles.TMFC_MW_B7,...
+                handles.TMFC_MW_B8, handles.TMFC_MW_B9, handles.TMFC_MW_B10, handles.TMFC_MW_B11,...
+                handles.TMFC_MW_B12,handles.TMFC_MW_B13a,handles.TMFC_MW_B13b,handles.TMFC_MW_B14a...
+                handles.TMFC_MW_B14b], 'Enable', STATE);
+
+end
+          
+
+end  
+
+function TMFC_SS_select_proj_path(S)
+    TMFC_SS_PP = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.40 0.20 0.10],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'Proj_path');
+    PP_details = {'Next, select the project path where all results and temporary files will be stored'};
+    TMFC_SS_PP_S1 = uicontrol(TMFC_SS_PP,'Style','text','String',strcat(num2str(S), ' subjects selected'),'Units', 'normalized', 'Position',[0.35 0.70 0.30 0.17],'backgroundcolor','w','fontunits','normalized','fontSize', 0.55,'ForegroundColor',[0.219, 0.341, 0.137]);
+    TMFC_SS_PP_S2 = uicontrol(TMFC_SS_PP,'Style','text','String',PP_details,'Units', 'normalized', 'Position',[0.05 0.38 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.34);
+    OK = uicontrol(TMFC_SS_PP,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.14 0.2 0.2]);
+    set(OK, 'callback', @OKAY);
+    
+    function OKAY(~,~)
+        delete(TMFC_SS_PP);
+    end
+    uiwait();
 end
