@@ -53,17 +53,7 @@ function TMFC
 
 %% ==================[ Set up GUI and TMFC structure ]=====================
 
-if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1 
-    
-    screenResolution = get(0,'screensize');
-    screen_Width = screenResolution(3);
-    screen_Height = screenResolution(4);
-    W = screen_Width/6144;
-    H = screen_Height/1016.5;
-    X = screen_Width/13356.5;
-    Y = screen_Height/9874.28;
-    
-    
+if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1  
     
     % Set up TMFC structure
     tmfc.defaults.parallel = 0;      
@@ -118,40 +108,54 @@ if isempty(findobj('Tag', 'MAIN_WINDOW')) == 1
 %     handles.change_p = uicontrol('Style', 'pushbutton', 'String', 'Change paths', 'Units', 'normalized', 'Position', [0.06 0.038 0.40 0.0715]);
 %     handles.settings = uicontrol('Style', 'pushbutton', 'String', 'Settings', 'Units', 'normalized', 'Position', [0.536 0.038 0.40 0.0715]);
 
-    handles.TMFC_MW = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [X Y W H], 'color', 'w', 'Tag', 'MAIN_WINDOW');%[0.115 0.0875 0.250 0.850]
+    handles.TMFC_MW = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.115 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'MAIN_WINDOW');%'Resize', 'off', 
     
-    handles.P1 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.85 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
-    handles.P2 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.92 0.40 0.05],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.MP1 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.85 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.MP2 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.65 0.94 0.19],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.MP3 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.511 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.MP4 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.37 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.MP5 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.23 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.MP6 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.03 0.01 0.94 0.13],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     
-    handles.TMFC_MW_B1 = uicontrol('Style', 'pushbutton', 'String', 'Subjects', 'Units', 'normalized', 'Position', [0.06 0.92 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S1 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.55 0.927 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
-      
+    handles.SP1 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.922 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.SP2 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.863 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.SP3 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.782 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.SP4 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.722 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.SP6 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.582 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.SP8 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.442 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    handles.SP9 = uipanel(handles.TMFC_MW,'Units', 'normalized','Position',[0.54 0.302 0.40 0.0473],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    
+    
+    
+handles.TMFC_MW_B1 = uicontrol('Style', 'pushbutton', 'String', 'Subjects', 'Units', 'normalized', 'Position', [0.06 0.92 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
+    handles.TMFC_MW_S1 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.555 0.926 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    
     handles.TMFC_MW_B2 = uicontrol('Style', 'pushbutton', 'String', 'ROI set', 'Units', 'normalized', 'Position', [0.06 0.86 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S2 = uicontrol('Style', 'text', 'String', 'ROI_set_1 (300 ROIs)', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.54 0.867 0.40 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
-    
+    handles.TMFC_MW_S2 = uicontrol('Style', 'text', 'String', 'ROI_set_1 (300 ROIs)', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.867 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+ 
     
     handles.TMFC_MW_B3 = uicontrol('Style', 'pushbutton', 'String', 'VOIs', 'Units', 'normalized', 'Position', [0.06 0.78 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S3 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.54 0.787 0.40 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S3 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.787 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     
     handles.TMFC_MW_B4 = uicontrol('Style', 'pushbutton', 'String', 'PPIs', 'Units', 'normalized', 'Position', [0.06 0.72 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S4 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.54 0.727 0.40 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S4 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.727 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     
     handles.TMFC_MW_B5a = uicontrol('Style', 'pushbutton', 'String', 'gPPI', 'Units', 'normalized', 'Position', [0.06 0.66 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_MW_B5b = uicontrol('Style', 'pushbutton', 'String', 'gPPI FIR', 'Units', 'normalized', 'Position', [0.54 0.66 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     
     
     handles.TMFC_MW_B6 = uicontrol('Style', 'pushbutton', 'String', 'LSS GLM', 'Units', 'normalized', 'Position', [0.06 0.58 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S6 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.54 0.587 0.40 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S6 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.587 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_MW_B7 = uicontrol('Style', 'pushbutton', 'String', 'BSC LSS', 'Units', 'normalized', 'Position', [0.06 0.52 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
     
     
     handles.TMFC_MW_B8 = uicontrol('Style', 'pushbutton', 'String', 'FIR task regression', 'Units', 'normalized', 'Position', [0.06 0.44 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S8 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.54 0.447 0.40 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S8 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.447 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_MW_B9 = uicontrol('Style', 'pushbutton', 'String', 'Background connectivity', 'Units', 'normalized', 'Position', [0.06 0.38 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
     
     
     handles.TMFC_MW_B10 = uicontrol('Style', 'pushbutton', 'String', 'LSS GLM after FIR', 'Units', 'normalized', 'Position', [0.06 0.30 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
-    handles.TMFC_MW_S10 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.54 0.307 0.40 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_MW_S10 = uicontrol('Style', 'text', 'String', '100 done', 'ForegroundColor', [0.219, 0.341, 0.137], 'Units', 'norm', 'Position',[0.555 0.307 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_MW_B11 = uicontrol('Style', 'pushbutton', 'String', 'BSC LSS after FIR', 'Units', 'normalized', 'Position', [0.06 0.24 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
     
     
