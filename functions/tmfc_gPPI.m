@@ -118,6 +118,7 @@ spm_jobman('initcfg');
 % Loop through subjects
 for i = start_sub:N
     tic
+    %=======================[ Specify gPPI GLM ]===========================
     SPM = load(tmfc.subjects(i).path);
     % Loop through ROIs
     for j = 1:R
@@ -125,16 +126,71 @@ for i = start_sub:N
             rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name),'s');
         end
         % Loop through conditions of interest
-        for k = 1:length(cond_list)
-            PPI(k) = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'PPIs',['Subject_' num2str(i,'%04.f')], ...
+        for condi = 1:length(cond_list)
+            PPI(condi) = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'PPIs',['Subject_' num2str(i,'%04.f')], ...
                             ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(j).name,' ','_') ...
-                            ']_[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                            regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') '].mat']));
+                            ']_[Sess_' num2str(cond_list(condi).sess) ']_[Cond_' num2str(cond_list(condi).number) ']_[' ...
+                            regexprep(char(SPM.SPM.Sess(cond_list(condi).sess).U(cond_list(condi).number).name),' ','_') '].mat']));
+        end
+        % gPPI GLM batch
+        matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name)};
+        matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
+        matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
+        matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
+        matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = SPM.SPM.xBF.T0;
+        % Loop throuph sessions
+        for sessi = 1:N_sess
+            % Functional images
+            for image = 1:SPM.SPM.nscan(sess_num(sessi))
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).scans{image,1} = SPM.SPM.xY.VY(SPM.SPM.Sess(sess_num(sessi)).row(image)).fname;
+            end
+            
+            % Conditions (including PSY regressors)
+            for cond = 1:length(SPM.SPM.Sess(sess_num(sessi)).U)
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).cond(cond).name = SPM.SPM.Sess(sess_num(sessi)).U(cond).name{1};
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).cond(cond).onset = SPM.SPM.Sess(sess_num(sessi)).U(cond).ons;
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).cond(cond).duration = 0;
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).cond(cond).tmod = 0;
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).cond(cond).pmod = struct('name', {}, 'param', {}, 'poly', {});
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).cond(cond).orth = 1;
+            end
+
+            % Add PPI regressors
+            for condi = 1:length(cond_list)
+                if cond_list(condi).sess == sess_num(sessi)
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).regress(condi).name = ['PPI_' PPI(condi).PPI.name];
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).regress(condi).val = PPI(condi).PPI.ppi;
+                end
+            end
+
+            % Add PHYS regressors
+            matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).regress(length(cond_list)+1).name = ['Seed_' tmfc.ROI_set(ROI_set_number).ROIs(j).name];
+            matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).regress(length(cond_list)+1).val = PPI(find(sess == sess_num(sessi),1)).PPI.Y;
+            
+            % Confounds       
+            for conf = 1:length(SPM.SPM.Sess(sess_num(sessi)).C.name)
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).regress(conf+length(find(sess == sess_num(sessi)))+1).name = SPM.SPM.Sess(sess_num(sessi)).C.name{1,conf};
+                matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).regress(conf+length(find(sess == sess_num(sessi)))+1).val = SPM.SPM.Sess(sess_num(sessi)).C.C(:,conf);
+            end
+            
+            matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).multi = {''};
+            matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).multi_reg = {''};
+            matlabbatch{1}.spm.stats.fmri_spec.sess(sess_num(sessi)).hpf = SPM.SPM.xX.K(sess_num(sessi)).HParam;            
         end
 
-        for j = 1:N_sess
-            
+        matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
+        matlabbatch{1}.spm.stats.fmri_spec.bases.hrf.derivs = [0 0];
+        matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
+        matlabbatch{1}.spm.stats.fmri_spec.global = SPM.SPM.xGX.iGXcalc;
+        matlabbatch{1}.spm.stats.fmri_spec.mthresh = SPM.SPM.xM.gMT;
+    
+        try
+            matlabbatch{1}.spm.stats.fmri_spec.mask = {SPM.SPM.xM.VM.fname};
+        catch
+            matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
         end
+    
+        matlabbatch{1}.spm.stats.fmri_spec.cvi = SPM.SPM.xVi.form;
 
         batch{j} = matlabbatch;
         clear matlabbatch PPI   
@@ -146,6 +202,9 @@ for i = start_sub:N
                 spm('defaults','fmri');
                 spm_jobman('initcfg');
                 spm_get_defaults('cmdline',true);
+                spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                spm_get_defaults('stats.fmri.ufp',1);
                 spm_jobman('run',batch{j});
             end
             
@@ -154,11 +213,56 @@ for i = start_sub:N
                 spm('defaults','fmri');
                 spm_jobman('initcfg');
                 spm_get_defaults('cmdline',true);
+                spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                spm_get_defaults('stats.fmri.ufp',1);
                 spm_jobman('run',batch{j});
             end
     end
 
     clear batch
+
+    %=======================[ Estimate gPPI GLM ]==========================
+    
+    % ROI-to-ROI analysis
+    if tmfc.defaults.analysis == 1 || 2
+     
+    end
+
+    % Seed-to-voxel analysis
+    if tmfc.defaults.analysis == 1 || 3
+        for j = 1:R
+            matlabbatch{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name),'SPM.mat'};
+            matlabbatch{1}.spm.stats.fmri_est.write_residuals = 0;
+            matlabbatch{1}.spm.stats.fmri_est.method.Classical = 1;
+            batch{j} = matlabbatch;
+            clear matlabbatch
+        end
+
+        switch tmfc.defaults.parallel
+            case 0                              % Sequential
+                for j = 1:R
+                    spm('defaults','fmri');
+                    spm_jobman('initcfg');
+                    spm_get_defaults('cmdline',true);
+                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                    spm_get_defaults('stats.fmri.ufp',1);
+                    spm_jobman('run',batch{j});
+                end
+                
+            case 1                              % Parallel
+                parfor j = 1:R
+                    spm('defaults','fmri');
+                    spm_jobman('initcfg');
+                    spm_get_defaults('cmdline',true);
+                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                    spm_get_defaults('stats.fmri.ufp',1);
+                    spm_jobman('run',batch{j});
+                end
+        end 
+    end
     
     sub_check(i) = 1;
     
