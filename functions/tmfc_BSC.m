@@ -85,11 +85,14 @@ if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).s
 end
 
 if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'))
-    for ROI_number = 1:R
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name));
-    end
     mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI'));
     mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Beta_series'));
+end
+
+for ROI_number = 1:R
+    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name))
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name));
+    end
 end
 
 SPM = load(tmfc.subjects(1).path);
