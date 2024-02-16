@@ -98,7 +98,6 @@ hdr.mat = SPM.SPM.Vbeta(1).mat;
 w = waitbar(0,'Please wait...','Name','Compute contrasts');
 N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
-SPM = load(tmfc.subjects(1).path); 
 
 switch type
 

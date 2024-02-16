@@ -161,7 +161,6 @@ for i = start_sub:N
         clear batch
     end
     
-    clear SPM
     sub_check(i) = 1;
     
     % Update waitbar
@@ -174,6 +173,8 @@ for i = start_sub:N
         case 1                              % Parallel
             send(D,[]);
     end
+
+   clear SPM
 end
 
 try

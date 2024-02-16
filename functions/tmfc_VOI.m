@@ -179,6 +179,8 @@ for i = start_sub:N
         case 1                              % Parallel
             send(D,[]);
     end
+
+    clear SPM
 end
 
 try
