@@ -56,9 +56,9 @@ function TMFC
 if isempty(findobj('Tag', 'TMFC_MW')) == 1  
     
     % Set up TMFC structure
-    %tmfc.defaults.parallel = 0;      
-    %tmfc.defaults.maxmem = 2^31;
-    %tmfc.defaults.resmem = true;
+    tmfc.defaults.parallel = 0;      
+    tmfc.defaults.maxmem = 2^31;
+    tmfc.defaults.resmem = true;
 
     %tmfc.project_path = '';
     %tmfc.subjects(1).path = '';
