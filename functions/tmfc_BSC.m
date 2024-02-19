@@ -85,13 +85,20 @@ if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).s
 end
 
 if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'))
-    mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI'));
     mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Beta_series'));
 end
 
-for ROI_number = 1:R
-    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name))
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name));
+if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
+    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'))
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI'));
+    end
+end
+
+if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
+    for ROI_number = 1:R
+        if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name))
+            mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name));
+        end
     end
 end
 
@@ -149,31 +156,39 @@ for i = 1:N
             end
         end
 
-        % Seed-to-voxel correlation
-        for ROI_number = 1:R
-            BSC_image(ROI_number).z_value = atanh(corr(beta_series(j).ROI_mean(:,ROI_number),betas));
-        end
-
         % ROI-to-ROI correlation
-        z_matrix = atanh(corr(beta_series(j).ROI_mean));
-        z_matrix(1:size(z_matrix,1)+1:end) = nan;
-        
-        % Save BSC images
-        for ROI_number = 1:R
-            hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS', ...
-                'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
-                ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.nii']);
-            hdr.descrip = ['z-value map: ' beta_series(j).condition];    
-            image = NaN(SPM.SPM.xVol.DIM');
-            image(iXYZ) = BSC_image(ROI_number).z_value;
-            spm_write_vol(hdr,image);
+        if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
+            z_matrix = atanh(corr(beta_series(j).ROI_mean));
+            z_matrix(1:size(z_matrix,1)+1:end) = nan;     
+
+            % Save BSC matrices
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
+                ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.mat']),'z_matrix');
+
+            clear z_matrix
         end
 
-        % Save BSC matrices
-        save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
-            ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.mat']),'z_matrix');
+        % Seed-to-voxel correlation
+        if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
+            for ROI_number = 1:R
+                BSC_image(ROI_number).z_value = atanh(corr(beta_series(j).ROI_mean(:,ROI_number),betas));
+            end
 
-        clear betas BSC_image z_matrix
+            % Save BSC images
+            for ROI_number = 1:R
+                hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS', ...
+                    'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.nii']);
+                hdr.descrip = ['z-value map: ' beta_series(j).condition];    
+                image = NaN(SPM.SPM.xVol.DIM');
+                image(iXYZ) = BSC_image(ROI_number).z_value;
+                spm_write_vol(hdr,image);
+            end
+
+            clear BSC_image
+        end
+
+        clear betas  
     end
 
     % Save mean beta-series
