@@ -104,19 +104,26 @@ switch type
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
                     regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
     
-                load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI', ...
+                load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
                     ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
     
                 matrices(j,:) = ppi_matrix(:)';
-                clear z_matrix
+                symm_matrices(j,:) = symm_ppi_matrix(:)';
+                clear ppi_matrix symm_ppi_matrix
             end
             % Calculate and save contrasts
             for j = 1:length(contrast_number)
-                z_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).weights*matrices,[R,R]);
-                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
+                ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*matrices,[R,R]);
+                symm_ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*symm_matrices,[R,R]);
+                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
                     ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).title,' ','_') '].mat']),'z_matrix');
-                clear z_matrix
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].mat']),'ppi_matrix');
+                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].mat']),'symm_ppi_matrix');
+                clear ppi_matrix symm_ppi_matrix
             end
             % Update waitbar
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
@@ -128,7 +135,46 @@ switch type
         end 
 
     %==============================gPPI-FIR================================
-    %case 2
+    case 2
+        for i = 1:N
+            tic
+            % Load default contrasts for conditions of interest
+            cond_list = tmfc.gPPI_FIR.conditions;
+            for j = 1:length(cond_list)               
+                cond_name = [];
+                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
+    
+                load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+    
+                matrices(j,:) = ppi_matrix(:)';
+                symm_matrices(j,:) = symm_ppi_matrix(:)';
+                clear ppi_matrix symm_ppi_matrix
+            end
+            % Calculate and save contrasts
+            for j = 1:length(contrast_number)
+                ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).weights*matrices,[R,R]);
+                symm_ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).weights*symm_matrices,[R,R]);
+                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).title,' ','_') '].mat']),'ppi_matrix');
+                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
+                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).title,' ','_') '].mat']),'symm_ppi_matrix');
+                clear ppi_matrix symm_ppi_matrix
+            end
+            % Update waitbar
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end       
+            sub_check(i) = 1;
+            clear matrices
+        end 
+
     %===============================BSC-LSS================================
     case 3
         for i = 1:N
