@@ -100,6 +100,87 @@ N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
 
 switch type
+    %================================gPPI==================================
+    case 1
+        for i = 1:N
+            tic
+            % Load default contrasts for conditions of interest
+            cond_list = tmfc.gPPI.conditions;
+            for j = 1:length(cond_list)
+                cond_name = [];
+                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                for ROI_number = 1:R
+                    images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii'])),'xyz',XYZ);
+                end
+            end
+            % Calculate and save contrasts
+            for j = 1:length(contrast_number)
+                for ROI_number = 1:R
+                    contrast = tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*images(ROI_number).seed;
+
+                    hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI', ...
+                        'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') '_[' ...
+                        regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].nii']);
+                    hdr.descrip = ['Linear contrast of PPI beta maps: ' tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title];    
+                    image = NaN(SPM.SPM.xVol.DIM');
+                    image(iXYZ) = contrast;
+                    spm_write_vol(hdr,image);
+                    clear contrast
+                end
+            end
+            % Update waitbar
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end       
+            sub_check(i) = 1;
+            clear images
+        end
+
+    %=============================gPPI-FIR=================================
+    case 2
+        for i = 1:N
+            tic
+            % Load default contrasts for conditions of interest
+            cond_list = tmfc.gPPI.conditions;
+            for j = 1:length(cond_list)
+                cond_name = [];
+                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                for ROI_number = 1:R
+                    images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii'])),'xyz',XYZ);
+                end
+            end
+            % Calculate and save contrasts
+            for j = 1:length(contrast_number)
+                for ROI_number = 1:R
+                    contrast = tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*images(ROI_number).seed;
+
+                    hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR', ...
+                        'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') '_[' ...
+                        regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].nii']);
+                    hdr.descrip = ['Linear contrast of PPI beta maps: ' tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title];    
+                    image = NaN(SPM.SPM.xVol.DIM');
+                    image(iXYZ) = contrast;
+                    spm_write_vol(hdr,image);
+                    clear contrast
+                end
+            end
+            % Update waitbar
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            try
+                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end       
+            sub_check(i) = 1;
+            clear images
+        end
 
     %===============================BSC-LSS================================
     case 3
