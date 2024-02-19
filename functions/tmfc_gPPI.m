@@ -1,4 +1,4 @@
-function [sub_check] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
+function [sub_check,contrasts] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -6,7 +6,7 @@ function [sub_check] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 % (ROI-to-ROI analysis) and connectivity images (seed-to-voxel analysis)
 % for each condition of interest.
 %
-% FORMAT [sub_check] = tmfc_gPPI(tmfc)
+% FORMAT [sub_check,contrasts] = tmfc_gPPI(tmfc)
 % Run a function starting from the first subject in the list.
 %
 %   tmfc.subjects.path     - Paths to individual SPM.mat files
@@ -50,7 +50,7 @@ function [sub_check] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
 %   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
-% FORMAT [sub_check] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
+% FORMAT [sub_check,contrasts] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for
 % the selected ROI set.
 %
@@ -115,7 +115,8 @@ end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
     if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI'))
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI'));
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical'));
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical'));
     end
 end
 
@@ -330,9 +331,13 @@ for i = start_sub:N
         % Save PPI beta matrices
         for condi = 1:length(cond_list)
             ppi_matrix = squeeze(beta(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),:,:));
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI', ...
+            ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
+            symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
                 ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'ppi_matrix');
-            clear ppi_matrix
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'symm_ppi_matrix');
+            clear ppi_matrix symm_ppi_matrix
         end
     end
 
@@ -389,9 +394,13 @@ for i = start_sub:N
         % Save PPI beta matrices
         for condi = 1:length(cond_list)
             ppi_matrix = squeeze(beta(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),:,:));
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI', ...
+            ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
+            symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
                 ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'ppi_matrix');
-            clear ppi_matrix
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'symm_ppi_matrix');
+            clear ppi_matrix symm_ppi_matrix
         end
     end
 
@@ -466,9 +475,23 @@ for i = start_sub:N
 
     clear SPM
 end
+
+% Default contrasts info
+SPM = load(tmfc.subjects(1).path);
+for j = 1:length(cond_list)
+    sess = cond_list(j).sess;
+    cond = cond_list(j).number;
+    contrasts(j).title = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+    contrasts(j).weights = zeros(1,length(cond_list));
+    contrasts(j).weights(1,j) = 1;
+end
+
+% Close waitbar
 try
     close(w)
 end
+
 end
 
 % Save batches in parallel mode

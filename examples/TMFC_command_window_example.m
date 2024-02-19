@@ -143,8 +143,23 @@ tmfc.gPPI.conditions = tmfc.LSS.conditions;
 % PPI calculation
 [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub);
 
-% gPPI-FIR calculation
-[sub_check] = tmfc_gPPI(tmfc,ROI_set_number,start_sub);
+% gPPI calculation
+[sub_check,contrasts] = tmfc_gPPI(tmfc,ROI_set_number,start_sub);
+
+% Update contrasts info
+tmfc.ROI_set(ROI_set_number).contrasts.gPPI = contrasts;
+
+% Define new contrasts:
+tmfc.ROI_set(1).contrasts.gPPI(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(1).contrasts.gPPI(6).title = 'Cond2_vs_Cond1';
+tmfc.ROI_set(1).contrasts.gPPI(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(1).contrasts.gPPI(6).weights = [-0.5 0.5 -0.5 0.5];
+
+% Calculate contrasts
+type = 1;                           % gPPI
+contrast_number = [5,6];            % Calculate contrasts #5 and #6
+[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
+[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI_set_number);
 
 
 %% gPPI-FIR (gPPI model with psychological regressors defined by FIR functions)
