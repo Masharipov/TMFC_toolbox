@@ -28,13 +28,13 @@ function [sub_check] = tmfc_FIR(tmfc,start_sub)
 %
 %   tmfc.subjects.path     - Paths to individual SPM.mat files
 %   tmfc.project_path      - Path where all results will be saved
-%   tmfc.FIR.window        - FIR window length (in seconds)
-%   tmfc.FIR.bins          - Number of FIR time bins
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
 %                            the same time during GLM estimation)
 %   tmfc.defaults.resmem   - true or false (store temporaty files during
 %                            GLM estimation in RAM or on disk)
+%   tmfc.FIR.window        - FIR window length (in seconds)
+%   tmfc.FIR.bins          - Number of FIR time bins
 %
 % FORMAT [sub_check] = FIR_regress(tmfc,start_sub)
 % Run the function starting from a specific subject in the path list.

@@ -80,7 +80,7 @@ tmfc.ROI_set(1).contrasts.BSC(6).title = 'Cond2_vs_Cond1';
 tmfc.ROI_set(1).contrasts.BSC(5).weights = [0.5 -0.5 0.5 -0.5];
 tmfc.ROI_set(1).contrasts.BSC(6).weights = [-0.5 0.5 -0.5 0.5];
 
-% Calculate contrasts
+% Calculate new contrasts
 type = 3;                           % BSC-LSS
 contrast_number = [5,6];            % Calculate contrasts #5 and #6
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
@@ -121,7 +121,7 @@ tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR = contrasts;
 tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(2).title = 'Reverse contrast';
 tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(2).weights = [-1];
 
-% Calculate contrasts
+% Calculate new contrast
 type = 4;                           % BSC-LSS after FIR
 contrast_number = 2;                % Calculate contrast #2
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
@@ -155,7 +155,7 @@ tmfc.ROI_set(1).contrasts.gPPI(6).title = 'Cond2_vs_Cond1';
 tmfc.ROI_set(1).contrasts.gPPI(5).weights = [0.5 -0.5 0.5 -0.5];
 tmfc.ROI_set(1).contrasts.gPPI(6).weights = [-0.5 0.5 -0.5 0.5];
 
-% Calculate contrasts
+% Calculate new contrasts
 type = 1;                           % gPPI
 contrast_number = [5,6];            % Calculate contrasts #5 and #6
 [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
@@ -165,5 +165,20 @@ contrast_number = [5,6];            % Calculate contrasts #5 and #6
 %% gPPI-FIR (gPPI model with psychological regressors defined by FIR functions)
 
 % gPPI-FIR calculation
-[sub_check] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub);
+[sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub);
+
+% Update contrasts info
+tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR = contrasts;
+
+% Define new contrasts:
+tmfc.ROI_set(1).contrasts.gPPI_FIR(5).title = 'Cond1_vs_Cond2';
+tmfc.ROI_set(1).contrasts.gPPI_FIR(6).title = 'Cond2_vs_Cond1';
+tmfc.ROI_set(1).contrasts.gPPI_FIR(5).weights = [0.5 -0.5 0.5 -0.5];
+tmfc.ROI_set(1).contrasts.gPPI_FIR(6).weights = [-0.5 0.5 -0.5 0.5];
+
+% Calculate new contrasts
+type = 2;                           % gPPI-FIR
+contrast_number = [5,6];            % Calculate contrasts #5 and #6
+[sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_set_number);
+[sub_check] = tmfc_seed_to_voxel_contrast(tmfc,type,contrast_number,ROI_set_number);
 
