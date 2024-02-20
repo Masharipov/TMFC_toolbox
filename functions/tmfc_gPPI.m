@@ -47,8 +47,8 @@ function [sub_check,contrasts] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
+%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
 % FORMAT [sub_check,contrasts] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for

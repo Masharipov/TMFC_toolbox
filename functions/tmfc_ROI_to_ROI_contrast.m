@@ -139,7 +139,7 @@ switch type
         for i = 1:N
             tic
             % Load default contrasts for conditions of interest
-            cond_list = tmfc.gPPI_FIR.conditions;
+            cond_list = tmfc.gPPI.conditions;
             for j = 1:length(cond_list)               
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...

@@ -7,10 +7,10 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 % for each condition of interest.
 %
 % The difference between classic gPPI GLM and gPPI-FIR GLM is that the
-% latter, instead of using canonical HRF, uses finite impulse response
-% (FIR) functions to model activations for conditions of interst (PSY
-% regressors) and conditions of no interest. The FIR model allows to model
-% activations with any possible hemodynamic response shape.
+% latter uses finite impulse response (FIR) functions (instead of canonical
+% HRF function) to model activations for conditions of interst and
+% conditions of no interest. The FIR model allows to model activations
+% with any possible hemodynamic response shape.
 %
 % FORMAT [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc)
 % Run a function starting from the first subject in the list.
@@ -55,8 +55,8 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
+%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
 %
 % FORMAT [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for
@@ -113,32 +113,32 @@ end
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
     case 0                                      % Sequential
-        w = waitbar(0,'Please wait...','Name','gPPI GLM estimation');
+        w = waitbar(0,'Please wait...','Name','gPPI-FIR GLM estimation');
     case 1                                      % Parallel
-        w = waitbar(0,'Please wait...','Name','gPPI GLM estimation');
+        w = waitbar(0,'Please wait...','Name','gPPI-FIR GLM estimation');
         D = parallel.pool.DataQueue;            % Creation of parallel pool 
         afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
         tmfc_parfor_waitbar(w,N);     
 end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI'))
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical'));
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical'));
+    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR'))
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical'));
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical'));
     end
 end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
     for i = 1:R
-        if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
-            mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name));
+        if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
+            mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name));
         end
     end
 end
 
 for i = 1:R
-    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name));
+    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name));
     end
 end
 
@@ -152,8 +152,8 @@ for i = start_sub:N
     SPM = load(tmfc.subjects(i).path);
     % Loop through ROIs
     for j = 1:R
-        if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name))
-            rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name),'s');
+        if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name))
+            rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name),'s');
         end
         % Loop through conditions of interest
         for condi = 1:length(cond_list)
@@ -161,7 +161,7 @@ for i = start_sub:N
                             ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(j).name,' ','_') ']_' condition(condi).name '.mat']));
         end
         % gPPI GLM batch
-        matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name)};
+        matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name)};
         matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
         matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
         matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
@@ -208,7 +208,8 @@ for i = start_sub:N
         end
 
         matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
-        matlabbatch{1}.spm.stats.fmri_spec.bases.hrf.derivs = [0 0];
+        matlabbatch{1}.spm.stats.fmri_spec.bases.fir.length = tmfc.FIR.window;
+        matlabbatch{1}.spm.stats.fmri_spec.bases.fir.order = tmfc.FIR.bins;
         matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
         matlabbatch{1}.spm.stats.fmri_spec.global = SPM.SPM.xGX.iGXcalc;
         matlabbatch{1}.spm.stats.fmri_spec.mthresh = SPM.SPM.xM.gMT;
@@ -237,8 +238,8 @@ for i = start_sub:N
                 spm_jobman('run',batch{j});
     
                 % Save GLM_batch.mat file
-                tmfc_parsave_batch(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(j).name,...
-                    ['Subject_' num2str(i,'%04.f') '_gPPI_GLM.mat']),batch{j});
+                tmfc_parsave_batch(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(j).name,...
+                    ['Subject_' num2str(i,'%04.f') '_gPPI_FIR_GLM.mat']),batch{j});
             end
             
         case 1                              % Parallel
@@ -252,8 +253,8 @@ for i = start_sub:N
                 spm_jobman('run',batch{j});
 
                 % Save GLM_batch.mat file
-                tmfc_parsave_batch(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(j).name,...
-                    ['Subject_' num2str(i,'%04.f') '_gPPI_GLM.mat']),batch{j});
+                tmfc_parsave_batch(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(j).name,...
+                    ['Subject_' num2str(i,'%04.f') '_gPPI_FIR_GLM.mat']),batch{j});
             end
     end
 
@@ -266,14 +267,14 @@ for i = start_sub:N
 
         % Seed-to-voxel
         for j = 1:R
-            matlabbatch{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat')};
+            matlabbatch{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat')};
             matlabbatch{1}.spm.stats.fmri_est.write_residuals = 0;
             matlabbatch{1}.spm.stats.fmri_est.method.Classical = 1;
             batch{j} = matlabbatch;
             clear matlabbatch
         end
 
-        SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat'));
+        SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat'));
 
         switch tmfc.defaults.parallel
             case 0                              % Sequential
@@ -288,9 +289,9 @@ for i = start_sub:N
 
                     % Save PPI beta images
                     for condi = 1:length(cond_list)
-                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')], ... 
-                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
-                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
+                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')], ... 
+                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + tmfc.FIR.bins*length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
+                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
                             ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.nii']));
                     end
                 end
@@ -307,9 +308,9 @@ for i = start_sub:N
 
                     % Save PPI beta images
                     for condi = 1:length(cond_list)
-                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')], ... 
-                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
-                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
+                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')], ... 
+                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + tmfc.FIR.bins*length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
+                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
                             ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.nii']));
                     end
                 end
@@ -325,25 +326,25 @@ for i = start_sub:N
             case 0                              % Sequential
                 for j = 1:R
                     SPM = [];
-                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
+                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
                     beta(:,:,j) = SPM.SPM.xX.pKX*Y;                    
                 end
             case 1                              % Parallel
                 parfor j = 1:R
                     SPM = [];
-                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
+                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
                     beta(:,:,j) = SPM.SPM.xX.pKX*Y;                     
                 end
         end
         
         % Save PPI beta matrices
         for condi = 1:length(cond_list)
-            ppi_matrix = squeeze(beta(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),:,:));
+            ppi_matrix = squeeze(beta(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + tmfc.FIR.bins*length(SPM.SPM.Sess(PPI_sess(condi)).U),:,:));
             ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
             symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
                 ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'ppi_matrix');
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
                 ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'symm_ppi_matrix');
             clear ppi_matrix symm_ppi_matrix
         end
@@ -360,7 +361,7 @@ for i = start_sub:N
             case 0                              % Sequential
                 for j = 1:R
                     SPM = [];
-                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
+                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
                     xX = SPM.SPM.xX;
                     if isfield(SPM.SPM.xX,'W')
                         SPM.SPM.xX  = rmfield(SPM.SPM.xX,'W');
@@ -380,7 +381,7 @@ for i = start_sub:N
             case 1                              % Parallel
                 parfor j = 1:R
                     SPM = []; xX = []; xVi = []; W = []; xKXs = []; pKX = [];
-                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
+                    SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat'));
                     xX = SPM.SPM.xX;
                     if isfield(SPM.SPM.xX,'W')
                         SPM.SPM.xX  = rmfield(SPM.SPM.xX,'W');
@@ -401,12 +402,12 @@ for i = start_sub:N
 
         % Save PPI beta matrices
         for condi = 1:length(cond_list)
-            ppi_matrix = squeeze(beta(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),:,:));
+            ppi_matrix = squeeze(beta(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + tmfc.FIR.bins*length(SPM.SPM.Sess(PPI_sess(condi)).U),:,:));
             ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
             symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
                 ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'ppi_matrix');
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
                 ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.mat']),'symm_ppi_matrix');
             clear ppi_matrix symm_ppi_matrix
         end
@@ -415,14 +416,14 @@ for i = start_sub:N
     % Seed-to-voxel analysis only
     if tmfc.defaults.analysis == 3
         for j = 1:R
-            matlabbatch{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat')};
+            matlabbatch{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name,'SPM.mat')};
             matlabbatch{1}.spm.stats.fmri_est.write_residuals = 0;
             matlabbatch{1}.spm.stats.fmri_est.method.Classical = 1;
             batch{j} = matlabbatch;
             clear matlabbatch
         end
 
-        SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat'));
+        SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat'));
 
         switch tmfc.defaults.parallel
             case 0                              % Sequential
@@ -437,9 +438,9 @@ for i = start_sub:N
 
                     % Save PPI beta images
                     for condi = 1:length(cond_list)
-                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')], ... 
-                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
-                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
+                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')], ... 
+                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + tmfc.FIR.bins*length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
+                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
                             ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.nii']));
                     end
                 end
@@ -456,9 +457,9 @@ for i = start_sub:N
 
                     % Save PPI beta images
                     for condi = 1:length(cond_list)
-                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')], ... 
-                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
-                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
+                        copyfile(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')], ... 
+                            tmfc.ROI_set(ROI_set_number).ROIs(j).name,['beta_' num2str(PPI_num(condi) - 1 + SPM.SPM.Sess(PPI_sess(condi)).col(1) + tmfc.FIR.bins*length(SPM.SPM.Sess(PPI_sess(condi)).U),'%04.f') '.nii']), ...
+                            fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(j).name, ...
                             ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(condi,'%04.f') '_' condition(condi).name '.nii']));
                     end
                 end
@@ -466,7 +467,7 @@ for i = start_sub:N
     end
     
     % Remove temporal gPPI directories
-    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')]),'s');
+    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')]),'s');
 
     sub_check(i) = 1;
     
