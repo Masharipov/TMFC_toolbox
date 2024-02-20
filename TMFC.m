@@ -55,24 +55,25 @@ function TMFC
 
 if isempty(findobj('Tag', 'TMFC_MW')) == 1  
     
+    tmfc = struct;
     % Set up TMFC structure
     tmfc.defaults.parallel = 0;      
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
 
-    %tmfc.project_path = '';
-    %tmfc.subjects(1).path = '';
-    
-    %tmfc.FIR.window = NaN;
-    %tmfc.FIR.bins = NaN;
-    
-    %tmfc.subjects(1).FIR = [];
-    %tmfc.subjects(1).LSS = [];
-    %tmfc.subjects(1).LSS_after_FIR = [];
-    
-    %tmfc.LSS.conditions = [];
-    %tmfc.LSS_after_FIR.conditions = [];
-    %tmfc.ROI_set = [];
+%     tmfc.project_path = '';
+%     tmfc.subjects(1).path = '';
+%     
+%     tmfc.FIR.window = NaN;
+%     tmfc.FIR.bins = NaN;
+%     
+%     tmfc.subjects(1).FIR = [];
+%     tmfc.subjects(1).LSS = [];
+%     tmfc.subjects(1).LSS_after_FIR = [];
+%     
+%     tmfc.LSS.conditions = [];
+%     tmfc.LSS_after_FIR.conditions = [];
+%     tmfc.ROI_set = [];
        
 %     % Initializing handles & elements of the GUI    
 %     handles.MAIN_F = figure('Name', 'TMFC Toolbox', 'NumberTitle', 'off', 'Units', 'norm', 'Position', [0.40 0.26 0.205 0.575], 'MenuBar', 'none', 'ToolBar', 'none', 'color', 'w', 'Tag', 'MAIN_WINDOW');%'Resize', 'off', 
@@ -104,7 +105,7 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
 %     handles.change_p = uicontrol('Style', 'pushbutton', 'String', 'Change paths', 'Units', 'normalized', 'Position', [0.06 0.038 0.40 0.0715]);
 %     handles.settings = uicontrol('Style', 'pushbutton', 'String', 'Settings', 'Units', 'normalized', 'Position', [0.536 0.038 0.40 0.0715]);
     
-    tmfc = struct;
+    
     
     % Main TMFC Window
     handles.TMFC_MW = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.115 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'TMFC_MW');
@@ -845,7 +846,7 @@ function SAVER_STAT =  Saver(save_path)
         % Major change may affect the funcitoning of TMFC variable
         %EXPORT = evalin('base', 'tmfc');
         %save(save_path, 'EXPORT');
-        tmfc = evalin('base', 'tmfc');
+        %tmfc = evalin('base', 'tmfc');
         save(save_path, 'tmfc');
         SAVER_STAT = 1;
         % Save Success
@@ -946,7 +947,7 @@ function MW_Freeze(STATE)
 
 end
           
-
+%uiwait();
 end  
 
 function TMFC_SS_select_proj_path(S)
