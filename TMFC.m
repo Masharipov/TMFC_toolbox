@@ -57,7 +57,7 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
     
     tmfc = struct;
     % Set up TMFC structure
-    tmfc.defaults.parallel = 0;      
+    tmfc.defaults.parallel = 1;      
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
 
@@ -159,8 +159,10 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
     % CallBack functions corresponding to each button
     set(handles.TMFC_MW, 'CloseRequestFcn', {@Close_TMFC, handles.TMFC_MW}); 
     set(handles.TMFC_MW_B1, 'callback', {@Action_SUB_SEL, handles.TMFC_MW});
+    set(handles.TMFC_MW_B8, 'callback', {@Action_FIR_REG, handles.TMFC_MW});
+    set(handles.TMFC_MW_B12, 'callback', {@reset, handles.TMFC_MW});
+    set(handles.TMFC_MW_B13a, 'callback', {@LOAD_PROJ, handles.TMFC_MW});
     
-%     set(handles.save_p, 'callback', {@SAVE_PROJ, handles.TMFC_MW});
 %     set(handles.open_p, 'callback', {@LOAD_PROJ, handles.TMFC_MW});
 %     set(handles.change_p, 'callback', {@CP_GUI, handles.TMFC_MW});
 %     set(handles.settings, 'callback', {@Settings, handles.TMFC_MW});
@@ -171,14 +173,36 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
 %     set(handles.BGFC, 'callback', {@BGFC_EX, handles.TMFC_MW});
 %     set(handles.BSC, 'callback', {@BSC_EX, handles.TMFC_MW});
 %     set(handles.gPPI, 'callback', {@gPPI_EX, handles.TMFC_MW});
-    
+    set(handles.TMFC_MW_B13b, 'callback', {@tempsave, handles.TMFC_MW});
+
 else
     figure(findobj('Tag', 'TMFC_MW')); 
     warning('TMFC toolbox is already running');    
 end
     
-%% ========================[ Select Subjects ]=============================
+    function reset(ButtonH, EventData, TMFC_MW)
+        
+        tmfc = struct;
+        tmfc.defaults.parallel = 0;      
+        tmfc.defaults.maxmem = 2^31;
+        tmfc.defaults.resmem = true;
+        
+        set(handles.TMFC_MW_S1, 'String', 'Not selected','ForegroundColor', 'red');
+        set(handles.TMFC_MW_S2, 'String', 'Not selected','ForegroundColor', 'red');
+        set(handles.TMFC_MW_S3, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        set(handles.TMFC_MW_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        set(handles.TMFC_MW_S6, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        set(handles.TMFC_MW_S8, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        set(handles.TMFC_MW_S10, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        
+        disp('tmfc reset');
+        disp(tmfc);
+    end
 
+    function tempsave(ButtonH, EventData, TMFC_MW)
+        assignin('base', 'tmfc', tmfc);
+    end
+%% ========================[ Select Subjects ]=============================
 % Select subjects and check SPM.mat files
 function Action_SUB_SEL(ButtonH, EventData, TMFC_MW)
     MW_Freeze(1);
@@ -211,31 +235,112 @@ function Action_SUB_SEL(ButtonH, EventData, TMFC_MW)
     disp(tmfc);
 end
 
-%% ====================[ Background Connectivity ]=========================
-function BGFC_EX(ButtonH, EventData, TMFC_MW)
-    % -1 = no selection or creation 
-    % 0 reutrn = NEW ROI Created and have to select it 
-    % 1 ROI selected from existing list
-    D = tmfc_select_ROIs_GUI();
-    fprintf('Continue BGFC with ROI # = %d \n', D);
+
+%% ========================[ FIR Regression ]==============================
+
+function Action_FIR_REG(ButtonH, EventData, TMFC_MW)
+               
+    % Freezing the Main window
+    MW_Freeze(1);
     
-end
-
-%% =====================[ Beta Series Corelation ]=========================
-function BSC_EX(ButtonH, EventData, TMFC_MW)
-    BSC_entry = tmfc_select_ROIs_GUI();
-    fprintf('Continue BSC with ROI # = %d \n', BSC_entry);
-    if BSC_entry ~= -1
-        tmfc_BSC_GUI(tmfc,BSC_entry);
+    
+    disp('Initiating FIR regression');
+    if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+        % Checking if subjects has been selected
+        
+        if ~isfield(tmfc, 'FIR') 
+        % Checking if FIR has been executed before
+        
+            [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+            % Eneter bins & windows
+            
+             if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
+                % Initial exeuction of FIR regression
+                new_run = tmfc_FIR(tmfc, 1);
+                for i=1:length(tmfc.subjects)
+                    tmfc.subjects(i).FIR = new_run(i);
+                end
+             end
+             
+        elseif isfield(tmfc, 'FIR') && ~isfield(tmfc.subjects, 'FIR')
+            
+            % Exeuction if CTLR + C is pressed 
+            % Can add code for exuection from last complied .mat file
+            [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+            
+             if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
+                new_run = tmfc_FIR(tmfc, 1);
+                for i=1:length(tmfc.subjects)
+                    tmfc.subjects(i).FIR = new_run(i);
+                end
+             end
+            
+        else
+            
+            % Other cases 'Restart' and 'Continue'
+            if ~isnan(tmfc.FIR.window) && ~isnan(tmfc.FIR.bins) 
+                
+                
+                if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
+                    
+                    % Restart case
+                    STATUS = TMFC_FIR_RES_GUI();
+                    if STATUS == 1
+                        [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+                        if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                            
+                            disp('Restarting FIR Regression');
+                            re_run = tmfc_FIR(tmfc, 1);
+                            for i=1:length(tmfc.subjects)
+                                tmfc.subjects(i).FIR = re_run(i);
+                            end
+                        end
+                    end
+                    
+                    
+                else
+                    % Continue case
+                    for i=1:length(tmfc.subjects)
+                        FIR_index = NaN;
+                        if isnan(tmfc.subjects(i).FIR)
+                            FIR_index = i;
+                            break;
+                        end
+                    end
+                    
+                    FIR_dec = TMFC_FIR_CON_GUI(FIR_index);
+                    
+                    if FIR_dec == 0
+                        con_run = tmfc_FIR(tmfc,FIR_index);
+                        for i=FIR_index:length(tmfc.subjects)
+                            tmfc.subjects(i).FIR = con_run(i);
+                        end
+                    elseif FIR_dec == 1
+                        [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+                        if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                                                    
+                            con_run = tmfc_FIR(tmfc,1);
+                            for i=1:length(tmfc.subjects)
+                                tmfc.subjects(i).FIR = con_run(i);
+                            end
+                        end
+                    else
+                        warning('FIR Regression not initiated');
+                    end
+                    
+                end
+            end
+        end
+            
+    else
+        warning('Please select subjects to continue with FIR Regression');
     end
-end
-
-%% =============================[ Close ]==================================
-function gPPI_EX(ButtonH, EventData, TMFC_MW)
-    D = tmfc_select_ROIs_GUI();
-    fprintf('Continue gPPI with ROI # = %d \n', D);
-end
-
+    
+    
+        MW_Freeze(0);
+        disp(tmfc);
+        
+    end % Closing FIR Regress Function
+       
+    
 
 %% =============================[ Close ]==================================
  
@@ -340,6 +445,32 @@ end
               
     end
 
+%% ====================[ Background Connectivity ]=========================
+function BGFC_EX(ButtonH, EventData, TMFC_MW)
+    % -1 = no selection or creation 
+    % 0 reutrn = NEW ROI Created and have to select it 
+    % 1 ROI selected from existing list
+    D = tmfc_select_ROIs_GUI();
+    fprintf('Continue BGFC with ROI # = %d \n', D);
+    
+end
+
+
+%% =====================[ Beta Series Corelation ]=========================
+function BSC_EX(ButtonH, EventData, TMFC_MW)
+    BSC_entry = tmfc_select_ROIs_GUI();
+    fprintf('Continue BSC with ROI # = %d \n', BSC_entry);
+    if BSC_entry ~= -1
+        tmfc_BSC_GUI(tmfc,BSC_entry);
+    end
+end
+
+%% =============================[ Close ]==================================
+function gPPI_EX(ButtonH, EventData, TMFC_MW)
+    D = tmfc_select_ROIs_GUI();
+    fprintf('Continue gPPI with ROI # = %d \n', D);
+end
+
 
 %% ==========================[ Load Project ]==============================
 
@@ -369,9 +500,10 @@ end
             % variable name
             %assignin('base', variable_name_L{1}, variable_value_L);
             assignin('base', 'tmfc', variable_value_L);
-            
+            tmfc = evalin('base', 'tmfc');
+            disp(tmfc);
             % Supporting Function - To Update TMFC GUI when loading data
-            evaluate_file();
+            %evaluate_file();
             
         else
             warning('No file selected');
@@ -512,171 +644,7 @@ end
 
 
 
-%% ========================[ FIR Regression ]==============================
 
-    function FIR_REG(ButtonH, EventData, TMFC_MW)
-        
-    % Function that performs Cordinates & performs FIR Regression 
-    % Supporting functions (External) - tmfc_FIR_GUI(), tmfc_FIR_regress()
-    %                      (Internal) - FIR_Runner()
-        
-    % Freezing the Main window
-    try
-        h_FREZ = findobj('Tag','TMFC_MW');
-        F_data = guidata(h_FREZ); 
-        set([F_data.SUB,F_data.FIR_TR, F_data.LSS_R, F_data.LSS_RW, F_data.BSC, F_data.gPPI,F_data.save_p, F_data.open_p, F_data.change_p, F_data.settings,F_data.BGFC],'Enable', 'off');
-    end
-    
-        % Checking if the FIR_WINDOWS & BINS GUI is open 
-        try 
-            CHECK_FIR = findobj('Tag', 'FIR_REG_NUM');
-        end 
-        
-        % Continue with selection if the window doesn't exist
-        if isempty(CHECK_FIR)
-        
-            % Initialize Local copy of start index & TMFC variable in runtime
-            N_index = 0;
-            SUB_EXT = evalin('base', 'tmfc');
-
-            % If there exists subjects in the TMFC variable then proceed
-            if ~strcmp(SUB_EXT.subjects(1).path, '')
-                
-                % Check if FIR WINDOWS is not NaN, enter WIN & BIN
-                if isnan(SUB_EXT.FIR.window)
-                   tmfc_FIR_GUI(1);               
-                   uiwait();
-                end
-
-                % Create second local copy of TMFC that collects WIN & BIN
-                SUB_EXT_2 = evalin('base', 'tmfc');
-                % Create variable to store the length of subjects
-                DG = length(SUB_EXT_2.subjects);
-
-                % Check condition if FIR WINDOWS & BINS is not ZERO or NaN
-                if SUB_EXT_2.FIR.window ~= 0 & SUB_EXT_2.FIR.bins ~= 0 & isnan(SUB_EXT_2.FIR.window) == 0 & isnan(SUB_EXT_2.FIR.bins) == 0 %HERE
-
-                    
-                    % CONDITION 1: When running FIR Regression for the
-                    % FIRST TIME (EMPTY)
-                    
-                    % Check if first subject is processed (i.e. is NaN)
-                    if isnan(SUB_EXT_2.subjects(1).FIR) % 
-                        FIR_RUNNER(1);
-
-                    % CONDITION 2: When running FIR Regression after 
-                    % FULL COMPUTATION IS COMPELTED (Full Re-Run)
-                    
-                    % Condition to check if the last subject is computed
-                    elseif isnan(SUB_EXT_2.subjects(DG).FIR) == 0% FULL RE-RUN                        
-                        tmfc_FIR_GUI(2); % GUI to ask Restart Permission
-                        uiwait();
-                        
-                        % Obtain status of Restart from User (0/1)
-                        h18 = findobj('Tag', 'TMFC_MW');
-                        h18_V = getappdata(h18, 'RESTART_FIR');
-                        
-                        % If Restart is allowed, proceed
-                        if h18_V == 1
-                            
-                            % Ask for WINDOWS & BINS
-                            tmfc_FIR_GUI(1);                                           % Enter Windows & Bins 
-                            uiwait();
-                            
-                            h19 = findobj('Tag', 'TMFC_MW');
-                            h19_V = getappdata(h19, 'NO_COND');
-                            
-                            % Check if FIR_windows & bins were closed or
-                            % given by the user
-                            
-                            if h19_V ~= 1 | isempty(h19_V)    
-                                FIR_RUNNER(1);
-                            end
-                            
-                        end
-
-                    else
-                        % CONDITION 3: When running FIR Regression from 
-                        % THE MIDDLE OR CONTINUATION (Last processed sub)
-                        
-                        % Find the last procssed subject (i.e. not NaN)
-                        SUB_EXT_3 = evalin('base', 'tmfc');
-                        for i = 1:DG
-                            if isnan(SUB_EXT_3.subjects(i).FIR) == 1
-                                N_index = i; % INDEX of last processed subject is found
-                                break;
-                            end
-                        end
-                        
-                        % Ask User if they want to continue from the Index
-                        % GUI for Continue or Restart action
-                        tmfc_FIR_GUI(3, N_index); 
-                        uiwait();
-                        
-                        % Get Status of Continuation
-                        h5 = findobj('Tag', 'TMFC_MW');
-                        D5 = getappdata(h5, 'CONTD_FIR');
-                        
-                        if D5 == 1 % Continue computation from the Last processed index
-                            setappdata(h5,'CONTD_FIR', 0);
-                            FIR_RUNNER(int32(N_index));
-                            
-                        elseif D5 == 2 % Restart Computation from the first subject
-                            tmfc_FIR_GUI(1);        % Enter Windows & Bins 
-                            uiwait();     
-                            
-                            h29 = findobj('Tag', 'TMFC_MW');
-                            h29_V = getappdata(h29, 'NO_COND');
-                            
-                            if h29_V ~= 1 | isempty(h29_V)  
-                                FIR_RUNNER(1);
-                            end
-                            
-                        else
-                            warning('Somethings not right here, the status of CONTD_FIR was not changed by the GUI via App data');
-                        end
-                        
-                    end % Closing if statement for CONDITION 3
-                    
-                else
-                    warning('Please enter the Windows and bins to perform FIR Regression');
-                    
-                    
-                end % Closing if statement for FIR Regress Conditions (1,2,3)
-                
-            else
-                warning('Please select subjects to peform FIR regression');
-            end % Closing If statement to check WINDOWS & BINS 
-
-            else
-                warning('FIR Regression is already running');
-        end % Closing if Statment to check if FIR exists
- 
-        try          % Unfrezee action after completion of actuation
-        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'on');
-        end
-        
-    end % Closing FIR Regress Function
-       
-
-    % FIR Function the performs computation 
-    function FIR_RUNNER(str_sub)
-        
-        % Freeze buttons on Main Window
-        FIR_TMFC = evalin('base', 'tmfc');
-        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'off');
-        
-        % Actuator Function 
-        try
-            tmfc_FIR(FIR_TMFC, str_sub);
-        end
-        
-        % Unfrezee action after completion of actuation
-        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'on');
-        disp('FIR task regression completed');
-    end
-    
-    
 %% ========================[ LSS Regression ]==============================
 
 function LSS_REG(ButtonH, EventData, TMFC_MW)
@@ -876,41 +844,41 @@ function evaluate_file() % function to update the TMFC window after loading a tm
         
     end
     
-    if V_FIR ~= 0
-        set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-        set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
-    else 
-        set(handles.FIR_TR_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
-        set(handles.FIR_TR_stat,'String','Not done');
-    end
-    
-    if V_LSS_A_FIR ~= 0
-        set(handles.LSS_R_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-        set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS_A_FIR), '/', num2str(BPL_LEN), ' done'));
-    else 
-        set(handles.LSS_R_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
-        set(handles.LSS_R_stat,'String','Not done');
-    end
-    
-    switch BPL.defaults.parallel
-        case 1
-            COMPUTING = {'Parallel computing','Sequential computing',};           
-        case 0 
-           COMPUTING = {'Sequential computing','Parallel computing'};
-           
-    end
-    
-    switch BPL.defaults.resmem
-        case true
-            STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'}; 
-        case false 
-            STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
-           
-    end
-    
-    
-    
-    V_LSS = 0;
+%     if V_FIR ~= 0
+%         set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
+%         set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
+%     else 
+%         set(handles.FIR_TR_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
+%         set(handles.FIR_TR_stat,'String','Not done');
+%     end
+%     
+%     if V_LSS_A_FIR ~= 0
+%         set(handles.LSS_R_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
+%         set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS_A_FIR), '/', num2str(BPL_LEN), ' done'));
+%     else 
+%         set(handles.LSS_R_stat,'ForegroundColor',[0.773, 0.353, 0.067]);
+%         set(handles.LSS_R_stat,'String','Not done');
+%     end
+%     
+%     switch BPL.defaults.parallel
+%         case 1
+%             COMPUTING = {'Parallel computing','Sequential computing',};           
+%         case 0 
+%            COMPUTING = {'Sequential computing','Parallel computing'};
+%            
+%     end
+%     
+%     switch BPL.defaults.resmem
+%         case true
+%             STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'}; 
+%         case false 
+%             STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
+%            
+%     end
+%     
+%     
+%     
+%     V_LSS = 0;
     %for i = 1:BPL_LEN
     %    if ~isnan(BPL.subjects(i).LSS_residual_ts)
     %    V_LSS = V_LSS + 1 ;
@@ -945,11 +913,12 @@ function MW_Freeze(STATE)
                 handles.TMFC_MW_B12,handles.TMFC_MW_B13a,handles.TMFC_MW_B13b,handles.TMFC_MW_B14a...
                 handles.TMFC_MW_B14b], 'Enable', STATE);
 
-end
+     end
           
-%uiwait();
+
 end  
 
+%%
 function TMFC_SS_select_proj_path(S)
     TMFC_SS_PP = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.40 0.20 0.10],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'Proj_path');
     PP_details = {'Next, select the project path where all results and temporary files will be stored'};
@@ -960,6 +929,167 @@ function TMFC_SS_select_proj_path(S)
     
     function OKAY(~,~)
         delete(TMFC_SS_PP);
+    end
+    uiwait();
+end
+
+%%
+
+function [STATUS] = TMFC_FIR_CON_GUI(INDEX)
+
+    % STATUS = 1 - restart FIR 
+    % STATUS = 0 - continue FIR
+    % STATUS = -1 - no action
+
+    TMFC_FIR_CONT = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.18],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_FIR','CloseRequestFcn', @CANCEL); %X Y W H
+
+    TMFC_FIR_CONT_S1 = uicontrol(TMFC_FIR_CONT,'Style','text','String', 'Start FIR task regression from','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.55 0.80 0.260]);
+    TMFC_FIR_CONT_S2 = uicontrol(TMFC_FIR_CONT,'Style','text','String', strcat('subject №',num2str(INDEX),'?'), 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.40 0.80 0.260]);
+
+    TMFC_FIR_CONT_YES = uicontrol(TMFC_FIR_CONT,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28, 'Position',[0.12 0.15 0.320 0.270]);
+    TMFC_FIR_CONT_RESTART = uicontrol(TMFC_FIR_CONT,'Style','pushbutton', 'String', '<html>&#160 No, start from <br>the first subject','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28,'Position',[0.56 0.15 0.320 0.270]);
+
+    set([TMFC_FIR_CONT_S1,TMFC_FIR_CONT_S2],'backgroundcolor',get(TMFC_FIR_CONT,'color'));
+    set(TMFC_FIR_CONT_YES, 'callback', @CONTINUE);
+    set(TMFC_FIR_CONT_RESTART, 'callback', @RESTART);
+
+    function CANCEL(~,~)
+        delete(TMFC_FIR_CONT);
+        STATUS = -1;
+    end
+    
+    % Function to set status in MAIN_WINDOW appdata (To continue from
+    % last processed subject) 
+    function CONTINUE(~,~)
+        STATUS = 0;
+        delete(TMFC_FIR_CONT);
+    end
+
+    % Function to set status in MAIN_WINDOW appdata (To Restart from
+    % the first subject)
+    function RESTART(~,~)
+        STATUS = 1;
+        delete(TMFC_FIR_CONT);
+    end
+
+    
+    uiwait();
+end
+
+function [STATUS] = TMFC_FIR_RES_GUI(~,~)
+
+    % STATUS = 1 - restart FIR 
+    % STATUS = 0 - dont restart FIR 
+
+    TMFC_FIR_RES = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.16 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_FIR','CloseRequestFcn', @CANCEL); %X Y W H
+
+    TMFC_FIR_RES_S1 = uicontrol(TMFC_FIR_RES,'Style','text','String', {'Recompute FIR task','regression for all subjects.?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position', [0.10 0.55 0.80 0.260]);
+    TMFC_FIR_RES_OK = uicontrol(TMFC_FIR_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.25 0.320 0.170]);
+    TMFC_FIR_RES_CL = uicontrol(TMFC_FIR_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.25 0.320 0.170]);
+
+    set(TMFC_FIR_RES_S1,'backgroundcolor',get(TMFC_FIR_RES,'color'));
+    set(TMFC_FIR_RES_CL, 'callback', @CANCEL);
+    set(TMFC_FIR_RES_OK, 'callback', @RESTART);
+
+    % Function to close the Window
+    function CANCEL(~,~)
+        delete(TMFC_FIR_RES);
+        STATUS = 0;
+    end
+
+    % Function to Restart FIR Regression
+    function RESTART(~,~)
+        STATUS = 1;
+        delete(TMFC_FIR_RES);
+    end
+    uiwait();
+end
+
+function [win, bin] = TMFC_FIR_BW_GUI(~,~)
+
+    TMFC_FIR_BW = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off',...
+        'MenuBar', 'none', 'ToolBar', 'none','Tag','FIR_REG_NUM', 'WindowStyle','modal','CloseRequestFcn', @TMFC_FIR_BW_stable_Exit); 
+    set(gcf,'color','w');
+    
+    TMFC_FIR_BW_S1 = uicontrol(TMFC_FIR_BW,'Style','text','String', 'Enter FIR window length (in seconds):','Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40, 'Position',[0.08 0.62 0.65 0.200]);
+    TMFC_FIR_BW_S2 = uicontrol(TMFC_FIR_BW,'Style','text','String', 'Enter the number of FIR time bins:','Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40,'Position',[0.08 0.37 0.65 0.200]);
+    TMFC_FIR_BW_E1 = uicontrol(TMFC_FIR_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.67 0.185 0.170]);%,'InputType', 'digits');
+    TMFC_FIR_BW_E2 = uicontrol(TMFC_FIR_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.42 0.185 0.170]);
+    TMFC_FIR_BW_OK = uicontrol(TMFC_FIR_BW,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.21 0.13 0.230 0.170]);
+    TMFC_FIR_BW_HELP = uicontrol(TMFC_FIR_BW,'Style','pushbutton', 'String', 'Help','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.52 0.13 0.230 0.170]);
+
+    set(TMFC_FIR_BW_S1,'backgroundcolor',get(TMFC_FIR_BW,'color'));
+    set(TMFC_FIR_BW_S2,'backgroundcolor',get(TMFC_FIR_BW,'color'));
+    set(TMFC_FIR_BW_OK, 'callback', @TMFC_FIR_BW_EXTRACT);
+    set(TMFC_FIR_BW_HELP, 'callback', @TMFC_FIR_BW_HELP_POP);
+
+   
+    function TMFC_FIR_BW_stable_Exit(~,~)
+       %h76 = findobj('Tag', 'MAIN_WINDOW');
+       %setappdata(h76, 'NO_COND', 1); 
+       win = NaN; 
+       bin = NaN; 
+       delete(TMFC_FIR_BW);
+    end
+
+    % Generates the HELP WINDOW within the GUI 
+    function TMFC_FIR_BW_HELP_POP(~,~)
+
+            TMFC_FIR_BW_HELPWW = figure('Name', 'FIR task regression: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.22 0.48],'Resize','off','MenuBar', 'none','ToolBar', 'none');
+            set(gcf,'color','w');
+
+            TMFC_FIR_BW_DETAILS = {'Finite impulse response (FIR) task regression are used to remove co-activations from BOLD time-series.','',...
+                'Co-activations are simultaneous (de)activations', 'without communication between brain regions.',...
+                '',...
+                'Co-activations spuriously inflate task-modulated','functional connectivity (TMFC) estimates.','',...
+                'This option regress out (1) co-activations with any','possible shape and (2) confounds specified in the original',...
+                'SPM.mat file (e.g., motion, physiological noise, etc).',...
+                '','Functional images for residual time-series(Res_*.nii in',...
+                'FIR_GLM folders) will be further used for TMFC analysis.','',...
+                'Typically, the FIR window length covers the duration of',...
+                'the event and an additional 18s to account for the likely',...
+                'duration of the hemodynamic response.','',...
+                'Typically, the FIR time bin is equal to one repetition time',...
+                '(TR). Therefore, the number of FIR time bins is equal to:',''};
+                TMFC_FIR_BW_DETAILS_2 = {'Number of FIR bins = FIR window length/TR'};
+
+            TMFC_FIR_BW_LS2_DTS_1 = uicontrol(TMFC_FIR_BW_HELPWW,'Style','text','String', TMFC_FIR_BW_DETAILS,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.035, 'Position',[0.06 0.16 0.885 0.800]);
+            TMFC_FIR_BW_LS2_DTS_2 = uicontrol(TMFC_FIR_BW_HELPWW,'Style','text','String', TMFC_FIR_BW_DETAILS_2,'Units', 'normalized', 'HorizontalAlignment', 'Center','fontunits','normalized', 'fontSize', 0.30, 'Position',[0.06 0.10 0.885 0.10]);
+            TMFC_FIR_BW_LS2_OK = uicontrol(TMFC_FIR_BW_HELPWW,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.35, 'Position',[0.39 0.04 0.240 0.070]);
+
+            set(TMFC_FIR_BW_LS2_DTS_1,'backgroundcolor',get(TMFC_FIR_BW_HELPWW,'color'));
+            set(TMFC_FIR_BW_LS2_DTS_2,'backgroundcolor',get(TMFC_FIR_BW_HELPWW,'color'));
+            set(TMFC_FIR_BW_LS2_OK, 'callback', @TMFC_FIR_BW_CLOSE_LS2_OK);
+
+            function TMFC_FIR_BW_CLOSE_LS2_OK(~,~)
+                close(TMFC_FIR_BW_HELPWW);
+            end
+    end
+
+
+
+    % Function to extract the entered number from the user
+    function TMFC_FIR_BW_EXTRACT(~,~)
+
+       Window = str2double(get(TMFC_FIR_BW_E1, 'String'));
+       bins = str2double(get(TMFC_FIR_BW_E2, 'String'));
+
+       if isnan(Window)
+           warning('Please enter a numeric value for the number of windows');
+       elseif ~isnan(Window) && isnan(bins)
+           warning('Please eneter a numeric value for the number of bins');
+       elseif Window == 0 || Window < 0
+           warning('Entered value for ''Windows'' cannot be zero or negative, Please re-enter');
+       elseif bins == 0 || bins < 0
+           warning('Entered value for ''Bins'' cannot be zero or negative, Please re-enter');
+       else
+           win = Window; 
+           bin = bins;   
+           %h76_b = findobj('Tag', 'MAIN_WINDOW');
+           %setappdata(h76_b, 'NO_COND', 0); 
+           delete(TMFC_FIR_BW);
+       end
+
     end
     uiwait();
 end
