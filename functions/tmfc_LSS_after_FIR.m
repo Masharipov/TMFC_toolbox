@@ -38,7 +38,7 @@ function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 % FORMAT [sub_check] = tmfc_LSS_after_FIR(tmfc)
 % Run a function starting from the first subject in the list.
 %
-%   tmfc.subjects.path     - List of paths to SPM.mat files for N subjects
+%   tmfc.subjects.path     - Paths to individual SPM.mat files
 %   tmfc.project_path      - Path where all results will be saved
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
