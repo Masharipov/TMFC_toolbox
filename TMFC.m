@@ -494,16 +494,19 @@ end
             variable_name_L = fieldnames(loaded_data_L);                
             
             % Get value of the variable as in file
-            variable_value_L = loaded_data_L.(variable_name_L{1});      
+            tmfc = loaded_data_L.(variable_name_L{1});      
             
             % Assign generated data into Base workspace under corresponding
             % variable name
             %assignin('base', variable_name_L{1}, variable_value_L);
-            assignin('base', 'tmfc', variable_value_L);
-            tmfc = evalin('base', 'tmfc');
-            disp(tmfc);
+            %assignin('base', 'tmfc', variable_value_L);
+            %tmfc = evalin('base', 'tmfc');
+            
+            %disp(variable_value_L);
+            %tmfc = load(variable_value_L);
+            %disp(tmfc);
             % Supporting Function - To Update TMFC GUI when loading data
-            %evaluate_file();
+            evaluate_file(tmfc);
             
         else
             warning('No file selected');
@@ -824,25 +827,25 @@ function SAVER_STAT =  Saver(save_path)
     end
 end
 
-function evaluate_file() % function to update the TMFC window after loading a tmfc project
-    BPL = evalin('base', 'tmfc');
-    BPL_LEN = length(BPL.subjects);
-    set(handles.SUB_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-    set(handles.SUB_stat,'String',strcat(num2str(BPL_LEN), ' selected'));
+function evaluate_file(tmfc) % function to update the TMFC window after loading a tmfc project
+    %BPL = evalin('base', 'tmfc');
+    %BPL_LEN = length(BPL.subjects);
+    set(handles.TMFC_MW_S1,'String', strcat(num2str(length(tmfc.subjects)), ' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
+    
    
-    V_FIR = 0;
-    V_LSS_A_FIR = 0;
-    for i = 1:BPL_LEN
-        % checking status of FIR completion
-        if ~isnan(BPL.subjects(i).FIR)
-            V_FIR = V_FIR + 1 ;
-        end
-        % checkinf status of LSS completion
-        if ~isnan(BPL.subjects(i).LSS_after_FIR)
-            V_LSS_A_FIR = V_LSS_A_FIR + 1;
-        end
-        
-    end
+%     V_FIR = 0;
+%     V_LSS_A_FIR = 0;
+%     for i = 1:BPL_LEN
+%         % checking status of FIR completion
+%         if ~isnan(BPL.subjects(i).FIR)
+%             V_FIR = V_FIR + 1 ;
+%         end
+%         % checkinf status of LSS completion
+%         if ~isnan(BPL.subjects(i).LSS_after_FIR)
+%             V_LSS_A_FIR = V_LSS_A_FIR + 1;
+%         end
+%         
+%     end
     
 %     if V_FIR ~= 0
 %         set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
