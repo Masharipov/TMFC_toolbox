@@ -57,7 +57,7 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
     
     tmfc = struct;
     % Set up TMFC structure
-    tmfc.defaults.parallel = 1;      
+    tmfc.defaults.parallel = 0;      
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
 
@@ -162,6 +162,7 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
     set(handles.TMFC_MW_B8, 'callback', {@Action_FIR_REG, handles.TMFC_MW});
     set(handles.TMFC_MW_B12, 'callback', {@reset, handles.TMFC_MW});
     set(handles.TMFC_MW_B13a, 'callback', {@LOAD_PROJ, handles.TMFC_MW});
+    set(handles.TMFC_MW_B14b, 'callback', {@Action_Settings, handles.TMFC_MW});
     
 %     set(handles.open_p, 'callback', {@LOAD_PROJ, handles.TMFC_MW});
 %     set(handles.change_p, 'callback', {@CP_GUI, handles.TMFC_MW});
@@ -538,110 +539,113 @@ end
 
 % Variables to store & display selected settings in the settings window
 % Type of computing (Default computing: Sequential - 0, Parallel - 1)
-COMPUTING = {'Sequential computing', 'Parallel computing'};
-STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
+SET_COMPUTING = {'Sequential computing', 'Parallel computing'};
+SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
+SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
 
-function Settings(ButtonH, EventData, MAIN_F)
+function Action_Settings(ButtonH, EventData, TMFC_MW)
         
-    % Creates local copy of the TMFC variable and uses the most recent
-    % version of data & settings
-    SET_VAR = evalin('base', 'tmfc');
-
     % Create the Main figure for settings Window
-    MAIN_F_SET = figure('Name', 'Settings', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.205 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','Tag', 'MAIN_WINDOW_Settings','WindowStyle','modal');%,'WindowStyle','modal'
+    TMFC_SET = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.415 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'TMFC_MW_Settings','resize', 'off','WindowStyle','modal');
     
     % Textual Data to be displayed on the settings window
-    TEXT_1 = {'Parallel computing use Parallel Computing Toolbox. The number of workers in a parallel pool can be changed in MATLAB settings.'};
-    TEXT_2 = {'This option temporary changes resmem variable in spm_defaults, which governing whether temporary files during GLM estimation are stored on disk or kept in memory. If you have enough available RAM, not writing the files to disk will speed the estimation.'};
-    TEXT_3 = {'Max RAM temporary changes maxmem variable in spm_defaults, which indicates how much memory can be used at the same time during GLM estimation. If your computer has a large amount of RAM, you can increase that memory setting:'};
-    TEXT_4 = {'• 2^31 = 2GB','• 2^32 = 4GB', '• 2^33 = 8GB','• 2^34 = 16GB','• 2^35 = 32GB'};
+    SET_TEXT_1 = {'Parallel computing use Parallel Computing Toolbox. The number of workers in a parallel pool can be changed in MATLAB settings.'};
+    SET_TEXT_2 = {'This option temporary changes resmem variable in spm_defaults, which governing whether temporary files during GLM estimation are stored on disk or kept in memory. If you have enough available RAM, not writing the files to disk will speed the estimation.'};
+    SET_TEXT_3a = {'Max RAM temporary changes maxmem variable in spm_defaults, which indicates how much memory can be used at the same time during GLM estimation. If your computer has a large amount of RAM, you can increase that memory setting:'};
+    SET_TEXT_3b = {'• 2^31 = 2GB','• 2^32 = 4GB', '• 2^33 = 8GB','• 2^34 = 16GB','• 2^35 = 32GB'};
+    SET_TEXT_4 = {'Perform seed-to-voxel or ROI-to-ROI analysis or both. Applies to gPPI and BSC methods.','',...
+        'Seed-to-voxel gPPI is computationally expensive and can take a long time as it estimates the gPPI model parameters for each voxel.','',...
+        'Seed-to-voxel BSC calculates relatively fast (about as ROI-to-ROI analysis) since voxel-wise correlations are not computationally expensive.'};
 
     % Initializing Drop down menus of options for Settings Window
+    TMFC_SET_MP1 = uipanel(TMFC_SET,'Units', 'normalized','Position',[0.03 0.865 0.94 0.125],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    TMFC_SET_MP2 = uipanel(TMFC_SET,'Units', 'normalized','Position',[0.03 0.685 0.94 0.17],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    TMFC_SET_MP3 = uipanel(TMFC_SET,'Units', 'normalized','Position',[0.03 0.375 0.94 0.30],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
+    TMFC_SET_MP4 = uipanel(TMFC_SET,'Units', 'normalized','Position',[0.03 0.10 0.94 0.265],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType', 'line');
     
-    % Drop Down: Type of Computing
-    MF_S1 = uicontrol(MAIN_F_SET ,'Style','popupmenu', 'String', COMPUTING ,'Units', 'normalized', 'Position',[0.04 0.87 0.90 0.08],'fontunits','normalized', 'fontSize', 0.30);
-    MF_S1_STAT = uicontrol(MAIN_F_SET, 'Style','text','String', TEXT_1,'Units', 'normalized', 'Position',[0.04 0.795 0.90 0.10],'fontunits','normalized','fontSize', 0.24, 'HorizontalAlignment', 'left','backgroundcolor','w');%,'FontWeight', 'Bold',
-
-    % Drop Down: Type of Storage
-    MF_S2 = uicontrol(MAIN_F_SET ,'Style','popupmenu', 'String', STORAGE,'Units', 'normalized', 'Position',[0.04 0.69 0.90 0.08],'fontunits','normalized', 'fontSize', 0.30);
-    MF_S2_STAT = uicontrol(MAIN_F_SET, 'Style','text','String', TEXT_2,'Units', 'normalized', 'Position',[0.04 0.555 0.86 0.16],'fontunits','normalized','fontSize', 0.14, 'HorizontalAlignment', 'left','backgroundcolor','w');%,'FontWeight', 'Bold',
-
-    % Text box: Size of RAM to be used & its elaboration
-    MF_S3_STAT = uicontrol(MAIN_F_SET, 'Style','text','String', 'Max RAM for GLM esimtation (bits):','Units', 'normalized', 'Position',[0.04 0.45 0.65 0.08],'fontunits','normalized', 'fontSize', 0.30,'backgroundcolor','w','HorizontalAlignment', 'left');%
-    MF_S3_EDIT = uicontrol(MAIN_F_SET,'Style','edit','String', SET_VAR.defaults.maxmem,'Units', 'normalized', 'HorizontalAlignment', 'center','Position',[0.72 0.485 0.22 0.06],'fontunits','normalized', 'fontSize', 0.41);
-    MF_S3_STAT_2 = uicontrol(MAIN_F_SET, 'Style','text','String', TEXT_3,'Units', 'normalized', 'Position',[0.04 0.31 0.84 0.16],'fontunits','normalized','fontSize', 0.14, 'HorizontalAlignment', 'left','backgroundcolor','w');%,'FontWeight', 'Bold',
-    MF_S3_STAT_3 = uicontrol(MAIN_F_SET, 'Style','text','String', TEXT_4,'Units', 'normalized', 'Position',[0.08 0.155 0.30 0.16],'fontunits','normalized','fontSize', 0.15, 'HorizontalAlignment', 'left','backgroundcolor','w');%,'FontWeight', 'Bold',
-
-    % OKAY & Synchronize button
-    MF_S_OK = uicontrol(MAIN_F_SET,'Style','pushbutton','String', 'OK','Units', 'normalized','Position', [0.36 0.06 0.32 0.06],'fontunits','normalized', 'fontSize', 0.35);
-
+    TMFC_SET_P1 = uicontrol(TMFC_SET,'Style','popupmenu', 'String', SET_COMPUTING ,'Units', 'normalized', 'Position',[0.048 0.908 0.90 0.07],'fontunits','normalized', 'fontSize', 0.265);
+    TMFC_SET_P2 = uicontrol(TMFC_SET,'Style','popupmenu', 'String', SET_STORAGE ,'Units', 'normalized', 'Position',[0.048 0.775 0.90 0.07],'fontunits','normalized', 'fontSize', 0.265);
+    TMFC_SET_P4 = uicontrol(TMFC_SET,'Style','popupmenu', 'String', SET_SEED ,'Units', 'normalized', 'Position',[0.048 0.282 0.90 0.07],'fontunits','normalized', 'fontSize', 0.265);
     
-    set(MF_S_OK , 'callback', @OK_SYNC);   
+    TMFC_SET_OK = uicontrol(TMFC_SET,'Style', 'pushbutton', 'String', 'OK', 'Units', 'normalized', 'Position', [0.3 0.03 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
+    TMFC_SET_E1 = uicontrol(TMFC_SET,'Style','edit','String', tmfc.defaults.maxmem,'Units', 'normalized', 'HorizontalAlignment', 'center','Position',[0.72 0.61 0.22 0.05],'fontunits','normalized', 'fontSize', 0.38);
+    
+    TMFC_SET_S1 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_1,'Units', 'normalized', 'Position',[0.05 0.87 0.90 0.07],'fontunits','normalized','fontSize', 0.265, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S2 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_2,'Units', 'normalized', 'Position',[0.05 0.69 0.90 0.11],'fontunits','normalized','fontSize', 0.16, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S3_1 = uicontrol(TMFC_SET,'Style','text','String', 'Max RAM for GLM esimtation (bits):','Units', 'normalized', 'Position',[0.048 0.61 0.65 0.04],'fontunits','normalized', 'fontSize', 0.46,'HorizontalAlignment', 'left','backgroundcolor','w');%
+    TMFC_SET_S3_2 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_3a,'Units', 'normalized', 'Position',[0.05 0.505 0.90 0.09],'fontunits','normalized','fontSize', 0.19, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S3_3 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_3b,'Units', 'normalized', 'Position',[0.11 0.38 0.27 0.12],'fontunits','normalized','fontSize', 0.155, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S4 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_4,'Units', 'normalized', 'Position',[0.05 0.11 0.90 0.20],'fontunits','normalized','fontSize', 0.088, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    
+    set(TMFC_SET_OK , 'callback', @OK_SYNC);   
 
 
+    TMFC_SET_COPY = tmfc;
         % The following functions perform Synchronization after OK
         % button has been pressed 
         
         function OK_SYNC(~,~)
 
             % Create a local copy of the TMFC variable
-           SET_SYNC = evalin('base', 'tmfc');
+           %SET_SYNC = evalin('base', 'tmfc');
 
            % SYNC: Computation type
            % Check status of string in stat box -> if changed -> SWAP
            % details -> Change TMFC variable -> END          
            
-           C_1 = (MF_S1.String(MF_S1.Value));
+           C_1 = (TMFC_SET_P1.String(TMFC_SET_P1.Value));
            if strcmp(C_1{1},'Sequential computing')
-               COMPUTING = {'Sequential computing','Parallel computing'};
-               set(MF_S1, 'String', COMPUTING);
-               SET_SYNC.defaults.parallel = 0;
+               SET_COMPUTING = {'Sequential computing','Parallel computing'};
+               set(TMFC_SET_P1, 'String', SET_COMPUTING);
+               tmfc.defaults.parallel = 0;
 
            elseif strcmp(C_1{1},'Parallel computing')
-               COMPUTING = {'Parallel computing','Sequential computing',};
-               set(MF_S1, 'String', COMPUTING);
-               SET_SYNC.defaults.parallel = 1;
+               SET_COMPUTING = {'Parallel computing','Sequential computing',};
+               set(TMFC_SET_P1, 'String', SET_COMPUTING);
+               tmfc.defaults.parallel = 1;
            end
 
 
            % SYNC: Storage type
            % Check status of string in stat box -> if changed -> SWAP
            % details -> Change TMFC variable -> END
-           C_2 = (MF_S2.String(MF_S2.Value));
-           
+           C_2 = (TMFC_SET_P2.String(TMFC_SET_P2.Value));
            if strcmp(C_2{1}, 'Store temporary files for GLM estimation in RAM')
-               STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
-               set(MF_S2, 'String', STORAGE);
-               SET_SYNC.defaults.resmem =  true;
+               SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
+               set(TMFC_SET_P2, 'String', SET_STORAGE);
+               tmfc.defaults.resmem =  true;
 
            elseif strcmp(C_2{1}, 'Store temporary files for GLM estimation on disk')
-               STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
-               set(MF_S2, 'String', STORAGE);
-               SET_SYNC.defaults.resmem =  false;
-
+               SET_STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
+               set(TMFC_SET_P2, 'String', SET_STORAGE);
+               tmfc.defaults.resmem =  false;
            end
            
            
            % SYNC: Maximum Memory Value
            % Check status of string in stat box -> if changed -> SWAP
            % details -> Change TMFC variable -> END
-           DG4_STR = get(MF_S3_EDIT,'String');
+           DG4_STR = get(TMFC_SET_E1,'String');
            DG4 = eval(DG4_STR);
            if DG4 ~= 2^31
-               set(MF_S3_EDIT, 'String', DG4_STR);
-               SET_SYNC.defaults.maxmem = DG4;
+               set(TMFC_SET_E1, 'String', DG4_STR);
+               tmfc.defaults.maxmem = DG4;
            end
 
-           assignin('base', 'tmfc', SET_SYNC);
-           disp('Settings have been updated');
-           close(MAIN_F_SET);
+           
+           if TMFC_SET_COPY.defaults.parallel == tmfc.defaults.parallel &&...
+              TMFC_SET_COPY.defaults.maxmem == tmfc.defaults.maxmem &&...
+              TMFC_SET_COPY.defaults.resmem == tmfc.defaults.resmem
+          
+               disp('Settings have not been changed');
+           else
+               
+               disp('Settings have been updated');
+               
+           end
+           close(TMFC_SET);
            
         end
-
-        % Resizer function
-        %function RESIZER(SIZE)
-        %    set([handles.SUB,handles.SUB_stat,handles.FIR_TR, handles.FIR_TR_stat, handles.LSS_R, handles.LSS_R_stat, handles.ROI, handles.ROI_stat, handles.BSC, handles.gPPI, handles.save_p, handles.open_p, handles.change_p, handles.settings, handles.BGFC],'fontunits','normalized', 'fontSize', SIZE);
-        %end
     
 end
 
