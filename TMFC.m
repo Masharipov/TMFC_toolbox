@@ -60,7 +60,7 @@ if isempty(findobj('Tag', 'TMFC_MW')) == 1
     tmfc.defaults.parallel = 0;      
     tmfc.defaults.maxmem = 2^31;
     tmfc.defaults.resmem = true;
-
+    tmfc.defaults.analysis = 1;
 %     tmfc.project_path = '';
 %     tmfc.subjects(1).path = '';
 %     
@@ -632,11 +632,26 @@ function Action_Settings(ButtonH, EventData, TMFC_MW)
                tmfc.defaults.maxmem = DG4;
            end
 
+           C_4 = (TMFC_SET_P4.String(TMFC_SET_P4.Value));
+           if strcmp(C_4{1}, 'Seed-to-voxel and ROI-to-ROI')
+               SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
+               set(TMFC_SET_P4, 'String', SET_SEED);
+               tmfc.defaults.analysis =  1;
+
+           elseif strcmp(C_4{1}, 'ROI-to-ROI')
+               SET_SEED = {'ROI-to-ROI','Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI'};
+               set(TMFC_SET_P4, 'String', SET_SEED);
+               tmfc.defaults.analysis =  2;
+           elseif strcmp(C_4{1}, 'Seed-to-voxel only')
+               SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI'};
+               set(TMFC_SET_P4, 'String', SET_SEED);
+               tmfc.defaults.analysis =  3;
+           end
            
            if TMFC_SET_COPY.defaults.parallel == tmfc.defaults.parallel &&...
               TMFC_SET_COPY.defaults.maxmem == tmfc.defaults.maxmem &&...
-              TMFC_SET_COPY.defaults.resmem == tmfc.defaults.resmem
-          
+              TMFC_SET_COPY.defaults.resmem == tmfc.defaults.resmem&&...
+              TMFC_SET_COPY.defaults.analysis == tmfc.defaults.analysis 
                disp('Settings have not been changed');
            else
                
