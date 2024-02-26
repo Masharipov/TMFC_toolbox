@@ -69,17 +69,15 @@ else
     if start_sub == 1
        sub_check = NaN(length(tmfc.subjects),1);
     else
-       % Initialize sub_check (Continuation)
        sub_check = NaN(length(tmfc.subjects),1);
        sub_check(1:start_sub) = 1;
-    end
-    
-    % Updating Main GUI 
-    try
-        SS1_FIR = findobj('Tag','TMFC_MW');                   
-        g6data = guidata(SS1_FIR);                           
-        set(g6data.TMFC_MW_S8,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       
-    end
+    end   
+end
+
+% Updating Main GUI 
+try              
+    main_GUI = guidata(findobj('Tag','TMFC_GUI'));                           
+    set(main_GUI.TMFC_GUI_S8,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067]);       
 end
 
 spm('defaults','fmri');
@@ -149,33 +147,84 @@ for i = start_sub:length(tmfc.subjects)
     clear matlabbatch SPM; 
 end
 
-
-% Variable to Exit FIR regression during execution
-EXIT_STATUS = 0;
-
-
-
 % Parallel or sequential computing
-switch tmfc.defaults.parallel   
+switch tmfc.defaults.parallel
+    % ----------------------- Sequential Computing ------------------------
+    case 0
+        % Variable to Exit FIR regression during execution
+        exit_status = 0;
+        
+        % Creation of Waitbar Figure
+        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar');%, 'CreateCancelBtn', @quitter);
+        N = length(tmfc.subjects);                                          
+        cleanupObj = onCleanup(@cleanMeUp);
+        
+        % Serial Execution of FIR Regression
+        for i = start_sub:N   
+            tic
+            if exit_status ~= 1   % IF Cancel/X button has NOT been pressed, contiune execution
+                
+                try
+                    spm('defaults','fmri');
+                    spm_jobman('initcfg');
+                    spm_get_defaults('cmdline',true);
+                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                    spm_get_defaults('stats.fmri.ufp',1);
+                    spm_jobman('run', batch{i});
+                    tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat'),NaN);
+                    tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'GLM_batch.mat'),batch{i});
+                    sub_check(i) = 1;
+                catch
+                    sub_check(i) = 0;
+                end
+            else
+                waitbar(N,handles,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
+                delete(handles);
+                
+                try  % Updating the TMFC GUI window with the progress
+                    main_GUI = guidata(findobj('Tag','TMFC_GUI'));          
+                    set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i-1), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    
+                end
+
+                break;
+            end
+            
+            try  % Updating the TMFC GUI window with the progress                      
+                main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
+                set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    
+            end
+            
+            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss'; % Time calculation for the wait bar
+            
+            try
+                % Updating the Wait bar
+                waitbar(double(i)/double(N), handles, [num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            end
+        end
+        
+        try                                                                
+            delete(handles);
+        end
     
     % ------------------------ Parallel Computing -------------------------
     case 1
         
         % Creation of Waitbar Figure
-        handles.wp = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'W_Parallel');       
+        handles = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'tmfc_waitbar');       
         N = length(tmfc.subjects);             % Threshold of elements to run FIR regression
         D = parallel.pool.DataQueue;           % Creation of Parallel Pool 
         afterEach(D, @tmfc_parfor_waitbar);    % Command to update Waitbar
-        tmfc_parfor_waitbar(handles.wp, N);    % Custom function to update waitbar
+        tmfc_parfor_waitbar(handles, N);    % Custom function to update waitbar
        
         cleanupObj = onCleanup(@cleanMeUp);    % Initialize Ctrl + C action
 
         disp('Processing... please wait');
         
         try % Bring TMFC main window to the front 
-            DG = guidata(findobj('Tag', 'TMFC_MW'));    
-            set(DG.MAIN_F, 'Position', [0.18 0.26 0.205 0.575])
-            figure(DG.MAIN_F);
+            main_GUI = guidata(findobj('Tag','TMFC_GUI'));    
+            set(main_GUI.TMFC_GUI, 'Position',  [0.115 0.0875 0.250 0.850])
+            figure(main_GUI.TMFC_GUI);
         end
        
         % Parallel Loop
@@ -197,110 +246,46 @@ switch tmfc.defaults.parallel
             send(D,[]); 
             
             try 
-                % Updating the TMFC GUI with the progress (within the loop)
-                HBC_FIR = findobj('Tag','TMFC_MW');                    
-                g1data = guidata(HBC_FIR);                             
-                set(g1data.TMFC_MW_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+                % Updating the TMFC GUI with the progress (within the loop)                
+                main_GUI = guidata(findobj('Tag','TMFC_GUI'));                             
+                set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end    
         end
         
         try
-            % Updating the TMFC GUI with the progress (after loop completion)
-            HBC_FIR = findobj('Tag','TMFC_MW');                    
-            g1data = guidata(HBC_FIR);                                 
-            set(g1data.TMFC_MW_S8,'String', strcat(num2str(N), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            % Updating the TMFC GUI with the progress (after loop completion)               
+            main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
+            set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(N), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
         end 
         
         % Closing the Waitbar after execution
         try                                                                
-            delete(handles.wp);
-        end       
-        
-    % ----------------------- Sequential Computing ------------------------
-    case 0
-        
-        % Creation of Waitbar Figure
-        handles.ws = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'W_Serial', 'CreateCancelBtn', @quitter);
-        N = length(tmfc.subjects);                                          
-        cleanupObj = onCleanup(@cleanMeUp);
-        
-        
-        % Serial Execution of FIR Regression
-        for i = start_sub:N
-            tic
-            if EXIT_STATUS ~= 1   % IF Cancel/X button has NOT been pressed, contiune execution
-                
-                try
-                    spm('defaults','fmri');
-                    spm_jobman('initcfg');
-                    spm_get_defaults('cmdline',true);
-                    spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-                    spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
-                    spm_get_defaults('stats.fmri.ufp',1);
-                    spm_jobman('run', batch{i});
-                    tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat'),NaN);
-                    tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'GLM_batch.mat'),batch{i});
-                    sub_check(i) = 1;
-                catch
-                    sub_check(i) = 0;
-                end
-            else
-                waitbar(N,handles.ws,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
-                delete(handles.ws);
-                
-                try  % Updating the TMFC GUI window with the progress
-                    HBC_FIR = findobj('Tag','TMFC_MW'); 
-                    g1data = guidata(HBC_FIR);          
-                    set(g1data.TMFC_MW_S8,'String', strcat(num2str(i-1), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    
-                end
-                break;
-            end
-            
-            try  % Updating the TMFC GUI window with the progress
-                HBC_FIR = findobj('Tag','TMFC_MW');                        
-                g1data = guidata(HBC_FIR);                                 
-                set(g1data.TMFC_MW_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    
-            end
-            
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss'; % Time calculation for the wait bar
-            
-            try
-                 % Updating the Wait bar
-                waitbar(double(i)/double(N), handles.ws, [num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
-            end
-        end
-        
-        try                                                                
-            delete(handles.ws);
-        end
+            delete(handles);
+        end              
 end
 
-    % Function that changes the state of execution when CANCEL is pressed
-    function quitter(~,~)                                              
-        EXIT_STATUS = 1;
+% Function that changes the state of execution when CANCEL is pressed
+function quitter()                                              
+    exit_status = 1;
+end
+
+% CTRL + C breakout function 
+function cleanMeUp()
+    try
+        GUI = guidata(findobj('Tag','TMFC_GUI')); 
+        set([GUI.TMFC_GUI_B1, GUI.TMFC_GUI_B2, GUI.TMFC_GUI_B3, GUI.TMFC_GUI_B4,...
+            GUI.TMFC_GUI_B5a, GUI.TMFC_GUI_B5b, GUI.TMFC_GUI_B6, GUI.TMFC_GUI_B7,...
+            GUI.TMFC_GUI_B8, GUI.TMFC_GUI_B9, GUI.TMFC_GUI_B10, GUI.TMFC_GUI_B11,...
+            GUI.TMFC_GUI_B12,GUI.TMFC_GUI_B13a,GUI.TMFC_GUI_B13b,GUI.TMFC_GUI_B14a...
+            GUI.TMFC_GUI_B14b], 'Enable', 'on');
+        delete(findall(0,'Tag', 'tmfc_waitbar','type', 'Figure'));
+    end    
+    try                                                                 
+        delete(findall(0,'type','figure','Tag', 'tmfc_waitbar'));
     end
+end
 
-    % CTRL + C breakout function 
-    function cleanMeUp()
-        try
-            h_FREZ_U = findobj('Tag','TMFC_MW');
-            FZ_data = guidata(h_FREZ_U); 
-            set([FZ_data.TMFC_MW_B1, FZ_data.TMFC_MW_B2, FZ_data.TMFC_MW_B3, FZ_data.TMFC_MW_B4,...
-                FZ_data.TMFC_MW_B5a, FZ_data.TMFC_MW_B5b, FZ_data.TMFC_MW_B6, FZ_data.TMFC_MW_B7,...
-                FZ_data.TMFC_MW_B8, FZ_data.TMFC_MW_B9, FZ_data.TMFC_MW_B10, FZ_data.TMFC_MW_B11,...
-                FZ_data.TMFC_MW_B12,FZ_data.TMFC_MW_B13a,FZ_data.TMFC_MW_B13b,FZ_data.TMFC_MW_B14a...
-                FZ_data.TMFC_MW_B14b], 'Enable', 'on');
-            delete(findall(0,'Tag', 'W_Parallel','type', 'Figure'));
-
-            try                                                                 
-                del_wp = findall(0,'type','figure','Tag', 'W_Parallel');
-                delete(del_wp);
-            end
-        end
-    end  
-
-
-end   
+end
 
 % Save batches in parallel mode
 function tmfc_parsave(fname,matlabbatch)
