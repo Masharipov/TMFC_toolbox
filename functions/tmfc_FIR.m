@@ -155,7 +155,7 @@ switch tmfc.defaults.parallel
         exit_status = 0;
         
         % Creation of Waitbar Figure
-        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar', 'CreateCancelBtn', @quitter);
+        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar', CloseRequestFcn = '');
         N = length(tmfc.subjects);                                          
         cleanupObj = onCleanup(@cleanMeUp);
         

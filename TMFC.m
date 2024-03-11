@@ -202,7 +202,10 @@ end
 %% ========================[ FIR Regression ]==============================
 
 function FIR(ButtonH, EventData, TMFC_GUI)
-               
+    
+    %try
+    cd(tmfc.project_path);           
+    %end
     % Freezing the Main window
     MW_Freeze(1);
     
@@ -219,9 +222,9 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             
              if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
                 % Initial execuction of FIR regression
-                new_run = tmfc_FIR(tmfc, 1);
+                sub_check = tmfc_FIR(tmfc, 1);
                 for i=1:length(tmfc.subjects)
-                    tmfc.subjects(i).FIR = new_run(i);
+                    tmfc.subjects(i).FIR = sub_check(i);
                 end
              end
              
@@ -232,9 +235,9 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
             
              if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
-                new_run = tmfc_FIR(tmfc, 1);
+                sub_check = tmfc_FIR(tmfc, 1);
                 for i=1:length(tmfc.subjects) % change to len(new_run)
-                    tmfc.subjects(i).FIR = new_run(i);
+                    tmfc.subjects(i).FIR = sub_check(i);
                 end
              end
             
@@ -252,9 +255,9 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                         [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                            
                             disp('Restarting FIR Regression');
-                            re_run = tmfc_FIR(tmfc, 1);
+                            sub_check = tmfc_FIR(tmfc, 1);
                             for i=1:length(tmfc.subjects)
-                                tmfc.subjects(i).FIR = re_run(i);
+                                tmfc.subjects(i).FIR = sub_check(i);
                             end
                         end
                     end
@@ -263,8 +266,8 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                 else
                     % Continue case
                     for i=1:length(tmfc.subjects)
-                        FIR_index = NaN;
-                        if isnan(tmfc.subjects(i).FIR)
+                        FIR_index = [];
+                        if isempty(tmfc.subjects(i).FIR)
                             FIR_index = i;
                             break;
                         end
@@ -778,16 +781,16 @@ end % Closing LSS regress
 %% =====================[ Supporting Functions ]===========================
 
     % Failsafe function to pervent unintended freeze of TMFC Main Window
-    try
-        h1_UNFREZ = findobj('Tag','TMFC_GUI');
-        F1_data = guidata(h1_UNFREZ); 
-        set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
-    end
-            
-                
-    try % MAJOR CHANGE
-        guidata(handles.TMFC_GUI, handles);
-    end
+%     try
+%         h1_UNFREZ = findobj('Tag','TMFC_GUI');
+%         F1_data = guidata(h1_UNFREZ); 
+%         set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
+%     end
+%             
+%                 
+%     try % MAJOR CHANGE
+%         guidata(handles.TMFC_GUI, handles);
+%     end
 
 
 % This function performs Independent save & returns the status
@@ -809,10 +812,18 @@ function SAVER_STAT =  Saver(save_path)
 end
 
 function evaluate_file(tmfc) % function to update the TMFC window after loading a tmfc project
-    %BPL = evalin('base', 'tmfc');
-    %BPL_LEN = length(BPL.subjects);
-    set(handles.TMFC_GUI_S1,'String', strcat(num2str(length(tmfc.subjects)), ' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
     
+    try
+        cd(tmfc.project_path); 
+    end
+    
+    
+    % Add condition: if tmfc.subjcest is empyt set handlex.tmfc gui to NOT
+    % SELECTED 
+    
+    try
+        set(handles.TMFC_GUI_S1,'String', strcat(num2str(length(tmfc.subjects)), ' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
+    end
    
 %     V_FIR = 0;
 %     V_LSS_A_FIR = 0;
@@ -844,24 +855,29 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 %         set(handles.LSS_R_stat,'String','Not done');
 %     end
 %     
-%     switch BPL.defaults.parallel
-%         case 1
-%             COMPUTING = {'Parallel computing','Sequential computing',};           
-%         case 0 
-%            COMPUTING = {'Sequential computing','Parallel computing'};
-%            
-%     end
-%     
-%     switch BPL.defaults.resmem
-%         case true
-%             STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'}; 
-%         case false 
-%             STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
-%            
-%     end
-%     
-%     
-%     
+     switch tmfc.defaults.parallel
+         case 1
+             SET_COMPUTING = {'Parallel computing','Sequential computing',};           
+         case 0 
+            SET_COMPUTING = {'Sequential computing','Parallel computing'};
+     end   
+     
+     switch tmfc.defaults.resmem
+         case true
+             SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
+         case false 
+            SET_STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
+     end          
+     
+     switch tmfc.defaults.analysis
+         case 1
+             SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
+         case 2 
+             SET_SEED = {'ROI-to-ROI','Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI'};
+         case 3
+             SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI'};
+     end
+
 %     V_LSS = 0;
     %for i = 1:BPL_LEN
     %    if ~isnan(BPL.subjects(i).LSS_residual_ts)
@@ -965,11 +981,11 @@ function [STATUS] = TMFC_FIR_RES_GUI(~,~)
     % STATUS = 1 - restart FIR 
     % STATUS = 0 - dont restart FIR 
 
-    TMFC_FIR_RES = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.16 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_FIR','CloseRequestFcn', @CANCEL); %X Y W H
+    TMFC_FIR_RES = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_FIR','CloseRequestFcn', @CANCEL); %X Y W H
 
-    TMFC_FIR_RES_S1 = uicontrol(TMFC_FIR_RES,'Style','text','String', {'Recompute FIR task','regression for all subjects.?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position', [0.10 0.55 0.80 0.260]);
-    TMFC_FIR_RES_OK = uicontrol(TMFC_FIR_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.25 0.320 0.170]);
-    TMFC_FIR_RES_CL = uicontrol(TMFC_FIR_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.25 0.320 0.170]);
+    TMFC_FIR_RES_S1 = uicontrol(TMFC_FIR_RES,'Style','text','String', {'Recompute FIR task','regression for all subjects.?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260]);
+    TMFC_FIR_RES_OK = uicontrol(TMFC_FIR_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20]);
+    TMFC_FIR_RES_CL = uicontrol(TMFC_FIR_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20]);
 
     set(TMFC_FIR_RES_S1,'backgroundcolor',get(TMFC_FIR_RES,'color'));
     set(TMFC_FIR_RES_CL, 'callback', @CANCEL);
