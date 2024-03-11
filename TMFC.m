@@ -233,7 +233,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             
              if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
                 new_run = tmfc_FIR(tmfc, 1);
-                for i=1:length(tmfc.subjects)
+                for i=1:length(tmfc.subjects) % change to len(new_run)
                     tmfc.subjects(i).FIR = new_run(i);
                 end
              end

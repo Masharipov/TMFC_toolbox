@@ -64,14 +64,14 @@ function [sub_check] = tmfc_FIR(tmfc,start_sub)
 
 if nargin == 1
     start_sub = 1;
-else
-    % Initialize sub_check 
-    if start_sub == 1
-       sub_check = NaN(length(tmfc.subjects),1);
-    else
-       sub_check = NaN(length(tmfc.subjects),1);
-       sub_check(1:start_sub) = 1;
-    end   
+% else
+%     % Initialize sub_check 
+%     if start_sub == 1
+%        sub_check = NaN(length(tmfc.subjects),1);
+%     else
+%        sub_check = NaN(length(tmfc.subjects),1);
+%        sub_check(1:start_sub) = 1;
+%     end   
 end
 
 % Updating Main GUI 
@@ -155,7 +155,7 @@ switch tmfc.defaults.parallel
         exit_status = 0;
         
         % Creation of Waitbar Figure
-        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar');%, 'CreateCancelBtn', @quitter);
+        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar', 'CreateCancelBtn', @quitter);
         N = length(tmfc.subjects);                                          
         cleanupObj = onCleanup(@cleanMeUp);
         
@@ -265,7 +265,7 @@ switch tmfc.defaults.parallel
 end
 
 % Function that changes the state of execution when CANCEL is pressed
-function quitter()                                              
+function quitter(~,~)                                              
     exit_status = 1;
 end
 
