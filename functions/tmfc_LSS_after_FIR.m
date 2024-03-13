@@ -98,10 +98,8 @@ if nargin == 1
 end
 
 try
-   SS1_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via the handle
-   g7data = guidata(SS1_LSS);                                  % Creating a local refernce of the GUI's object 
-   set(g7data.LSS_R_stat,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067])       % Assigning the status to the TMFC variable
-   set([g7data.SUB, g7data.FIR_TR, g7data.LSS_R, g7data.LSS_RW, g7data.BSC, g7data.gPPI, g7data.save_p, g7data.open_p, g7data.change_p, g7data.settings, g7data.BGFC],'Enable', 'off');
+    main_GUI = guidata(findobj('Tag','TMFC_GUI'));                           
+    set(main_GUI.TMFC_GUI_S10,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067]);       
 end
 
 spm('defaults','fmri');
@@ -122,13 +120,13 @@ EXIT_STATUS_LSS = 0;
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
     case 1
-        handles.L_wp = waitbar(0,'Please wait...','Name','LSS regression','Tag','LSS_Parallel');
+        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 
         afterEach(D, @tmfc_parfor_waitbar);                                 % Command to update Waitbar
-        tmfc_parfor_waitbar(handles.L_wp, N);     
+        tmfc_parfor_waitbar(handles, N);     
         cleanupObj = onCleanup(@cleanMeUp);
     case 0
-        handles.L_ws = waitbar(0,'Please wait...','Name','LSS regression','Tag','LSS_Serial','CreateCancelBtn',@quitter);
+        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar',CloseRequestFcn = '');
 end
 
 % Loop through subjects
@@ -136,7 +134,7 @@ for i = start_sub:N
     tic
 
     if EXIT_STATUS_LSS == 1 
-        delete(handles.L_ws);
+        delete(handles);
         break;
     end
     
@@ -347,12 +345,11 @@ for i = start_sub:N
                         condition(trial.cond(k)).trials(trial.number(k)) = 0;
                     end
                 else
-                    waitbar(N,handles.L_ws, sprintf('Cancelling Operation'));
-                    delete(handles.L_ws);
+                    waitbar(N,handles, sprintf('Cancelling Operation'));
+                    delete(handles);
                     try                                                             % Updating the TMFC GUI window with the progress
-                        HBC_LSS = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
-                        g1data = guidata(HBC_LSS);                                      % Creating a local reference of the GUI's object
-                        set(g1data.LSS_R_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                        main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
+                        set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
                     end
                     break;
                 end
@@ -369,23 +366,20 @@ for i = start_sub:N
     switch(tmfc.defaults.parallel)
         case 1
             send(D,[]); 
-            
             try                                                             % Updating the TMFC GUI window with the progress
-                HBC_LSS = findobj('Tag','MAIN_WINDOW');                     % Finding the GUI's object via handle
-                g1data = guidata(HBC_LSS);                                  % Creating a local reference of the GUI's object
-                set(g1data.LSS_R_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
+                set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
 
         case 0
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
             try
-                waitbar(double(i)/double(N),handles.L_ws,[num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(double(i)/double(N),handles,[num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
             end
 
             try                                                             % Updating the TMFC GUI window with the progress
-                HBC_LSS = findobj('Tag','MAIN_WINDOW');                        % Finding the GUI's object via handle
-                g1data = guidata(HBC_LSS);                                      % Creating a local reference of the GUI's object
-                set(g1data.LSS_R_stat,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
+                set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
     end
 
@@ -395,45 +389,31 @@ end
 
 % Deleting the wait bars after completion of LSS regression
 try
-    delete(handles.L_wp);
+    delete(handles);
 end
-
-try
-    delete(handles.L_ws);
-end
-
-
-lss_upd = evalin('base', 'tmfc');                                       % Creation of local copy
-for i = start_sub:N                                                     % Updating the status
-    lss_upd.subjects(i).LSS_after_FIR = sub_check(i);
-end
-assignin('base', 'tmfc', lss_upd);      
-
 
 
 function quitter(~,~)                                                  % Function that changes the state of execution when CANCEL is pressed
     EXIT_STATUS_LSS = 1;
 end
 
+
 function cleanMeUp()
     
-    % Have to add code that synchronizes and returns the processed
-    % variables
-    
-    % At the moment, the function when running in parallel doesn't return
-    % variables sub_check(i,j,k) to the tmfc variable in workspace
     try
-        h_FREZ_U = findobj('Tag','MAIN_WINDOW');
-        FZ_data = guidata(h_FREZ_U); 
-        set([FZ_data.SUB, FZ_data.FIR_TR, FZ_data.LSS_R, FZ_data.LSS_RW, FZ_data.BSC, FZ_data.gPPI, FZ_data.save_p, FZ_data.open_p, FZ_data.change_p, FZ_data.settings, FZ_data.BGFC],'Enable', 'on');
-        delete(findall(0,'Tag', 'LSS_Parallel','type', 'Figure'));
-         
-        % FUTURE UPDATE PENDING
-        % This is where the piece of code that checks the last
-        % processed subjects should be inserted
-         
+        GUI = guidata(findobj('Tag','TMFC_GUI')); 
+        set([GUI.TMFC_GUI_B1, GUI.TMFC_GUI_B2, GUI.TMFC_GUI_B3, GUI.TMFC_GUI_B4,...
+            GUI.TMFC_GUI_B5a, GUI.TMFC_GUI_B5b, GUI.TMFC_GUI_B6, GUI.TMFC_GUI_B7,...
+            GUI.TMFC_GUI_B8, GUI.TMFC_GUI_B9, GUI.TMFC_GUI_B10, GUI.TMFC_GUI_B11,...
+            GUI.TMFC_GUI_B12,GUI.TMFC_GUI_B13a,GUI.TMFC_GUI_B13b,GUI.TMFC_GUI_B14a...
+            GUI.TMFC_GUI_B14b], 'Enable', 'on');
+        delete(findall(0,'Tag', 'tmfc_waitbar','type', 'Figure'));
+    end
+    try                                                                 
+        delete(findall(0,'type','figure','Tag', 'tmfc_waitbar'));
     end
 end
+
 end
 
 % Save batches in parallel mode
