@@ -113,6 +113,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     % CallBack functions corresponding to each button
     set(handles.TMFC_GUI, 'CloseRequestFcn', {@close_GUI, handles.TMFC_GUI}); 
     set(handles.TMFC_GUI_B1, 'callback', {@select_subjects, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
@@ -123,7 +124,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     % PPI
     % gPPI
     % gPPI_FIR
-    % LSS
+    % LSS - LSS_GLM
     % BSC
     % FIR
     % BGFC
@@ -203,9 +204,9 @@ end
 
 function FIR(ButtonH, EventData, TMFC_GUI)
     
-    %try
-    cd(tmfc.project_path);           
-    %end
+    try
+        cd(tmfc.project_path);           
+
     % Freezing the Main window
     MW_Freeze(1);
     
@@ -215,7 +216,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
         % Checking if subjects has been selected
         
         if ~isfield(tmfc, 'FIR') 
-        % Checking if FIR has been executed before
+        % Checking if FIR has not been executed before
         
             [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
             % Eneter bins & windows
@@ -303,7 +304,10 @@ function FIR(ButtonH, EventData, TMFC_GUI)
     
         MW_Freeze(0);
         disp(tmfc);
-        
+    catch
+       warning('Please select subjects & project path to perform FIR regression');
+    end 
+    
     end % Closing FIR Regress Function
        
     
@@ -632,150 +636,86 @@ end
 
 
 
-%% ========================[ LSS Regression ]==============================
+%% ============================[ LSS GLM ]=================================
 
-function LSS_REG(ButtonH, EventData, TMFC_GUI)
+function LSS_GLM(ButtonH, EventData, TMFC_GUI)
+
+    %try
+        cd(tmfc.project_path);           
+
     
-   L_checker = evalin('base', 'tmfc');
-   
-   if isnan(L_checker.FIR.bins) & isnan(L_checker.FIR.window) 
-       warning('Please complete FIR Regression before proceeding with LSS regression');
-   elseif ~isnan(L_checker.FIR.bins) & ~isnan(L_checker.FIR.window) & isnan(L_checker.subjects(length(L_checker.subjects)).FIR)
-       warning('Please complete the FIR Regression of all subjects before proceeding with LSS regression');
-   elseif isempty(L_checker.LSS_after_FIR.conditions)
-           tmfc_LSS_GUI(L_checker.subjects(1).path, 1);
-           LSS_RUNNER(1);
-   else
-       LSS_Lindex = 0;
-       LSS_flag = false;
-       L_checker_2 = evalin('base', 'tmfc');
-       LSS_len_sub = length(L_checker_2.subjects);
-       dimension = size(L_checker_2.subjects(length(L_checker_2.subjects)).LSS_after_FIR);
-       
-       
-       % conditions for Start, restart & continue
-       
-      for i = 1:LSS_len_sub
-
-          if LSS_flag == true
-               break;
-          end
-
-           for j = 1:dimension(1)
-
-               if LSS_flag == true
-                   break;
-               end
-
-               for k = 1:dimension(2)
-                   if L_checker_2.subjects(i).LSS_after_FIR(j,k) == 0 | isnan(L_checker_2.subjects(i).LSS_after_FIR(j,k))
-                       LSS_Lindex = [i,j,k];
-                       LSS_flag = true;
-                       break;
-                   end
-               end
-           end
-       end
-       
-       
-       % condition 1
-       if isnan(L_checker_2.subjects(1).LSS_after_FIR)
-           LSS_RUNNER(1);
-           
-       % condition 2 - there maybe a logical error here
-       % (LSS_Lindex == [LSS_len_sub, dimension(1), dimension(2)])
-       elseif LSS_Lindex == 0 & LSS_flag == false
-       %elseif L_checker_2.subjects(LSS_len_sub).LSS_after_FIR(dimension(1),dimension(2)) == 0 & isnan(L_checker_2.subjects(LSS_len_sub).LSS_after_FIR(1,1))
-           
-          tmfc_LSS_GUI(L_checker_2.subjects(1).path, 2);
-          %uiwait();
-          
-          h77 = findobj('Tag', 'TMFC_GUI');
-          h77_V = getappdata(h77, 'RESTART_LSS');
-          
-          if h77_V == 1
-              
-              % ask for conditions again
-              tmfc_LSS_GUI(L_checker_2.subjects(1).path, 1);
-              
-              h78 = findobj('Tag', 'TMFC_GUI');
-              h78_V = getappdata(h78, 'LSS_NO_COND');
-              
-              if h78_V ~= 1
-                  LSS_RUNNER(1);
-              end
-          end
-           
-       else    
-           % condition 3
-
-           for i = 1:LSS_len_sub
-
-              if LSS_flag == true
-                   break;
-              end
-
-               for j = 1:dimension(1)
-
-                   if LSS_flag == true
-                       break;
-                   end
-
-                   for k = 1:dimension(2)
-                       if L_checker_2.subjects(i).LSS_after_FIR(j,k) == 0 
-                           LSS_Lindex = [i,j-1,k];
-                           LSS_flag = true;
-                           break;
-                       end
-                   end
-               end
-           end
-
-           tmfc_LSS_GUI(L_checker_2.subjects(1).path, 3, LSS_Lindex(1));
-
-
-           h54 = findobj('Tag', 'TMFC_GUI');
-           h54_V = getappdata(h54, 'CONTD_LSS');
-
-           if h54_V == 1
-              setappdata(h54_V, 'CONTD_LSS', 0);
-              LSS_RUNNER(int32(LSS_Lindex(1)));
-
-           elseif h54_V == 2
-               setappdata(h54_V, 'CONTD_LSS', 0);
-               tmfc_LSS_GUI(L_checker_2.subjects(1).path, 1);
-
-               h53 = findobj('Tag', 'TMFC_GUI');
-               h53_V = getappdata(h53, 'LSS_NO_COND');
-
-               if h53_V ~= 1
-                   setappdata(h53, 'LSS_NO_COND', 0);
-                   LSS_RUNNER(1);
-               end
-           else
-               disp('LSS Regression not initiated');
-               %warning('Something isnt right here, contact devs for LSS reg issue');
-           end
-       end     
-   end    
-           
-end % Closing LSS regress
-
-       % FIR Function the performs computation 
-    function LSS_RUNNER(str_sub)
+    % Freezing the Main window
+    MW_Freeze(1);
+    
+    
+    disp('Initiating LSS GLM');
+    if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+        % Checking if subjects has been selected
         
-        % Freeze buttons on Main Window
-        LSS_TMFC = evalin('base', 'tmfc');
-        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'off');
-        
-        % Actuator Function 
-        try
-            tmfc_LSS_after_FIR(LSS_TMFC, str_sub);
+        if ~isfield(tmfc, 'LSS') 
+        % First time exeuction
+
+            % select conditions    
+            tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+            
+            if isstruct(tmfc.LSS.conditions)
+               
+                sub_check = tmfc_LSS(tmfc,1);
+                for i=1:length(tmfc.subjects)
+                    tmfc.subjects(i).LSS = sub_check(i);
+                end
+                
+            end
+            
+        elseif isfield(tmfc.LSS, 'conditions') && ~isfield(tmfc.subjects, 'LSS')
+            % Execution if CTLR + C is pressed 
+            % Can add code for exuection from last complied .mat file
+            
+            tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+            
+            if isstruct(tmfc.LSS.conditions)
+               
+                sub_check = tmfc_LSS(tmfc,1);
+                for i=1:length(tmfc.subjects)
+                    tmfc.subjects(i).LSS = sub_check(i);
+                end
+                
+            end
+                
+        else
+            disp("Restart & Continue cases");
+            
+            % Other cases 'Restart' and 'Continue'
+%              if isstruct(tmfc.LSS.conditions)
+%                  len_sub = size(tmfc.subjects);
+%                  dimension = size(tmfc.subjects(length(tmfc.subjects)).LSS);
+%                  size(tmfc.subjects(length(tmfc.subjects)).LSS.session.condition.trials)
+%                  if tmfc.subjects(len_sub(2)).
+%                  
+%                 
+%                 
+%                 if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
+%                     
+%                     % Restart case  
+%                     
+%                 else
+%                     % Continue case
+%   
+%                 end
+             %end
         end
+            
+    else
+        warning('Please select subjects to continue with LSS Regression');
+    end
+    
+    
+        MW_Freeze(0);
+        disp(tmfc);
+    %catch
+%       warning('Please select subjects & project path to perform LSS GLM regression');
+%    end
         
-        % Unfrezee action after completion of actuation
-        set([handles.SUB,handles.FIR_TR, handles.LSS_R, handles.LSS_RW, handles.BSC, handles.gPPI,handles.save_p, handles.open_p, handles.change_p, handles.settings,handles.BGFC],'Enable', 'on');
-        disp('LSS task regression completed');
     end
      
 %% =====================[ Supporting Functions ]===========================
@@ -788,9 +728,9 @@ end % Closing LSS regress
 %     end
 %             
 %                 
-%     try % MAJOR CHANGE
-%         guidata(handles.TMFC_GUI, handles);
-%     end
+    try % MAJOR CHANGE
+        guidata(handles.TMFC_GUI, handles);
+    end
 
 
 % This function performs Independent save & returns the status

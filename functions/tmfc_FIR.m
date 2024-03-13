@@ -189,7 +189,7 @@ switch tmfc.defaults.parallel
 
                 break;
             end
-            
+
             try  % Updating the TMFC GUI window with the progress                      
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
                 set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    

@@ -1,4 +1,4 @@
-function [conditions] = tmfc_LSS_GUI(SPM,start_case,start_sub)
+function [conditions] = tmfc_LSS_GUI(SPM)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -29,46 +29,16 @@ function [conditions] = tmfc_LSS_GUI(SPM,start_case,start_sub)
 %
 % Contact email: masharipov@ihb.spb.ru
 
-start_check = findobj('Tag', 'MAIN_WINDOW');
-
-if isempty(start_check)
-    try
-        all_cond = generate_LSS_conditions(SPM);
-        LSS_Cond_GUI();
-    catch
-        warning('Incorrect format of subject path');
-    end
-else    
-    switch (start_case)
-
-        % GUI window to ask for LSS regression conditions 
-        case 1
-            try
-            % Generate All conditions using function
-                all_cond = generate_LSS_conditions(SPM);
-                LSS_Cond_GUI();
-            catch
-                warning('Incorrect format of subject path');
-            end
-
-
-        % GUI window to ask if user wants to Restart computation for all subs
-        case 2
-            LSS_restart_GUI();
-
-        % GUI window to ask if user wants to continue from last processed or 
-        % Full restart
-        case 3
-            LSS_continue_GUI(start_sub);
-
-    end
+try
+    all_cond = generate_LSS_conditions(SPM);
+    LSS_Cond_GUI();
+catch
+    warning('Incorrect format of subject path');
 end
 
-% Function that extracts & produces Conditions for user selection via GUI
+
+%% Function that extracts & produces Conditions for user selection via GUI
     function LSS_Cond_GUI(~,~)
-
-
-
 
         % Local Variables that work throughout the RunTime upto checking stage
         % Variable to store all conditions possible 
@@ -95,7 +65,7 @@ end
 
         %% Creation of GUI & its elements
 
-        LSS_GUI = figure('Name', 'LSS regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.65 0.25 0.22 0.56],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle','modal','CloseRequestFcn', @LSS_stable_Exit);
+        LSS_GUI = figure('Name', 'LSS regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.45 0.25 0.22 0.56],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle','modal','CloseRequestFcn', @LSS_stable_Exit);
 
         % Initializing Elements of the UI
         LSS_E0  = uicontrol(LSS_GUI,'Style','text','String', 'Select conditions of interest','Units', 'normalized', 'Position',[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.50,'backgroundcolor','w');
@@ -131,11 +101,9 @@ end
         %% Function to reuturn user's selection 
         
         function LSS_stable_Exit(~,~)
-            try
-               h88 = findobj('Tag', 'MAIN_WINDOW');
-               setappdata(h88, 'LSS_NO_COND', 1); 
-            end
+
             delete(LSS_GUI);
+            conditions = NaN;
         end
         
         function action_select_1(~,~)
@@ -251,21 +219,15 @@ end
                    end
                end
 
-                try 
-                    % import tmfc
-                    LS_GR = evalin('base', 'tmfc');
-                    % Assign conditions to TMFC variable in workspace
-                    LS_GR.LSS_after_FIR.conditions = cond;
-                    assignin('base', 'tmfc', LS_GR);
-                end
+
                delete(LSS_GUI);
 
                disp(strcat(num2str(length(LST_2)),' conditions successfully selected'));
                conditions = cond;
-               try
-                   h99 = findobj('Tag', 'MAIN_WINDOW');
-                   setappdata(h99, 'LSS_NO_COND', 0); 
-               end
+%                try
+%                    h99 = findobj('Tag', 'MAIN_WINDOW');
+%                    setappdata(h99, 'LSS_NO_COND', 0); 
+%                end
            end
             
         end
@@ -315,7 +277,7 @@ end
         function LSS_H(~,~)
 
             % Creation of GUI window for Help description
-            LSS_H_W = figure('Name', 'LSS regression: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.65 0.15 0.22 0.50],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
+            LSS_H_W = figure('Name', 'LSS regression: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.67 0.31 0.22 0.50],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'WindowStyle', 'Modal');
 
             Data_1 = {'Suppose you have two separate sessions.','','Both sessions contains task regressors for', '“Cond A”, “Cond B” and “Errors”', '','If you are only interested in “Cond A” and “Cond B” comparison, the following conditions should be selected:',...
                 '','1)  Cond A (Sess1)','2)  Cond B (Sess1)','3)  Cond A (Sess2)','4)  Cond B (Sess2)','','For all selected conditions of interest, the TMFC toolbox will calculate individual trial’s beta-images using Least-Squares Separate (LSS) approach.',...
@@ -337,7 +299,11 @@ end
     end
 
 
-    % Function to create & generate LSS conditions for selection via GUI interface
+end
+
+
+%%
+% Function to create & generate LSS conditions for selection via GUI interface
     function [cond_list] = generate_LSS_conditions(SPM)
             try
                 load(SPM);
@@ -357,96 +323,6 @@ end
             end
     end
 
-    %% Function to generate GUI window asking user to Restart computation of all subs
-    function LSS_restart_GUI()
-
-        LSS_RECOMP = figure('Name', 'LSS task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.16 0.16],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_LSS','CloseRequestFcn', @close_LSS_restart); %X Y W H
-
-        LSS_D1 = uicontrol(LSS_RECOMP,'Style','text','String', {'Recompute LSS task','regression for all subjects.?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
-
-        LSS_OK = uicontrol(LSS_RECOMP,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48);
-        LSS_CCL = uicontrol(LSS_RECOMP,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48);
-
-        LSS_D1.Position = [0.10 0.55 0.80 0.260];
-        set(LSS_D1,'backgroundcolor',get(LSS_RECOMP,'color'));
-
-        LSS_OK.Position = [0.14 0.25 0.320 0.170];
-        LSS_CCL.Position = [0.52 0.25 0.320 0.170];
-
-        set(LSS_CCL, 'callback', @CANCEL);
-        set(LSS_OK, 'callback', @ACC);
-
-        % Function to close the Window
-        function close_LSS_restart(~,~)
-           h3 = findobj('Tag', 'MAIN_WINDOW');
-           setappdata(h3, 'RESTART_LSS', 0);
-           delete(LSS_RECOMP); 
-        end
-        
-        
-        function CANCEL(~,~)
-           h3 = findobj('Tag', 'MAIN_WINDOW');
-           setappdata(h3, 'RESTART_LSS', 0);
-           delete(LSS_RECOMP); 
-        end
-
-        % Function to set state of Restart in APP Data of main Window
-        function ACC(~,~)
-            h3 = findobj('Tag', 'MAIN_WINDOW');
-            setappdata(h3, 'RESTART_LSS', 1);
-            delete(LSS_RECOMP);
-        end
-
-        uiwait();
-    end
-
-    %% Function to generate GUI window asking to Continue from a last processed subject
-    function LSS_continue_GUI(INDEX)
-
-        LSS_MIDCOMP = figure('Name', 'LSS task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_LSS','CloseRequestFcn',@LSS_contd_del); %X Y W H
-
-        LSS_Q1 = uicontrol(LSS_MIDCOMP,'Style','text','String', 'Start FIR task regression from','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
-        LSS_Q2 = uicontrol(LSS_MIDCOMP,'Style','text','String', strcat('subject №',num2str(INDEX),'?'), 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
-
-        LSS_YES = uicontrol(LSS_MIDCOMP,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28);
-        LSS_RESTART = uicontrol(LSS_MIDCOMP,'Style','pushbutton', 'String', '<html>&#160 No, start from <br>the first subject','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28);
-
-        LSS_Q1.Position = [0.10 0.55 0.80 0.260];
-        LSS_Q2.Position = [0.10 0.40 0.80 0.260];
-
-        set([LSS_Q1,LSS_Q2],'backgroundcolor',get(LSS_MIDCOMP,'color'));
-
-        LSS_YES.Position = [0.12 0.15 0.320 0.270];
-        LSS_RESTART.Position = [0.56 0.15 0.320 0.270];
-
-        set(LSS_YES, 'callback', @contd);
-        set(LSS_RESTART, 'callback', @RESTART);
-
-        % Function to set status in MAIN_WINDOW appdata (To continue from
-        % last processed subject) 
-        function LSS_contd_del(~,~)
-            h96 = findobj('Tag', 'MAIN_WINDOW');
-            setappdata(h96, 'CONTD_LSS', 0);
-           delete(LSS_MIDCOMP); 
-        end
-        
-        
-        function contd(~,~)
-            h6 = findobj('Tag', 'MAIN_WINDOW');
-            setappdata(h6, 'CONTD_LSS', 1);
-            delete(LSS_MIDCOMP);
-        end
-        % Function to set status in MAIN_WINDOW appdata (To Restart from
-        % the first subject)
-        function RESTART(~,~)
-            h96 = findobj('Tag', 'MAIN_WINDOW');
-            setappdata(h96, 'CONTD_LSS', 2);
-            delete(LSS_MIDCOMP);
-        end
-        uiwait();
-    end
-
-end
 %%
 % Function to perform intial sorting of LSS conditions
 function [out_list] = sorter_1(in_list)
