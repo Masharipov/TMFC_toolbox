@@ -114,6 +114,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI, 'CloseRequestFcn', {@close_GUI, handles.TMFC_GUI}); 
     set(handles.TMFC_GUI_B1, 'callback', {@select_subjects, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
@@ -124,7 +125,6 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     % PPI
     % gPPI
     % gPPI_FIR
-    % LSS - LSS_GLM
     % BSC
     % FIR
     % BGFC
@@ -716,8 +716,97 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
 %       warning('Please select subjects & project path to perform LSS GLM regression');
 %    end
         
+end
+
+
+%% ============================[ LSS GLM ]=================================
+
+function LSS_FIR(ButtonH, EventData, TMFC_GUI)
+
+    %try
+        cd(tmfc.project_path);           
+
+    
+    % Freezing the Main window
+    MW_Freeze(1);
+    
+    
+    disp('Initiating LSS after FIR');
+    if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+        % Checking if subjects has been selected
+        last_size = size(tmfc.subjects);
+        
+        if isfield(tmfc.subjects, 'FIR') && tmfc.subjects(last_size(2)).FIR == 1
+            
+            if ~isfield(tmfc, 'LSS_after_FIR') 
+            % First time exeuction
+
+                % select conditions    
+                tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+
+                if isstruct(tmfc.LSS_after_FIR.conditions)
+
+                    sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                    for i=1:length(tmfc.subjects)
+                        tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                    end
+
+                end
+
+            elseif isfield(tmfc.LSS_after_FIR, 'conditions') && ~isfield(tmfc.subjects, 'LSS_after_FIR')
+                % Execution if CTLR + C is pressed 
+                % Can add code for exuection from last complied .mat file
+
+                tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+
+                if isstruct(tmfc.LSS_after_FIR.conditions)
+
+                    sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                    for i=1:length(tmfc.subjects)
+                        tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                    end
+
+                end
+
+            else
+                disp("Restart & Continue cases");
+
+                % Other cases 'Restart' and 'Continue'
+    %              if isstruct(tmfc.LSS.conditions)
+    %                  len_sub = size(tmfc.subjects);
+    %                  dimension = size(tmfc.subjects(length(tmfc.subjects)).LSS);
+    %                  size(tmfc.subjects(length(tmfc.subjects)).LSS.session.condition.trials)
+    %                  if tmfc.subjects(len_sub(2)).
+    %                  
+    %                 
+    %                 
+    %                 if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
+    %                     
+    %                     % Restart case  
+    %                     
+    %                 else
+    %                     % Continue case
+    %   
+    %                 end
+                 %end
+            end
+        else
+            warning('Please complete FIR regression to continue with LSS regression');
+        end  
+    else
+        warning('Please select subjects to continue with LSS regression');
     end
-     
+    
+    
+        MW_Freeze(0);
+        disp(tmfc);
+    %catch
+%       warning('Please select subjects & project path to perform LSS GLM regression');
+%    end
+        
+end
+
+
 %% =====================[ Supporting Functions ]===========================
 
     % Failsafe function to pervent unintended freeze of TMFC Main Window
