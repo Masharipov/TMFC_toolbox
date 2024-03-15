@@ -113,12 +113,14 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     % CallBack functions corresponding to each button
     set(handles.TMFC_GUI, 'CloseRequestFcn', {@close_GUI, handles.TMFC_GUI}); 
     set(handles.TMFC_GUI_B1, 'callback', {@select_subjects, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B2, 'callback', {@ROI_sel, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
+    
     
     % ROI_set
     % VOI
@@ -425,7 +427,6 @@ function BGFC_EX(ButtonH, EventData, TMFC_GUI)
     
 end
 
-
 %% =====================[ Beta Series Corelation ]=========================
 function BSC_EX(ButtonH, EventData, TMFC_GUI)
     BSC_entry = tmfc_select_ROIs_GUI();
@@ -441,53 +442,45 @@ function gPPI_EX(ButtonH, EventData, TMFC_GUI)
     fprintf('Continue gPPI with ROI # = %d \n', D);
 end
 
-
 %% ==========================[ Load Project ]==============================
+function load_project(ButtonH, EventData, TMFC_GUI)
 
-    % Function to perform loading of TMFC variable from .m file 
-    % to Workspace in matlab
-    
-    function load_project(ButtonH, EventData, TMFC_GUI)
-        
-        % Get File name, Directory of File to be loaded
-        [filename_LO, pathname_LO] = uigetfile(pwd,'*.mat', 'Select .mat file');
-        
-        % If user has selected a file the proceed else warning
-        if filename_LO ~= 0                                              
-            % Construct Full Path to file
-            fullpath_L = fullfile(pathname_LO, filename_LO);            
-            
-            % Load Data from File into temporary variable
-            loaded_data_L = load(fullpath_L);            
-            
-            % Get the name of the variable as in file 
-            variable_name_L = fieldnames(loaded_data_L);                
-            
-            % Get value of the variable as in file
-            tmfc = loaded_data_L.(variable_name_L{1});      
-            
-            % Assign generated data into Base workspace under corresponding
-            % variable name
-            %assignin('base', variable_name_L{1}, variable_value_L);
-            %assignin('base', 'tmfc', variable_value_L);
-            %tmfc = evalin('base', 'tmfc');
-            
-            %disp(variable_value_L);
-            %tmfc = load(variable_value_L);
-            %disp(tmfc);
-            % Supporting Function - To Update TMFC GUI when loading data
-            evaluate_file(tmfc);
-            
-        else
-            warning('No file selected');
-        end
-        
-    end     
+    % Get File name, Directory of File to be loaded
+    [filename_LO, pathname_LO] = uigetfile(pwd,'*.mat', 'Select .mat file');
 
+    % If user has selected a file the proceed else warning
+    if filename_LO ~= 0                                              
+        % Construct Full Path to file
+        fullpath_L = fullfile(pathname_LO, filename_LO);            
+
+        % Load Data from File into temporary variable
+        loaded_data_L = load(fullpath_L);            
+
+        % Get the name of the variable as in file 
+        variable_name_L = fieldnames(loaded_data_L);                
+
+        % Get value of the variable as in file
+        tmfc = loaded_data_L.(variable_name_L{1});      
+
+        % Assign generated data into Base workspace under corresponding
+        % variable name
+        %assignin('base', variable_name_L{1}, variable_value_L);
+        %assignin('base', 'tmfc', variable_value_L);
+        %tmfc = evalin('base', 'tmfc');
+
+        %disp(variable_value_L);
+        %tmfc = load(variable_value_L);
+        %disp(tmfc);
+        % Supporting Function - To Update TMFC GUI when loading data
+        evaluate_file(tmfc);
+
+    else
+        warning('No file selected');
+    end
+
+end   
 
 %% ==========================[ Change Paths ]==============================
-
-% Function to perform change of paths using Select subs
 function CP_GUI(ButtonH, EventData, TMFC_GUI)
     try
         % Select subjects to change the Path 
@@ -503,11 +496,6 @@ function CP_GUI(ButtonH, EventData, TMFC_GUI)
 end
 
 %% ============================[ Settings ]================================
-
-% Function that launches Settings Window & Synchronizes new options 
-
-% Variables to store & display selected settings in the settings window
-% Type of computing (Default computing: Sequential - 0, Parallel - 1)
 SET_COMPUTING = {'Sequential computing', 'Parallel computing'};
 SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
 SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
@@ -633,25 +621,22 @@ function tmfc_settings(ButtonH, EventData, TMFC_GUI)
     
 end
 
-
-
-
 %% ============================[ LSS GLM ]=================================
-
 function LSS_GLM(ButtonH, EventData, TMFC_GUI)
 
-    %try
+    try
         cd(tmfc.project_path);           
+    end
 
     
     % Freezing the Main window
     MW_Freeze(1);
     
     
-    disp('Initiating LSS GLM');
+    
     if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
         % Checking if subjects has been selected
-        
+        disp('Initiating LSS GLM');
         if ~isfield(tmfc, 'LSS') 
         % First time exeuction
 
@@ -718,21 +703,21 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
         
 end
 
-
 %% ============================[ LSS GLM ]=================================
-
 function LSS_FIR(ButtonH, EventData, TMFC_GUI)
 
-    %try
+    try
         cd(tmfc.project_path);           
+    end
 
     
     % Freezing the Main window
     MW_Freeze(1);
     
     
-    disp('Initiating LSS after FIR');
+    
     if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+        disp('Initiating LSS after FIR');
         % Checking if subjects has been selected
         last_size = size(tmfc.subjects);
         
@@ -806,21 +791,74 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
         
 end
 
+%% ============================[ ROI SET ]=================================
+    function ROI_sel(ButtonH, EventData, TMFC_GUI)
+        
+       if isfield(tmfc, 'project_path')
+           
+       cd(tmfc.project_path);    
+       
+       MW_Freeze(1);
+       
+       if ~isfield(tmfc, 'ROI_set')
+           ROI_hold = tmfc_select_ROIs_GUI(tmfc);  
+           if isstruct(ROI_hold)
+               tmfc.ROI_set_number = 1;
+               tmfc.ROI_set(1) = ROI_hold;
+               set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+           end
+           
+       else
+           
+           
+            lst_4 = {};
+            for l = 1:length(tmfc.ROI_set)
+                matter = {l,horzcat(tmfc.ROI_set(l).set_name, ' (',num2str(length(tmfc.ROI_set(l).ROIs)),' ROIs)')};
+                lst_4 = vertcat(lst_4, matter);
+            end  
 
-%% =====================[ Supporting Functions ]===========================
+            [R_ans, pos] = ROI_F2(lst_4);
+            SZ_4 = size(lst_4);
 
-    % Failsafe function to pervent unintended freeze of TMFC Main Window
-%     try
-%         h1_UNFREZ = findobj('Tag','TMFC_GUI');
-%         F1_data = guidata(h1_UNFREZ); 
-%         set([F1_data.SUB,F1_data.FIR_TR, F1_data.LSS_R, F1_data.LSS_RW, F1_data.BSC, F1_data.gPPI,F1_data.save_p, F1_data.open_p, F1_data.change_p, F1_data.settings,F1_data.BGFC],'Enable', 'on');
-%     end
-%             
-%                 
-    try % MAJOR CHANGE
-        guidata(handles.TMFC_GUI, handles);
+            if R_ans == 1
+
+               % add new ROI
+               new_ROI_set = tmfc_select_ROIs_GUI(tmfc);  
+               
+               if isstruct(new_ROI_set)
+                   tmfc.ROI_set(SZ_4(1)+1) = new_ROI_set;
+                   tmfc.ROI_set_number = SZ_4(1)+1;
+                   disp('ROIs have been succesfully selected');
+                   set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(SZ_4(1)+1).set_name, ' (',num2str(length(tmfc.ROI_set(SZ_4(1)+1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+               end
+
+            elseif R_ans == 0 && pos ~=0
+
+                fprintf('Selected ROI for processing is: %s \n', char(lst_4(pos,2)));
+                tmfc.ROI_set_number = pos;
+                set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(pos).set_name, ' (',num2str(length(tmfc.ROI_set(pos).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+            else
+                disp('ROIs have not been selected');
+
+            end
+        
+        
+        
+       end
+       
+       
+       MW_Freeze(0);
+        
+       else
+            warning('Please select subjects to continue with ROI set selection');
+        end
     end
 
+%% =====================[ Supporting Functions ]===========================
+      
+try 
+    guidata(handles.TMFC_GUI, handles);
+end
 
 % This function performs Independent save & returns the status
 % of saving. 0 - Success, 1 - Fail
@@ -840,6 +878,7 @@ function SAVER_STAT =  Saver(save_path)
     end
 end
 
+%%
 function evaluate_file(tmfc) % function to update the TMFC window after loading a tmfc project
     
     try
@@ -854,6 +893,12 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
         set(handles.TMFC_GUI_S1,'String', strcat(num2str(length(tmfc.subjects)), ' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
     end
    
+    try 
+        if isfield(tmfc,'ROI_set_number')            
+            set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(tmfc.ROI_set_number).set_name, ' (',num2str(length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);                   
+        end
+    end
+    
 %     V_FIR = 0;
 %     V_LSS_A_FIR = 0;
 %     for i = 1:BPL_LEN
@@ -946,7 +991,6 @@ function MW_Freeze(STATE)
           
 
 end  
-
 %%
 function TMFC_SS_select_proj_path(S)
     TMFC_SS_PP = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.40 0.20 0.10],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'Proj_path');
@@ -961,8 +1005,6 @@ function TMFC_SS_select_proj_path(S)
     end
     uiwait();
 end
-
-%%
 
 function [STATUS] = TMFC_FIR_CON_GUI(INDEX)
 
@@ -1122,3 +1164,61 @@ function [win, bin] = TMFC_FIR_BW_GUI(~,~)
     end
     uiwait();
 end
+
+% ROI Set functions
+function [new_flag, position] = ROI_F2(LIST_SETS,~)
+    
+    new_flag = 0;
+    position = 0;
+    
+    ROI_2 = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.35 0.40 0.28 0.35],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
+
+    ROI_2_disp = uicontrol(ROI_2 , 'Style', 'listbox', 'String', LIST_SETS(:,2),'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09);
+
+    ROI_2_S1 = uicontrol(ROI_2,'Style','text','String', 'Select ROI set','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.58);
+    ROI_2_S2 = uicontrol(ROI_2,'Style','text','String', 'Sets:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.64);
+    
+    ROI_2_OK = uicontrol(ROI_2,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_2_Select = uicontrol(ROI_2,'Style','pushbutton', 'String', 'Select new ROI set','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+     
+    ROI_2_S1.Position = [0.29 0.85 0.400 0.09];
+    ROI_2_S2.Position = [0.04 0.74 0.100 0.08];
+     
+    ROI_2_OK.Position = [0.16 0.10 0.28 0.10]; % W H
+    ROI_2_Select.Position = [0.56 0.10 0.28 0.10];
+    
+    selection_3 = {};
+    set(ROI_2_disp, 'Value', 1);
+    selection_3 = 1;
+    
+    set(ROI_2_S1,'backgroundcolor',get(ROI_2,'color'));
+    set(ROI_2_S2,'backgroundcolor',get(ROI_2,'color'));
+    set(ROI_2_disp, 'callback', @action_select_M1);
+    
+    set(ROI_2_OK, 'callback', @ROI_F2_OK);
+    set(ROI_2_Select, 'callback', @ROI_F2_SELECT);
+    
+     
+    function action_select_M1(~,~)
+        index = get(ROI_2_disp, 'Value');  % Retrieves the users selection LIVE
+        selection_3 = index;    
+    end
+
+    
+    
+    function ROI_F2_OK(~,~)
+        new_flag = 0;
+        position = selection_3;
+        close(ROI_2);
+    end
+
+    function ROI_F2_SELECT(~,~)
+        new_flag = 1;
+        close(ROI_2);
+        position = 0;
+    end
+    
+    uiwait();
+    
+end
+
