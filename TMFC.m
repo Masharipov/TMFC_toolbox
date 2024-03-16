@@ -1188,7 +1188,7 @@ function [new_flag, position] = ROI_F2(LIST_SETS,~)
     ROI_2_S2 = uicontrol(ROI_2,'Style','text','String', 'Sets:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.64);
     
     ROI_2_OK = uicontrol(ROI_2,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
-    ROI_2_Select = uicontrol(ROI_2,'Style','pushbutton', 'String', 'Select new ROI set','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
+    ROI_2_Select = uicontrol(ROI_2,'Style','pushbutton', 'String', 'Add new ROI set','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4);
      
     ROI_2_S1.Position = [0.29 0.85 0.400 0.09];
     ROI_2_S2.Position = [0.04 0.74 0.100 0.08];
