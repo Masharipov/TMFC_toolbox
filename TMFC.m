@@ -7,30 +7,36 @@ function TMFC
 % The tmfc structure contains the following structures:
 %    
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
-%   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used at
+%   tmfc.defaults.maxmem   - e.g. 2^32 = 4GB (how much RAM can be used at
 %                            the same time during GLM estimation)
 %   tmfc.defaults.resmem   - true or false (store temporaty files during
 %                            GLM estimation in RAM or on disk)
+%   tmfc.defaults.analysis - 1 (Seed-to-voxel and ROI-to-ROI analyses)
+%                          - 2 (ROI-to-ROI analysis only)
+%                          - 3 (Seed-to-voxel analysis only)
 %   
 %   tmfc.project_path      - The path where all results will be saved
 %   
 %   tmfc.subjects.path     - Paths to individual subject SPM.mat files
 %   tmfc.subjects.FIR:            - 1 or 0 (completed or not)
+%   tmfc.subjects.LSS             - 1 or 0 (completed or not)
 %   tmfc.subjects.LSS_after_FIR   - 1 or 0 (completed or not)
-%   tmfc.subjects.LSS_without_FIR - 1 or 0 (completed or not)
 %
-%   tmfc.FIR.window        - FIR window length in doc memory[s]
+%   tmfc.ROI_set:          - information about the selected ROI set
+%                            and completed TMFC procedures
+%
+%   tmfc.FIR.window        - FIR window length [seconds]
 %   tmfc.FIR.bins          - Number of FIR time bins
-% 
+%
+%   tmfc.LSS.conditions             - Conditions of interest for LSS
+%                                     regression without FIR regression
+%                                     (based on original time series) 
 %   tmfc.LSS_after_FIR.conditions   - Conditions of interest for LSS 
 %                                     regression after FIR regression
 %                                     (based on residual time series)
-%   tmfc.LSS_without_FIR.conditions - Conditions of interest for LSS
-%                                     regression without FIR regression
-%                                     (based on original time series)            
 %
-%   tmfc.ROI_set:         - information about the selected ROI set
-%                           and completed TMFC procedures
+%   tmfc.gPPI.conditions            - Conditions of interest for gPPI and
+%                                     gPPI-FIR regression
 %
 % =========================================================================
 %
@@ -57,7 +63,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     
     % Set up TMFC structure
     tmfc.defaults.parallel = 0;      
-    tmfc.defaults.maxmem = 2^34;
+    tmfc.defaults.maxmem = 2^32;
     tmfc.defaults.resmem = true;
     tmfc.defaults.analysis = 1;
     
@@ -99,11 +105,10 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     handles.TMFC_GUI_B14b = uicontrol('Style', 'pushbutton', 'String', 'Settings', 'Units', 'normalized', 'Position', [0.54 0.02 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     
     % String counters
-    % red = 'red'
     % green = [0.219, 0.341, 0.137]
     % orange = [0.773, 0.353, 0.067]
-    handles.TMFC_GUI_S1 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.555 0.926 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
-    handles.TMFC_GUI_S2 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', 'red', 'Units', 'norm', 'Position',[0.555 0.867 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_GUI_S1 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', [1, 0, 0], 'Units', 'norm', 'Position',[0.555 0.926 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
+    handles.TMFC_GUI_S2 = uicontrol('Style', 'text', 'String', 'Not selected', 'ForegroundColor', [1, 0, 0], 'Units', 'norm', 'Position',[0.555 0.867 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_GUI_S3 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.787 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_GUI_S4 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.727 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
     handles.TMFC_GUI_S6 = uicontrol('Style', 'text', 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067], 'Units', 'norm', 'Position',[0.555 0.587 0.38 0.03],'FontUnits','normalized','FontSize',0.56,'backgroundcolor', 'w');
@@ -145,29 +150,33 @@ else
     figure(findobj('Tag', 'TMFC_GUI')); 
     warning('TMFC toolbox is already running');    
 end
-    
-    function reset(ButtonH, EventData, TMFC_GUI)
-        
-        tmfc = struct;
-        tmfc.defaults.parallel = 0;      
-        tmfc.defaults.maxmem = 2^31;
-        tmfc.defaults.resmem = true;
-        
-        set(handles.TMFC_GUI_S1, 'String', 'Not selected','ForegroundColor', 'red');
-        set(handles.TMFC_GUI_S2, 'String', 'Not selected','ForegroundColor', 'red');
-        set(handles.TMFC_GUI_S3, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        set(handles.TMFC_GUI_S6, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        set(handles.TMFC_GUI_S8, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        set(handles.TMFC_GUI_S10, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        
-        disp('tmfc reset');
-        disp(tmfc);
-    end
 
-    function tempsave(ButtonH, EventData, TMFC_GUI)
-        assignin('base', 'tmfc', tmfc);
-    end
+%% ==============================[ Reset ]=================================
+function reset(ButtonH, EventData, TMFC_GUI)
+    
+    tmfc = struct;
+    tmfc.defaults.parallel = 0;      
+    tmfc.defaults.maxmem = 2^32;
+    tmfc.defaults.resmem = true;
+    tmfc.defaults.analysis = 1;
+    
+    set(handles.TMFC_GUI_S1, 'String', 'Not selected','ForegroundColor', [1, 0, 0]);
+    set(handles.TMFC_GUI_S2, 'String', 'Not selected','ForegroundColor', [1, 0, 0]);
+    set(handles.TMFC_GUI_S3, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+    set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+    set(handles.TMFC_GUI_S6, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+    set(handles.TMFC_GUI_S8, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+    set(handles.TMFC_GUI_S10, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+    
+    disp('tmfc reset');
+    disp(tmfc);
+end
+
+%% ===========================[ TMP Save ]=================================
+function tempsave(ButtonH, EventData, TMFC_GUI)
+    assignin('base', 'tmfc', tmfc);
+end
+
 %% ========================[ Select Subjects ]=============================
 % Select subjects and check SPM.mat files
 function select_subjects(ButtonH, EventData, TMFC_GUI)
@@ -374,48 +383,48 @@ end
     
 %% ==========================[ Save Project ]==============================
 
-    % Function to perform Saving of TMFC variable from workspace to
-    % individual .m file in user desired location
+% Function to perform Saving of TMFC variable from workspace to
+% individual .m file in user desired location
+
+function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, TMFC_GUI)
+   
+    % Acquire variable from Workspace
+    %TMFC = evalin('base', 'tmfc');
     
-    function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, TMFC_GUI)
-       
-        % Acquire variable from Workspace
-        %TMFC = evalin('base', 'tmfc');
+    % Ask user for Filename & location name:
+    [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as'); %pwd
+    
+    % Set Flag save status to Zero, this flag is used in the future as
+    % a reference to check if the Save was successful or not
+    SAVE_STAT = 0;
+    
+    % Check if FileName or Path is missing or not available 
+    if isequal(filename_SO, 0) || isequal(pathname_SO, 0)
+        error('TMFC variable not saved, File name or Save Directory not selected');
+    
+    else
+        % If all data is available
+        % Construct full path: PATH + FileName
+        % e.g (D:\user\matlab\ + Test.m)
         
-        % Ask user for Filename & location name:
-        [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as'); %pwd
+        fullpath = fullfile(pathname_SO, filename_SO);
         
-        % Set Flag save status to Zero, this flag is used in the future as
-        % a reference to check if the Save was successful or not
-        SAVE_STAT = 0;
+        % D receives the save status of the variable in the desingated
+        % location
+        SAVE_STAT = Saver(fullpath);
         
-        % Check if FileName or Path is missing or not available 
-        if isequal(filename_SO, 0) || isequal(pathname_SO, 0)
-            error('TMFC variable not saved, File name or Save Directory not selected');
-        
+        % If the variable was successfully saved then display info
+        if SAVE_STAT == 1
+            fprintf('File saved successfully in path: %s\n', fullpath);
         else
-            % If all data is available
-            % Construct full path: PATH + FileName
-            % e.g (D:\user\matlab\ + Test.m)
-            
-            fullpath = fullfile(pathname_SO, filename_SO);
-            
-            % D receives the save status of the variable in the desingated
-            % location
-            SAVE_STAT = Saver(fullpath);
-            
-            % If the variable was successfully saved then display info
-            if SAVE_STAT == 1
-                fprintf('File saved successfully in path: %s\n', fullpath);
-            else
-                fprintf('File not saved ');
-            end
-            %save(pathname, replace( filename, '.mat' , "" ));
-            %save(fullpath, 'TMFC');
-            %fprintf('File saved successfully in path: %s\n', fullpath);
+            fprintf('File not saved ');
         end
-              
+        %save(pathname, replace( filename, '.mat' , "" ));
+        %save(fullpath, 'TMFC');
+        %fprintf('File saved successfully in path: %s\n', fullpath);
     end
+          
+end
 
 %% ====================[ Background Connectivity ]=========================
 function BGFC_EX(ButtonH, EventData, TMFC_GUI)
@@ -536,89 +545,88 @@ function tmfc_settings(ButtonH, EventData, TMFC_GUI)
     
     set(TMFC_SET_OK , 'callback', @OK_SYNC);   
 
-
     TMFC_SET_COPY = tmfc;
-        % The following functions perform Synchronization after OK
-        % button has been pressed 
-        
-        function OK_SYNC(~,~)
 
-            % Create a local copy of the TMFC variable
-           %SET_SYNC = evalin('base', 'tmfc');
-
-           % SYNC: Computation type
-           % Check status of string in stat box -> if changed -> SWAP
-           % details -> Change TMFC variable -> END          
-           
-           C_1 = (TMFC_SET_P1.String(TMFC_SET_P1.Value));
-           if strcmp(C_1{1},'Sequential computing')
-               SET_COMPUTING = {'Sequential computing','Parallel computing'};
-               set(TMFC_SET_P1, 'String', SET_COMPUTING);
-               tmfc.defaults.parallel = 0;
-
-           elseif strcmp(C_1{1},'Parallel computing')
-               SET_COMPUTING = {'Parallel computing','Sequential computing',};
-               set(TMFC_SET_P1, 'String', SET_COMPUTING);
-               tmfc.defaults.parallel = 1;
-           end
-
-
-           % SYNC: Storage type
-           % Check status of string in stat box -> if changed -> SWAP
-           % details -> Change TMFC variable -> END
-           C_2 = (TMFC_SET_P2.String(TMFC_SET_P2.Value));
-           if strcmp(C_2{1}, 'Store temporary files for GLM estimation in RAM')
-               SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
-               set(TMFC_SET_P2, 'String', SET_STORAGE);
-               tmfc.defaults.resmem =  true;
-
-           elseif strcmp(C_2{1}, 'Store temporary files for GLM estimation on disk')
-               SET_STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
-               set(TMFC_SET_P2, 'String', SET_STORAGE);
-               tmfc.defaults.resmem =  false;
-           end
-           
-           
-           % SYNC: Maximum Memory Value
-           % Check status of string in stat box -> if changed -> SWAP
-           % details -> Change TMFC variable -> END
-           DG4_STR = get(TMFC_SET_E1,'String');
-           DG4 = eval(DG4_STR);
-           if DG4 ~= 2^31
-               set(TMFC_SET_E1, 'String', DG4_STR);
-               tmfc.defaults.maxmem = DG4;
-           end
-
-           C_4 = (TMFC_SET_P4.String(TMFC_SET_P4.Value));
-           if strcmp(C_4{1}, 'Seed-to-voxel and ROI-to-ROI')
-               SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
-               set(TMFC_SET_P4, 'String', SET_SEED);
-               tmfc.defaults.analysis =  1;
-
-           elseif strcmp(C_4{1}, 'ROI-to-ROI')
-               SET_SEED = {'ROI-to-ROI','Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI'};
-               set(TMFC_SET_P4, 'String', SET_SEED);
-               tmfc.defaults.analysis =  2;
-           elseif strcmp(C_4{1}, 'Seed-to-voxel only')
-               SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI'};
-               set(TMFC_SET_P4, 'String', SET_SEED);
-               tmfc.defaults.analysis =  3;
-           end
-           
-           if TMFC_SET_COPY.defaults.parallel == tmfc.defaults.parallel &&...
-              TMFC_SET_COPY.defaults.maxmem == tmfc.defaults.maxmem &&...
-              TMFC_SET_COPY.defaults.resmem == tmfc.defaults.resmem&&...
-              TMFC_SET_COPY.defaults.analysis == tmfc.defaults.analysis 
-               disp('Settings have not been changed');
-           else
-               
-               disp('Settings have been updated');
-               
-           end
-           close(TMFC_SET);
-           
-        end
+    % The following functions perform Synchronization after OK
+    % button has been pressed 
     
+    function OK_SYNC(~,~)
+
+        % Create a local copy of the TMFC variable
+       %SET_SYNC = evalin('base', 'tmfc');
+
+       % SYNC: Computation type
+       % Check status of string in stat box -> if changed -> SWAP
+       % details -> Change TMFC variable -> END          
+       
+       C_1 = (TMFC_SET_P1.String(TMFC_SET_P1.Value));
+       if strcmp(C_1{1},'Sequential computing')
+           SET_COMPUTING = {'Sequential computing','Parallel computing'};
+           set(TMFC_SET_P1, 'String', SET_COMPUTING);
+           tmfc.defaults.parallel = 0;
+
+       elseif strcmp(C_1{1},'Parallel computing')
+           SET_COMPUTING = {'Parallel computing','Sequential computing',};
+           set(TMFC_SET_P1, 'String', SET_COMPUTING);
+           tmfc.defaults.parallel = 1;
+       end
+
+
+       % SYNC: Storage type
+       % Check status of string in stat box -> if changed -> SWAP
+       % details -> Change TMFC variable -> END
+       C_2 = (TMFC_SET_P2.String(TMFC_SET_P2.Value));
+       if strcmp(C_2{1}, 'Store temporary files for GLM estimation in RAM')
+           SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
+           set(TMFC_SET_P2, 'String', SET_STORAGE);
+           tmfc.defaults.resmem =  true;
+
+       elseif strcmp(C_2{1}, 'Store temporary files for GLM estimation on disk')
+           SET_STORAGE = {'Store temporary files for GLM estimation on disk','Store temporary files for GLM estimation in RAM'};
+           set(TMFC_SET_P2, 'String', SET_STORAGE);
+           tmfc.defaults.resmem =  false;
+       end
+       
+       
+       % SYNC: Maximum Memory Value
+       % Check status of string in stat box -> if changed -> SWAP
+       % details -> Change TMFC variable -> END
+       DG4_STR = get(TMFC_SET_E1,'String');
+       DG4 = eval(DG4_STR);
+       if DG4 ~= 2^31
+           set(TMFC_SET_E1, 'String', DG4_STR);
+           tmfc.defaults.maxmem = DG4;
+       end
+
+       C_4 = (TMFC_SET_P4.String(TMFC_SET_P4.Value));
+       if strcmp(C_4{1}, 'Seed-to-voxel and ROI-to-ROI')
+           SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
+           set(TMFC_SET_P4, 'String', SET_SEED);
+           tmfc.defaults.analysis =  1;
+
+       elseif strcmp(C_4{1}, 'ROI-to-ROI')
+           SET_SEED = {'ROI-to-ROI','Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI'};
+           set(TMFC_SET_P4, 'String', SET_SEED);
+           tmfc.defaults.analysis =  2;
+       elseif strcmp(C_4{1}, 'Seed-to-voxel only')
+           SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI'};
+           set(TMFC_SET_P4, 'String', SET_SEED);
+           tmfc.defaults.analysis =  3;
+       end
+       
+       if TMFC_SET_COPY.defaults.parallel == tmfc.defaults.parallel &&...
+          TMFC_SET_COPY.defaults.maxmem == tmfc.defaults.maxmem &&...
+          TMFC_SET_COPY.defaults.resmem == tmfc.defaults.resmem&&...
+          TMFC_SET_COPY.defaults.analysis == tmfc.defaults.analysis 
+           disp('Settings have not been changed');
+       else
+           
+           disp('Settings have been updated');
+           
+       end
+       close(TMFC_SET);
+       
+    end   
 end
 
 %% ============================[ LSS GLM ]=================================
