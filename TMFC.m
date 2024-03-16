@@ -813,6 +813,7 @@ end
            if isstruct(ROI_hold)
                tmfc.ROI_set_number = 1;
                tmfc.ROI_set(1) = ROI_hold;
+               tmfc.ROI_set.contrasts = [];
                set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
            end
            
