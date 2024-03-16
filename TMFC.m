@@ -830,8 +830,9 @@ end
 
             if R_ans == 1
 
-               % add new ROI
-               new_ROI_set = tmfc_select_ROIs_GUI(tmfc);  
+               % Add new ROI set
+               new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
+               new_ROI_set.contrasts = [];
                
                if isstruct(new_ROI_set)
                    tmfc.ROI_set(SZ_4(1)+1) = new_ROI_set;
