@@ -171,48 +171,7 @@ function reset(ButtonH, EventData, TMFC_GUI)
     disp('tmfc reset');
     disp(tmfc);
 end
-%% ============================[ FIR Track ]===============================
-function FIR_track(ButtonH, EventData, TMFC_GUI)
-   try
-    cd(tmfc.project_path);  
-   end
-    
-    % track
-    for subi = 1:length(tmfc.subjects)              
-        SPM = load(tmfc.subjects(subi).path);
-        if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(subi,'%04.f')],['Res_' num2str(sum(SPM.SPM.nscan),'%04.f') '.nii']), 'file')
 
-           tmfc.subjects(subi).FIR = 1;
-        else           
-           tmfc.subjects(subi).FIR = 0;       
-        end
-        
-    end
-    
-    % Set GUI
-    try
-        SZ_tmfc = size(tmfc.subjects);
-        V_FIR = 0;
-        for i = 1:SZ_tmfc(2)
-            % checking status of FIR completion
-            if tmfc.subjects(i).FIR == 0
-                V_FIR = i ;
-                break;
-            end
-        end
-        
-        if V_FIR == 0
-            set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        else
-            set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        end
-
-        set(handles.TMFC_GUI_B8B, 'visible', 'off');
-        set(handles.TMFC_GUI_B9, 'visible', 'on');
-        MW_Freeze(0);
-    end
-    
-end
 %% ===========================[ TMP Save ]=================================
 function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
@@ -265,6 +224,39 @@ function FIR(ButtonH, EventData, TMFC_GUI)
     % Freezing the Main window
     MW_Freeze(1);
     
+    try
+               % track
+        for subi = 1:length(tmfc.subjects)              
+            SPM = load(tmfc.subjects(subi).path);
+            if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(subi,'%04.f')],['Res_' num2str(sum(SPM.SPM.nscan),'%04.f') '.nii']), 'file')
+
+               tmfc.subjects(subi).FIR = 1;
+            else           
+               tmfc.subjects(subi).FIR = 0;       
+            end
+
+        end
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_FIR = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of FIR completion
+                if tmfc.subjects(i).FIR == 0
+                    V_FIR = i ;
+                    break;
+                end
+            end
+
+            if V_FIR == 0
+                set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            else
+                set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+        end
+        pause(0.1); 
+    end
+    
+    
     
     disp('Initiating FIR regression');
     if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
@@ -301,7 +293,6 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             
             % Other cases 'Restart' and 'Continue'
             if ~isnan(tmfc.FIR.window) && ~isnan(tmfc.FIR.bins) 
-                
                 
                 if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
                     
