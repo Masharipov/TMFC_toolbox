@@ -273,11 +273,8 @@ end
 function cleanMeUp()
     try
         GUI = guidata(findobj('Tag','TMFC_GUI')); 
-        set([GUI.TMFC_GUI_B1, GUI.TMFC_GUI_B2, GUI.TMFC_GUI_B3, GUI.TMFC_GUI_B4,...
-            GUI.TMFC_GUI_B5a, GUI.TMFC_GUI_B5b, GUI.TMFC_GUI_B6, GUI.TMFC_GUI_B7,...
-            GUI.TMFC_GUI_B8, GUI.TMFC_GUI_B9, GUI.TMFC_GUI_B10, GUI.TMFC_GUI_B11,...
-            GUI.TMFC_GUI_B12,GUI.TMFC_GUI_B13a,GUI.TMFC_GUI_B13b,GUI.TMFC_GUI_B14a...
-            GUI.TMFC_GUI_B14b], 'Enable', 'on');
+        set(GUI.TMFC_GUI_B9, 'visible', 'off');
+        set(GUI.TMFC_GUI_B8B, 'visible', 'on');
         delete(findall(0,'Tag', 'tmfc_waitbar','type', 'Figure'));
     end    
     try                                                                 

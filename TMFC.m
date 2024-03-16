@@ -95,6 +95,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     handles.TMFC_GUI_B6 = uicontrol('Style', 'pushbutton', 'String', 'LSS GLM', 'Units', 'normalized', 'Position', [0.06 0.58 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_GUI_B7 = uicontrol('Style', 'pushbutton', 'String', 'BSC LSS', 'Units', 'normalized', 'Position', [0.06 0.52 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_GUI_B8 = uicontrol('Style', 'pushbutton', 'String', 'FIR task regression', 'Units', 'normalized', 'Position', [0.06 0.44 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
+    handles.TMFC_GUI_B8B = uicontrol('Style', 'pushbutton', 'String', 'Click to Track FIR Progress and continue', 'Units', 'normalized', 'Position', [0.06 0.38 0.88 0.05],'FontUnits','normalized','FontSize',0.33, 'visible', 'off');
     handles.TMFC_GUI_B9 = uicontrol('Style', 'pushbutton', 'String', 'Background connectivity', 'Units', 'normalized', 'Position', [0.06 0.38 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_GUI_B10 = uicontrol('Style', 'pushbutton', 'String', 'LSS GLM after FIR', 'Units', 'normalized', 'Position', [0.06 0.30 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     handles.TMFC_GUI_B11 = uicontrol('Style', 'pushbutton', 'String', 'BSC LSS after FIR', 'Units', 'normalized', 'Position', [0.06 0.24 0.88 0.05],'FontUnits','normalized','FontSize',0.33);
@@ -122,6 +123,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B8B, 'callback', {@FIR_track, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
@@ -171,7 +173,48 @@ function reset(ButtonH, EventData, TMFC_GUI)
     disp('tmfc reset');
     disp(tmfc);
 end
+%% ============================[ FIR Track ]===============================
+function FIR_track(ButtonH, EventData, TMFC_GUI)
+   try
+    cd(tmfc.project_path);  
+   end
+    
+    % track
+    for subi = 1:length(tmfc.subjects)              
+        SPM = load(tmfc.subjects(subi).path);
+        if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(subi,'%04.f')],['Res_' num2str(sum(SPM.SPM.nscan),'%04.f') '.nii']), 'file')
 
+           tmfc.subjects(subi).FIR = 1;
+        else           
+           tmfc.subjects(subi).FIR = 0;       
+        end
+        
+    end
+    
+    % Set GUI
+    try
+        SZ_tmfc = size(tmfc.subjects);
+        V_FIR = 0;
+        for i = 1:SZ_tmfc(2)
+            % checking status of FIR completion
+            if tmfc.subjects(i).FIR == 0
+                V_FIR = i ;
+                break;
+            end
+        end
+        
+        if V_FIR == 0
+            set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+        else
+            set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+        end
+
+        set(handles.TMFC_GUI_B8B, 'visible', 'off');
+        set(handles.TMFC_GUI_B9, 'visible', 'on');
+        MW_Freeze(0);
+    end
+    
+end
 %% ===========================[ TMP Save ]=================================
 function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
@@ -279,7 +322,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                     % Continue case
                     for i=1:length(tmfc.subjects)
                         FIR_index = [];
-                        if isempty(tmfc.subjects(i).FIR)
+                        if tmfc.subjects(i).FIR == 0
                             FIR_index = i;
                             break;
                         end
@@ -909,19 +952,33 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
         end
     end
     
-%     V_FIR = 0;
-%     V_LSS_A_FIR = 0;
-%     for i = 1:BPL_LEN
-%         % checking status of FIR completion
-%         if ~isnan(BPL.subjects(i).FIR)
-%             V_FIR = V_FIR + 1 ;
-%         end
-%         % checkinf status of LSS completion
-%         if ~isnan(BPL.subjects(i).LSS_after_FIR)
-%             V_LSS_A_FIR = V_LSS_A_FIR + 1;
-%         end
-%         
-%     end
+    
+    try
+        SZ_tmfc = size(tmfc.subjects);
+        V_FIR = 0;
+        %V_LSS_A_FIR = 0;
+        for i = 1:SZ_tmfc(2)
+            % checking status of FIR completion
+            if tmfc.subjects(i).FIR == 0
+                V_FIR = i ;
+                break;
+            end
+    %         checkinf status of LSS completion
+    %         if ~isnan(BPL.subjects(i).LSS_after_FIR)
+    %             V_LSS_A_FIR = V_LSS_A_FIR + 1;
+    %         end
+
+        end
+        
+        if V_FIR == 0
+            set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+        else
+            set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+        end
+
+    end
+    
+ 
     
 %     if V_FIR ~= 0
 %         set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
