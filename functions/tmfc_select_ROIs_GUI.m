@@ -34,7 +34,7 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 % Contact email: masharipov@ihb.spb.ru
 
 
- full_flag = 0;
+full_flag = 0;
 % % check if the code is called from GUI or CLI
 % OPD = findobj('Tag', 'TMFC_GUI');
 
