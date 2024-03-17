@@ -301,7 +301,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                     if STATUS == 1
                         [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                            
-                            disp('Restarting FIR Regression');
+                            disp('Restarting FIR regression');
                             sub_check = tmfc_FIR(tmfc, 1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.subjects(i).FIR = sub_check(i);
@@ -336,7 +336,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                             end
                         end
                     else
-                        warning('FIR Regression not initiated');
+                        warning('FIR regression not initiated');
                     end
                     
                 end
@@ -344,7 +344,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
         end
             
     else
-        warning('Please select subjects to continue with FIR Regression');
+        warning('Please select subjects to perform FIR Regression');
     end
     
     
@@ -1073,7 +1073,7 @@ function [STATUS] = TMFC_FIR_CON_GUI(INDEX)
 
     TMFC_FIR_CONT = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.18],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_FIR','CloseRequestFcn', @CANCEL); %X Y W H
 
-    TMFC_FIR_CONT_S1 = uicontrol(TMFC_FIR_CONT,'Style','text','String', 'Start FIR task regression from','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.55 0.80 0.260]);
+    TMFC_FIR_CONT_S1 = uicontrol(TMFC_FIR_CONT,'Style','text','String', 'Continue FIR task regression from','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.55 0.80 0.260]);
     TMFC_FIR_CONT_S2 = uicontrol(TMFC_FIR_CONT,'Style','text','String', strcat('subject №',num2str(INDEX),'?'), 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.40 0.80 0.260]);
 
     TMFC_FIR_CONT_YES = uicontrol(TMFC_FIR_CONT,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28, 'Position',[0.12 0.15 0.320 0.270]);
@@ -1113,7 +1113,7 @@ function [STATUS] = TMFC_FIR_RES_GUI(~,~)
 
     TMFC_FIR_RES = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_FIR','CloseRequestFcn', @CANCEL); %X Y W H
 
-    TMFC_FIR_RES_S1 = uicontrol(TMFC_FIR_RES,'Style','text','String', {'Recompute FIR task','regression for all subjects.?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260]);
+    TMFC_FIR_RES_S1 = uicontrol(TMFC_FIR_RES,'Style','text','String', {'Recompute FIR task','regression for all subjects?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260]);
     TMFC_FIR_RES_OK = uicontrol(TMFC_FIR_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20]);
     TMFC_FIR_RES_CL = uicontrol(TMFC_FIR_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20]);
 
