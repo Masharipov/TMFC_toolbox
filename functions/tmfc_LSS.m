@@ -82,7 +82,6 @@ try
 end
 
 spm('defaults','fmri');
-spm_jobman('initcfg');
    
 N = length(tmfc.subjects);
 
@@ -96,16 +95,16 @@ N_sess = length(sess_num);
 
 EXIT_STATUS_LSS = 0;
 
-% Initialize waitbar for parallel or sequential computing
+% Initialize waitbar for sequential or parallel computing
 switch tmfc.defaults.parallel
+    case 0
+        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar', CloseRequestFcn = '');
     case 1
         handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 
         afterEach(D, @tmfc_parfor_waitbar);                                 % Command to update Waitbar
         tmfc_parfor_waitbar(handles, N);     
         cleanupObj = onCleanup(@cleanMeUp);
-    case 0
-        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar', CloseRequestFcn = '');
 end
 
 % Loop through subjects
@@ -227,7 +226,7 @@ for i = start_sub:N
             end
             
             matlabbatch{1}.spm.stats.fmri_spec.cvi = SPM.SPM.xVi.form;
-            matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = cfg_dep('fMRI model specification: SPM.mat File', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
+            matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'SPM.mat')};
             matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
             matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
 
@@ -238,15 +237,55 @@ for i = start_sub:N
         % Variable to exit LSS regression during execution
          
         
-        % Parallel or sequential computing
-        switch tmfc.defaults.parallel    
-        % --------------------- Parallel Computing ------------------------        
+        % Sequential or parallel computing
+        switch tmfc.defaults.parallel                                 
+            % -------------------- Sequential Computing -----------------------
+            case 0
+                for k = 1:E
+                    if EXIT_STATUS_LSS ~= 1                                             % IF Cancel/X button has NOT been pressed, then contiune execution
+                        try
+                            % Specify LSS GLM
+                            spm('defaults','fmri');
+                            spm_get_defaults('cmdline',true);
+                            spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
+                            spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
+                            spm_get_defaults('stats.fmri.ufp',1);
+                            spm_jobman('run',batch{k});
+    
+                            % Save individual trial beta image
+                            copyfile(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'beta_0001.nii'),...
+                                fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'Betas', ...
+                                ['Beta_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
+    
+                            % Save GLM_batch.mat file
+                            tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
+                                ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
+    
+                            % Remove temporal LSS directory
+                            rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
+                            
+                            pause(0.01)
+    
+                            condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                        catch
+                            condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                        end
+                    else
+                        waitbar(N,handles, sprintf('Cancelling Operation'));
+                        delete(handles);
+                        try                                                             % Updating the TMFC GUI window with the progress
+                            main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
+                            set(main_GUI.TMFC_GUI_S6,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                        end
+                        break;
+                    end
+                end
+            % --------------------- Parallel Computing ------------------------        
             case 1
                 parfor k = 1:E
                     try
                         % Specify LSS GLM
                         spm('defaults','fmri');
-                        spm_jobman('initcfg');
                         spm_get_defaults('cmdline',true);
                         spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                         spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
@@ -281,50 +320,7 @@ for i = start_sub:N
 %                     DG = guidata(findobj('Tag', 'MAIN_WINDOW'));
 %                     set(DG.MAIN_F, 'Position', [0.18 0.26 0.205 0.575])
 %                     figure(DG.MAIN_F);
-%                     end                
-                 
-        % -------------------- Sequential Computing -----------------------
-        case 0
-            for k = 1:E
-                if EXIT_STATUS_LSS ~= 1                                             % IF Cancel/X button has NOT been pressed, then contiune execution
-                    try
-                        % Specify LSS GLM
-                        spm('defaults','fmri');
-                        spm_jobman('initcfg');
-                        spm_get_defaults('cmdline',true);
-                        spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
-                        spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
-                        spm_get_defaults('stats.fmri.ufp',1);
-                        spm_jobman('run',batch{k});
-
-                        % Save individual trial beta image
-                        copyfile(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'beta_0001.nii'),...
-                            fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                            ['Beta_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
-
-                        % Save GLM_batch.mat file
-                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
-
-                        % Remove temporal LSS directory
-                        rmdir(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
-                        
-                        pause(0.01)
-
-                        condition(trial.cond(k)).trials(trial.number(k)) = 1;
-                    catch
-                        condition(trial.cond(k)).trials(trial.number(k)) = 0;
-                    end
-                else
-                    waitbar(N,handles, sprintf('Cancelling Operation'));
-                    delete(handles);
-                    try                                                             % Updating the TMFC GUI window with the progress
-                        main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                        set(main_GUI.TMFC_GUI_S6,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
-                    end
-                    break;
-                end
-            end 
+%                     end  
         end
 
         sub_check(i).session(sess_num(j)).condition = condition;
@@ -333,21 +329,20 @@ for i = start_sub:N
 
     end
     
-    % Update waitbar for sequential and parallel computing
+    % Update waitbar for sequential or parallel computing
     switch(tmfc.defaults.parallel)
-        case 1
-            send(D,[]); 
-            try                                                             % Updating the TMFC GUI window with the progress
-                main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                set(main_GUI.TMFC_GUI_S6,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
-            end
-
         case 0
             t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
             try
                 waitbar(double(i)/double(N),handles,[num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
             end
 
+            try                                                             % Updating the TMFC GUI window with the progress
+                main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
+                set(main_GUI.TMFC_GUI_S6,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+            end
+        case 1
+            send(D,[]); 
             try                                                             % Updating the TMFC GUI window with the progress
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
                 set(main_GUI.TMFC_GUI_S6,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
