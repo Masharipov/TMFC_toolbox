@@ -82,7 +82,8 @@ try
 end
 
 spm('defaults','fmri');
-   
+spm_jobman('initcfg');
+
 N = length(tmfc.subjects);
 
 cond_list = tmfc.LSS.conditions;
@@ -246,6 +247,7 @@ for i = start_sub:N
                         try
                             % Specify LSS GLM
                             spm('defaults','fmri');
+                            spm_jobman('initcfg');
                             spm_get_defaults('cmdline',true);
                             spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                             spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
@@ -286,6 +288,7 @@ for i = start_sub:N
                     try
                         % Specify LSS GLM
                         spm('defaults','fmri');
+                        spm_jobman('initcfg');
                         spm_get_defaults('cmdline',true);
                         spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                         spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
