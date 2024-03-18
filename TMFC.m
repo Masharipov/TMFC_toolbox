@@ -151,7 +151,7 @@ else
     warning('TMFC toolbox is already running');    
 end
 
-%% ==============================[ Reset ]=================================
+%% ==============================[ Reset ]=============REMOVE later========
 function reset(ButtonH, EventData, TMFC_GUI)
     
     tmfc = struct;
@@ -172,7 +172,7 @@ function reset(ButtonH, EventData, TMFC_GUI)
     disp(tmfc);
 end
 
-%% ===========================[ TMP Save ]=================================
+%% ===========================[ TMP Save ]=============REMOVE later========
 function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
 end
@@ -210,7 +210,10 @@ function select_subjects(ButtonH, EventData, TMFC_GUI)
    try
     cd(tmfc.project_path);  
    end
-    disp(tmfc);
+   
+   tmfc = major_reset(tmfc);
+   
+   disp(tmfc);
 end
 
 
@@ -349,7 +352,6 @@ function FIR(ButtonH, EventData, TMFC_GUI)
     
     
         MW_Freeze(0);
-        disp(tmfc);
     catch
        warning('Please select subjects & project path to perform FIR regression');
     end 
@@ -739,7 +741,6 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
     
     
         MW_Freeze(0);
-        disp(tmfc);
     %catch
 %       warning('Please select subjects & project path to perform LSS GLM regression');
 %    end
@@ -827,7 +828,6 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
     
     
         MW_Freeze(0);
-        disp(tmfc);
     %catch
 %       warning('Please select subjects & project path to perform LSS GLM regression');
 %    end
@@ -1046,9 +1046,37 @@ function MW_Freeze(STATE)
                 handles.TMFC_GUI_B12,handles.TMFC_GUI_B13a,handles.TMFC_GUI_B13b,handles.TMFC_GUI_B14a...
                 handles.TMFC_GUI_B14b], 'Enable', STATE);
 
-     end
-          
+end
+         
+%% Reset after new Subjects
+function [tmfc] = major_reset(tmfc)
 
+% tmfc = rmfield(tmfc, 'subjects');
+% tmfc = rmfield(tmfc,'project_path');
+    try 
+        tmfc = rmfield(tmfc,'ROI_set');
+    end
+    try
+        tmfc = rmfield(tmfc,'ROI_set_number');
+    end
+    try
+        tmfc = rmfield(tmfc,'LSS');
+    end
+    try 
+        tmfc = rmfield(tmfc,'FIR');
+    end
+    try
+        tmfc = rmfield(tmfc,'LSS_after_FIR');
+    end
+
+set(handles.TMFC_GUI_S2,'String', 'Not selected','ForegroundColor',[1, 0, 0]);
+set(handles.TMFC_GUI_S3,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
+set(handles.TMFC_GUI_S4,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
+set(handles.TMFC_GUI_S6,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
+set(handles.TMFC_GUI_S8,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
+set(handles.TMFC_GUI_S10,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
+
+end
 end  
 %%
 function TMFC_SS_select_proj_path(S)
