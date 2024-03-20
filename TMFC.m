@@ -124,6 +124,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B14a, 'callback', {@CP_GUI, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
     
     
@@ -528,17 +529,17 @@ end
 
 %% ==========================[ Change Paths ]==============================
 function CP_GUI(ButtonH, EventData, TMFC_GUI)
-    try
-        % Select subjects to change the Path 
-        % Using Select_Subjects_GUI (without checking)
+    
+    disp('Select subjects whose paths are to be changed');
+    
         D = tmfc_select_subjects_GUI(0);  
-        % 
-        % Continue exectuion using Change paths GUI (feed selected paths to change_paths_gui)
-        tmfc_change_paths_GUI(D);    
-    catch
-        % If user 
-        disp('No subject files selected for path change');
-    end        
+        
+        if ~isempty(D)
+            tmfc_change_paths_GUI(D);  
+        else
+            disp('No subject files selected for path change');
+        end
+    
 end
 
 %% ============================[ Settings ]================================
