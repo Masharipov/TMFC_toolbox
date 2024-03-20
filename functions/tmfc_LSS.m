@@ -371,10 +371,10 @@ function cleanMeUp()
             GUI.TMFC_GUI_B8, GUI.TMFC_GUI_B9, GUI.TMFC_GUI_B10, GUI.TMFC_GUI_B11,...
             GUI.TMFC_GUI_B12,GUI.TMFC_GUI_B13a,GUI.TMFC_GUI_B13b,GUI.TMFC_GUI_B14a...
             GUI.TMFC_GUI_B14b], 'Enable', 'on');
-        delete(findall(0,'Tag', 'tmfc_waitbar','type', 'Figure'));
+        delete(findall(0,'type', 'Figure','Tag', 'tmfc_waitbar'));
     end
     try                                                                 
-        delete(findall(0,'type','figure','Tag', 'tmfc_waitbar'));
+        delete(findall(0,'type','Figure','Tag', 'tmfc_waitbar'));
     end
 end
 

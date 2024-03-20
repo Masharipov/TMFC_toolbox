@@ -300,7 +300,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                 if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
                     
                     % Restart case
-                    STATUS = TMFC_FIR_RES_GUI();
+                    STATUS = TMFC_RES_GUI(1);
                     if STATUS == 1
                         [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                            
@@ -323,7 +323,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                         end
                     end
                     
-                    FIR_dec = TMFC_FIR_CON_GUI(FIR_index);
+                    FIR_dec = TMFC_CON_GUI(FIR_index,1);
                     
                     if FIR_dec == 0
                         con_run = tmfc_FIR(tmfc,FIR_index);
@@ -671,13 +671,108 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
 
     try
         cd(tmfc.project_path);           
-    end
+    
 
     
     % Freezing the Main window
     MW_Freeze(1);
-    
-    
+    L_break = 0;
+    V_LSS = 0;
+     try
+     
+     % code-----
+        cond_list = tmfc.LSS.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+
+        for subi = 1:length(tmfc.subjects)              
+            SPM = load(tmfc.subjects(subi).path);
+            for j = 1:N_sess 
+                % Trials of interest
+                E = 0;
+                trial.cond = [];
+                trial.number = [];
+                for k = 1:length(cond_list)
+                    if cond_list(k).sess == sess_num(j)
+                        E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
+                        trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
+                        trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
+                    end
+                end
+                % Check
+                for k = 1:E
+                    if exist(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(subi,'%04.f')],'GLM_batches', ...
+                                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' ...
+                                            regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' ...
+                                            num2str(trial.number(k)) '].mat']), 'file')
+                       condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                    else           
+                       condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                    end
+                end
+                tmfc.subjects(subi).LSS.session(sess_num(j)).condition = condition;
+                clear condition
+            end
+            clear SPM E trial
+        end
+        clear cond_list sess sess_num N_sess
+        % code ---
+        
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            allValues = [tmfc.LSS.conditions.sess];
+            SZS_tmfc = max(allValues); % maximum Sessions
+            SZC_tmfc = size(tmfc.LSS.conditions); % maximum Conditions
+            socket = 0;
+            if SZC_tmfc(2) == 1 
+                socket = tmfc.LSS.conditions.number;
+            end
+            for i = 1:SZ_tmfc(2)
+                % Checking status of LSS completion
+                if L_break == 1
+                    break;
+                else
+                    for j = 1:SZS_tmfc
+                        if L_break == 1
+                            break;
+                        else
+                            for k = 1:SZC_tmfc(2)
+                                if L_break == 1
+                                    break;
+                                else
+                                    if ~socket==0
+                                        % if there is only one condition
+                                        if any(tmfc.subjects(i).LSS.session(j).condition(socket).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    else
+                                        if any(tmfc.subjects(i).LSS.session(j).condition(k).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end                
+                end
+            end
+
+            if V_LSS == 0
+                set(handles.TMFC_GUI_S6,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            else
+                set(handles.TMFC_GUI_S6,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+        end
+        pause(0.1); 
+    end
     
     if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
         % Checking if subjects has been selected
@@ -688,7 +783,7 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
             % select conditions    
             tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
             
-            if isstruct(tmfc.LSS.conditions)
+            if isstruct(tmfc.LSS.conditions) && ~isfield(tmfc.subjects, 'LSS')
                
                 sub_check = tmfc_LSS(tmfc,1);
                 for i=1:length(tmfc.subjects)
@@ -713,26 +808,53 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
             end
                 
         else
-            disp("Restart & Continue cases");
-            
-            % Other cases 'Restart' and 'Continue'
-%              if isstruct(tmfc.LSS.conditions)
-%                  len_sub = size(tmfc.subjects);
-%                  dimension = size(tmfc.subjects(length(tmfc.subjects)).LSS);
-%                  size(tmfc.subjects(length(tmfc.subjects)).LSS.session.condition.trials)
-%                  if tmfc.subjects(len_sub(2)).
-%                  
-%                 
-%                 
-%                 if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
-%                     
-%                     % Restart case  
-%                     
-%                 else
-%                     % Continue case
-%   
-%                 end
-             %end
+            if isfield(tmfc.LSS, 'conditions') && isfield(tmfc.subjects, 'LSS') 
+                
+                % Restart case
+                % if last subject's LSS is proccessed, then restart
+                if any(tmfc.subjects(SZ_tmfc(2)).LSS.session(SZS_tmfc).condition(tmfc.LSS.conditions.number).trials == 1)
+                    
+                    STATUS = TMFC_RES_GUI(2);
+                    if STATUS == 1
+                        verify_old = tmfc.LSS.conditions;
+                        tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+                        if isstruct(tmfc.LSS.conditions)
+                            sub_check = tmfc_LSS(tmfc,1);
+                            for i=1:length(tmfc.subjects)
+                                tmfc.subjects(i).LSS = sub_check(i);
+                            end
+                        else
+                            tmfc.LSS.conditions = verify_old;                            
+                        end
+                    end
+
+                else
+                    % continue case
+                    STATUS = TMFC_CON_GUI(V_LSS, 2);
+                    % THE ERROR occures somewhere here
+                    if STATUS == 0
+                        disp(V_LSS);
+                        sub_check = tmfc_LSS(tmfc,V_LSS);
+                        % THE ERROR TO here
+                        for i=V_LSS:length(tmfc.subjects)
+                            tmfc.subjects(i).LSS = sub_check(i);
+                        end
+                    elseif STATUS == 1
+                        verify_old = tmfc.LSS.conditions;
+                        tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+                        if isstruct(tmfc.LSS.conditions)
+                            sub_check = tmfc_LSS(tmfc,1);
+                            for i=1:length(tmfc.subjects)
+                                tmfc.subjects(i).LSS = sub_check(i);
+                            end
+                        else
+                            tmfc.LSS.conditions = verify_old;                            
+                        end
+                    else
+                        warning('LSS regression not initiated');
+                    end
+                end
+            end
         end
             
     else
@@ -741,11 +863,11 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
     
     
         MW_Freeze(0);
-    %catch
+    catch
 %       warning('Please select subjects & project path to perform LSS GLM regression');
-%    end
+    end
         
-end
+end % closing LSS regression
 
 %% ============================[ LSS GLM ]=================================
 function LSS_FIR(ButtonH, EventData, TMFC_GUI)
@@ -1093,26 +1215,46 @@ function TMFC_SS_select_proj_path(S)
     uiwait();
 end
 
-function [STATUS] = TMFC_FIR_CON_GUI(INDEX)
+function [STATUS] = TMFC_CON_GUI(INDEX, option)
 
     % STATUS = 1 - restart FIR 
     % STATUS = 0 - continue FIR
     % STATUS = -1 - no action
 
-    TMFC_FIR_CONT = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.18],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_FIR','CloseRequestFcn', @CANCEL); %X Y W H
+    
+    res_str_0 = '';
+    res_str_1 = {};
+    
+    switch (option)
+        case 1
+            % FIR
+            res_str_0 = 'FIR task regression';
+            res_str_1 = {'Continue FIR task regression from'};
+        case 2
+            % LSS
+            res_str_0 = 'LSS GLM regression';
+            res_str_1 = {'Continue LSS GLM regression from'};
+        case 3
+            % LSS after FIR
+            res_str_0 = 'LSS after FIR regression';
+            res_str_1 = {'Continue LSS after FIR regression from'};
+    end
+    
+    
+    TMFC_CONT = figure('Name', res_str_0, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.18],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Contd_FIR','CloseRequestFcn', @CANCEL); %X Y W H
 
-    TMFC_FIR_CONT_S1 = uicontrol(TMFC_FIR_CONT,'Style','text','String', 'Continue FIR task regression from','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.55 0.80 0.260]);
-    TMFC_FIR_CONT_S2 = uicontrol(TMFC_FIR_CONT,'Style','text','String', strcat('subject №',num2str(INDEX),'?'), 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.40 0.80 0.260]);
+    TMFC_CONT_S1 = uicontrol(TMFC_CONT,'Style','text','String', res_str_1,'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.55 0.80 0.260]);
+    TMFC_CONT_S2 = uicontrol(TMFC_CONT,'Style','text','String', strcat('subject №',num2str(INDEX),'?'), 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38, 'Position',[0.10 0.40 0.80 0.260]);
 
-    TMFC_FIR_CONT_YES = uicontrol(TMFC_FIR_CONT,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28, 'Position',[0.12 0.15 0.320 0.270]);
-    TMFC_FIR_CONT_RESTART = uicontrol(TMFC_FIR_CONT,'Style','pushbutton', 'String', '<html>&#160 No, start from <br>the first subject','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28,'Position',[0.56 0.15 0.320 0.270]);
+    TMFC_CONT_YES = uicontrol(TMFC_CONT,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28, 'Position',[0.12 0.15 0.320 0.270]);
+    TMFC_CONT_RESTART = uicontrol(TMFC_CONT,'Style','pushbutton', 'String', '<html>&#160 No, start from <br>the first subject','Units', 'normalized','fontunits','normalized', 'fontSize', 0.28,'Position',[0.56 0.15 0.320 0.270]);
 
-    set([TMFC_FIR_CONT_S1,TMFC_FIR_CONT_S2],'backgroundcolor',get(TMFC_FIR_CONT,'color'));
-    set(TMFC_FIR_CONT_YES, 'callback', @CONTINUE);
-    set(TMFC_FIR_CONT_RESTART, 'callback', @RESTART);
+    set([TMFC_CONT_S1,TMFC_CONT_S2],'backgroundcolor',get(TMFC_CONT,'color'));
+    set(TMFC_CONT_YES, 'callback', @CONTINUE);
+    set(TMFC_CONT_RESTART, 'callback', @RESTART);
 
     function CANCEL(~,~)
-        delete(TMFC_FIR_CONT);
+        delete(TMFC_CONT);
         STATUS = -1;
     end
     
@@ -1120,45 +1262,63 @@ function [STATUS] = TMFC_FIR_CON_GUI(INDEX)
     % last processed subject) 
     function CONTINUE(~,~)
         STATUS = 0;
-        delete(TMFC_FIR_CONT);
+        delete(TMFC_CONT);
     end
 
     % Function to set status in MAIN_WINDOW appdata (To Restart from
     % the first subject)
     function RESTART(~,~)
         STATUS = 1;
-        delete(TMFC_FIR_CONT);
+        delete(TMFC_CONT);
     end
 
     
     uiwait();
 end
 
-function [STATUS] = TMFC_FIR_RES_GUI(~,~)
+function [STATUS] = TMFC_RES_GUI(option)
 
     % STATUS = 1 - restart FIR 
     % STATUS = 0 - dont restart FIR 
+    res_str_0 = '';
+    res_str_1 = {};
+    
+    switch (option)
+        case 1
+            % FIR
+            res_str_0 = 'FIR task regression';
+            res_str_1 = {'Recompute FIR Task', 'regression for all subjects?'};
+        case 2
+            % LSS
+            res_str_0 = 'LSS GLM regression';
+            res_str_1 = {'Recompute LSS GL', 'regression for all subjects?'};
+        case 3
+            % LSS after FIR
+            res_str_0 = 'LSS after FIR regression';
+            res_str_1 = {'Recompute LSS after FIR', 'regression for all subjects?'};
+    end
+    
+    TMFC_RES = figure('Name', res_str_0, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_WIN','CloseRequestFcn', @CANCEL); %X Y W H
+    
+    %
+    TMFC_RES_S1 = uicontrol(TMFC_RES,'Style','text','String',res_str_1 ,'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260]);
+    TMFC_RES_OK = uicontrol(TMFC_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20]);
+    TMFC_RES_CL = uicontrol(TMFC_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20]);
 
-    TMFC_FIR_RES = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_FIR','CloseRequestFcn', @CANCEL); %X Y W H
-
-    TMFC_FIR_RES_S1 = uicontrol(TMFC_FIR_RES,'Style','text','String', {'Recompute FIR task','regression for all subjects?'},'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260]);
-    TMFC_FIR_RES_OK = uicontrol(TMFC_FIR_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20]);
-    TMFC_FIR_RES_CL = uicontrol(TMFC_FIR_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20]);
-
-    set(TMFC_FIR_RES_S1,'backgroundcolor',get(TMFC_FIR_RES,'color'));
-    set(TMFC_FIR_RES_CL, 'callback', @CANCEL);
-    set(TMFC_FIR_RES_OK, 'callback', @RESTART);
+    set(TMFC_RES_S1,'backgroundcolor',get(TMFC_RES,'color'));
+    set(TMFC_RES_CL, 'callback', @CANCEL);
+    set(TMFC_RES_OK, 'callback', @RESTART);
 
     % Function to close the Window
     function CANCEL(~,~)
-        delete(TMFC_FIR_RES);
+        delete(TMFC_RES);
         STATUS = 0;
     end
 
     % Function to Restart FIR Regression
     function RESTART(~,~)
         STATUS = 1;
-        delete(TMFC_FIR_RES);
+        delete(TMFC_RES);
     end
     uiwait();
 end
