@@ -120,8 +120,8 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B1, 'callback', {@select_subjects, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B2, 'callback', {@ROI_sel, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
@@ -279,7 +279,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                 end
              end
              
-        elseif isfield(tmfc, 'FIR') && ~isfield(tmfc.subjects, 'FIR')
+        elseif isfield(tmfc, 'FIR') && tmfc.subjects(1).FIR == 0 %~isfield(tmfc.subjects, 'FIR')
             
             % Exeuction if CTLR + C is pressed 
             % Can add code for exuection from last complied .mat file
@@ -864,7 +864,7 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
     
         MW_Freeze(0);
     catch
-%       warning('Please select subjects & project path to perform LSS GLM regression');
+       warning('Please select subjects & project path to perform LSS GLM regression');
     end
         
 end % closing LSS regression
@@ -874,28 +874,122 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
 
     try
         cd(tmfc.project_path);           
-    end
+    
 
     
     % Freezing the Main window
     MW_Freeze(1);
-    
-    
+    L_break = 0;
+    V_LSS = 0;
+     try
+     
+     % code-----
+        cond_list = tmfc.LSS_after_FIR.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+
+        for subi = 1:length(tmfc.subjects)              
+            SPM = load(tmfc.subjects(subi).path);
+            for j = 1:N_sess 
+                % Trials of interest
+                E = 0;
+                trial.cond = [];
+                trial.number = [];
+                for k = 1:length(cond_list)
+                    if cond_list(k).sess == sess_num(j)
+                        E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
+                        trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
+                        trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
+                    end
+                end
+                % Check
+                for k = 1:E
+                    if exist(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(subi,'%04.f')],'GLM_batches', ...
+                                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' ...
+                                            regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' ...
+                                            num2str(trial.number(k)) '].mat']), 'file')
+                       condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                    else           
+                       condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                    end
+                end
+                tmfc.subjects(subi).LSS_after_FIR.session(sess_num(j)).condition = condition;
+                clear condition
+            end
+            clear SPM E trial
+        end
+        clear cond_list sess sess_num N_sess
+        % code ---
+        
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            allValues = [tmfc.LSS_after_FIR.conditions.sess];
+            SZS_tmfc = max(allValues); % maximum Sessions
+            SZC_tmfc = size(tmfc.LSS_after_FIR.conditions); % maximum Conditions
+            socket = 0;
+            if SZC_tmfc(2) == 1 
+                socket = tmfc.LSS_after_FIR.conditions.number;
+            end
+            for i = 1:SZ_tmfc(2)
+                % Checking status of LSS after FIR completion
+                if L_break == 1
+                    break;
+                else
+                    for j = 1:SZS_tmfc
+                        if L_break == 1
+                            break;
+                        else
+                            for k = 1:SZC_tmfc(2)
+                                if L_break == 1
+                                    break;
+                                else
+                                    if ~socket==0
+                                        % if there is only one condition
+                                        if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(socket).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    else
+                                        if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(k).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end                
+                end
+            end
+
+            if V_LSS == 0
+                set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            else
+                set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+        end
+        pause(0.1); 
+    end
     
     if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-        disp('Initiating LSS after FIR');
         % Checking if subjects has been selected
         last_size = size(tmfc.subjects);
-        
         if isfield(tmfc.subjects, 'FIR') && tmfc.subjects(last_size(2)).FIR == 1
-            
+        disp('Initiating LSS after FIR');        
+        
             if ~isfield(tmfc, 'LSS_after_FIR') 
             % First time exeuction
 
                 % select conditions    
                 tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
 
-                if isstruct(tmfc.LSS_after_FIR.conditions)
+                if isstruct(tmfc.LSS_after_FIR.conditions) && ~isfield(tmfc.subjects, 'LSS_after_FIR')
 
                     sub_check = tmfc_LSS_after_FIR(tmfc,1);
                     for i=1:length(tmfc.subjects)
@@ -920,39 +1014,69 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                 end
 
             else
-                disp("Restart & Continue cases");
+                if isfield(tmfc.LSS_after_FIR, 'conditions') && isfield(tmfc.subjects, 'LSS_after_FIR') 
 
-                % Other cases 'Restart' and 'Continue'
-    %              if isstruct(tmfc.LSS.conditions)
-    %                  len_sub = size(tmfc.subjects);
-    %                  dimension = size(tmfc.subjects(length(tmfc.subjects)).LSS);
-    %                  size(tmfc.subjects(length(tmfc.subjects)).LSS.session.condition.trials)
-    %                  if tmfc.subjects(len_sub(2)).
-    %                  
-    %                 
-    %                 
-    %                 if tmfc.subjects(length(tmfc.subjects)).FIR == 1                  
-    %                     
-    %                     % Restart case  
-    %                     
-    %                 else
-    %                     % Continue case
-    %   
-    %                 end
-                 %end
+                    % Restart case
+                    % if last subject's LSS is proccessed, then restart
+                    if any(tmfc.subjects(SZ_tmfc(2)).LSS_after_FIR.session(SZS_tmfc).condition(tmfc.LSS_after_FIR.conditions.number).trials == 1)
+
+                        STATUS = TMFC_RES_GUI(3);
+                        if STATUS == 1
+                            verify_old = tmfc.LSS_after_FIR.conditions;
+                            tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+                            if isstruct(tmfc.LSS_after_FIR.conditions)
+                                sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                                for i=1:length(tmfc.subjects)
+                                    tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                                end
+                            else
+                                tmfc.LSS_after_FIR.conditions = verify_old;                            
+                            end
+                        end
+
+                    else
+                        % continue case
+                        STATUS = TMFC_CON_GUI(V_LSS, 3);
+                        % THE ERROR occures somewhere here
+                        if STATUS == 0
+                            disp(V_LSS);
+                            sub_check = tmfc_LSS_after_FIR(tmfc,V_LSS);
+                            % THE ERROR TO here
+                            for i=V_LSS:length(tmfc.subjects)
+                                tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                            end
+                        elseif STATUS == 1
+                            verify_old = tmfc.LSS_after_FIR.conditions;
+                            tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+                            if isstruct(tmfc.LSS_after_FIR.conditions)
+                                sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                                for i=1:length(tmfc.subjects)
+                                    tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                                end
+                            else
+                                tmfc.LSS_after_FIR.conditions = verify_old;                            
+                            end
+                        else
+                            warning('LSS after FIR regression not initiated');
+                        end
+                    end
+                end
             end
+        
+        
         else
             warning('Please complete FIR regression to continue with LSS regression');
-        end  
+        end
+            
     else
-        warning('Please select subjects to continue with LSS regression');
+        warning('Please select subjects to continue with LSS Regression');
     end
     
     
         MW_Freeze(0);
-    %catch
-%       warning('Please select subjects & project path to perform LSS GLM regression');
-%    end
+    catch
+       warning('Please select subjects & project path to perform LSS after FIR regression');
+    end
         
 end
 
@@ -1056,17 +1180,19 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
     % Add condition: if tmfc.subjcest is empyt set handlex.tmfc gui to NOT
     % SELECTED 
     
+    % update subjects
     try
         set(handles.TMFC_GUI_S1,'String', strcat(num2str(length(tmfc.subjects)), ' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
     end
    
+    % Update ROI set
     try 
         if isfield(tmfc,'ROI_set_number')            
             set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(tmfc.ROI_set_number).set_name, ' (',num2str(length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);                   
         end
     end
     
-    
+    % update FIR
     try
         SZ_tmfc = size(tmfc.subjects);
         V_FIR = 0;
@@ -1092,8 +1218,113 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 
     end
     
- 
+    % update LSS
+     try   
+            L_break = 0;
+            V_LSS = 0;
+            SZ_tmfc = size(tmfc.subjects);
+            allValues = [tmfc.LSS.conditions.sess];
+            SZS_tmfc = max(allValues); % maximum Sessions
+            SZC_tmfc = size(tmfc.LSS.conditions); % maximum Conditions
+            socket = 0;
+            if SZC_tmfc(2) == 1 
+                socket = tmfc.LSS.conditions.number;
+            end
+            for i = 1:SZ_tmfc(2)
+                % Checking status of LSS completion
+                if L_break == 1
+                    break;
+                else
+                    for j = 1:SZS_tmfc
+                        if L_break == 1
+                            break;
+                        else
+                            for k = 1:SZC_tmfc(2)
+                                if L_break == 1
+                                    break;
+                                else
+                                    if ~socket==0
+                                        % if there is only one condition
+                                        if any(tmfc.subjects(i).LSS.session(j).condition(socket).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    else
+                                        if any(tmfc.subjects(i).LSS.session(j).condition(k).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end                
+                end
+            end
+
+            if V_LSS == 0
+                set(handles.TMFC_GUI_S6,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            else
+                set(handles.TMFC_GUI_S6,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+     end
     
+    
+     
+     try   
+            L_break = 0;
+            V_LSS = 0;
+            SZ_tmfc = size(tmfc.subjects);
+            allValues = [tmfc.LSS_after_FIR.conditions.sess];
+            SZS_tmfc = max(allValues); % maximum Sessions
+            SZC_tmfc = size(tmfc.LSS_after_FIR.conditions); % maximum Conditions
+            socket = 0;
+            if SZC_tmfc(2) == 1 
+                socket = tmfc.LSS_after_FIR.conditions.number;
+            end
+            for i = 1:SZ_tmfc(2)
+                % Checking status of LSS completion
+                if L_break == 1
+                    break;
+                else
+                    for j = 1:SZS_tmfc
+                        if L_break == 1
+                            break;
+                        else
+                            for k = 1:SZC_tmfc(2)
+                                if L_break == 1
+                                    break;
+                                else
+                                    if ~socket==0
+                                        % if there is only one condition
+                                        if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(socket).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    else
+                                        if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(k).trials == 0)
+                                            V_LSS = i ;
+                                            L_break = 1;
+                                            break;
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end                
+                end
+            end
+
+            if V_LSS == 0
+                set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            else
+                set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+    end
+     
 %     if V_FIR ~= 0
 %         set(handles.FIR_TR_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
 %         set(handles.FIR_TR_stat,'String',strcat(num2str(V_FIR), '/', num2str(BPL_LEN), ' done'));
