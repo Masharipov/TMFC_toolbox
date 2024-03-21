@@ -99,7 +99,8 @@ EXIT_STATUS_LSS = 0;
 % Initialize waitbar for sequential or parallel computing
 switch tmfc.defaults.parallel
     case 0
-        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar', CloseRequestFcn = '');
+        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
+        cleanupObj = onCleanup(@cleanMeUp);
     case 1
         handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 

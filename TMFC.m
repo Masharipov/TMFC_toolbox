@@ -832,11 +832,12 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                 else
                     % continue case
                     STATUS = TMFC_CON_GUI(V_LSS, 2);
-                    % THE ERROR occures somewhere here
+                    % THE ERROR occures somewhere here-----------------
+                    % line 829
                     if STATUS == 0
                         disp(V_LSS);
                         sub_check = tmfc_LSS(tmfc,V_LSS);
-                        % THE ERROR TO here
+                        % THE ERROR TO here-----------------------------
                         for i=V_LSS:length(tmfc.subjects)
                             tmfc.subjects(i).LSS = sub_check(i);
                         end
