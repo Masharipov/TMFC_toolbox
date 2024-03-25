@@ -128,15 +128,13 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
     
     
-    % ROI_set
+    
     % VOI
     % PPI
     % gPPI
     % gPPI_FIR
     % BSC
-    % FIR
     % BGFC
-    % LSS_after_FIR
     % BSC_after_FIR
     % Results
 
@@ -1096,10 +1094,10 @@ end
            if isstruct(ROI_hold)
                tmfc.ROI_set_number = 1;
                tmfc.ROI_set(1) = ROI_hold;
-               tmfc.ROI_set.contrasts = [];
                set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
            end
            
+           tmfc = ROI_initializer(tmfc);
        else
            
            
@@ -1116,7 +1114,7 @@ end
 
                % Add new ROI set
                new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
-               new_ROI_set.contrasts = [];
+               tmfc = ROI_initializer(tmfc);
                
                if isstruct(new_ROI_set)
                    tmfc.ROI_set(SZ_4(1)+1) = new_ROI_set;
@@ -1702,3 +1700,39 @@ function [new_flag, position] = ROI_F2(LIST_SETS,~)
     
 end
 
+function [tmfc] = ROI_initializer(tmfc)
+
+   for j=1:length(tmfc.subjects)
+       tmfc.ROI_set(tmfc.ROI_set_number).subjects(j).BGFC = 0;
+       tmfc.ROI_set(tmfc.ROI_set_number).subjects(j).BSC = 0;
+       tmfc.ROI_set(tmfc.ROI_set_number).subjects(j).BSC_after_FIR = 0;       
+   end
+   
+   
+   for m = 1:length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs)
+       
+       for n = 1:length(tmfc.subjects)
+           
+           tmfc.ROI_set(tmfc.ROI_set_number).ROIs(m).subjects(n).VOI = 0;
+           tmfc.ROI_set(tmfc.ROI_set_number).ROIs(m).subjects(n).PPI = 0;
+           tmfc.ROI_set(tmfc.ROI_set_number).ROIs(m).subjects(n).gPPI = 0;
+           tmfc.ROI_set(tmfc.ROI_set_number).ROIs(m).subjects(n).gPPI_FIR = 0;
+      
+       end
+       
+   end
+   
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.title = [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.weights= [];
+   
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.title = [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.weights= [];
+   
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.title = [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.weights= [];
+   
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.title = [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.weights= [];
+   
+
+end

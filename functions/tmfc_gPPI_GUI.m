@@ -1,67 +1,48 @@
-function gPPI_GUI
+function tmfc_gPPI_GUI()
 
-    %Creation of BASE OUTLINE for Window                                  %[startingX startingY Width Height]
-    GPPI_1 = figure("Name", "gPPI", "NumberTitle", "off", "Units", "normalized", "Position", [0.30 0.40 0.35 0.26],'Resize','off','MenuBar', 'none','ToolBar', 'none','color','w');
+                                                                                               
+    GPPI_GUI = figure("Name", "gPPI", "NumberTitle", "off", "Units", "normalized", "Position", [0.45 0.25 0.22 0.56],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
     
     % Initializing Elements of the UI
-    GPPI_M = uicontrol(GPPI_1,'Style','text',"String", "Estimate gPPI models using:","Units", "normalized",'fontweight', 'bold', 'fontunits','normalized', 'fontSize', 0.3);
+    GPPI_E0  = uicontrol(GPPI_GUI,'Style','text',"String", "Select conditions of interest","Units", "normalized", "Position",[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.50,'backgroundcolor','w');
     
-    GP_G1_Q = uicontrol(GPPI_1,'Style','pushbutton',"String", "<html>Residual time-series after FIR task regression <br> &emsp&emsp&emsp&emsp&emsp&emsp (recommended)","Units", "normalized",'fontunits','normalized', 'fontSize', 0.22,"HorizontalAlignment", "center");%,"BackgroundColor", [0.95 0.95 0.95]);
-    GP_G1_A = uicontrol(GPPI_1,'Style','text',"String", "Not done","ForegroundColor","red","Units", "normalized",'fontunits','normalized', 'fontSize', 0.6);
+    GPPI_E1  = uicontrol(GPPI_GUI,'Style','text',"String", "All conditions:","Units", "normalized", "Position",[0.045 0.88 0.450 0.05],"HorizontalAlignment", "left",'fontunits','normalized', 'fontSize', 0.50,'backgroundcolor','w');
+    GPPI_E1_lst = uicontrol(GPPI_GUI , 'Style', 'listbox', "String", ["CondA (Sess1)","CondB (Sess1)","Errors (Sess1)","CondA (Sess2)","CondB (Sess2)","Errors (Sess2)"],'Max', 100,"Units", "normalized", "Position",[0.045 0.59 0.900 0.300],'fontunits','normalized', 'fontSize', 0.07);
     
-    GP_G2_Q = uicontrol(GPPI_1,'Style','pushbutton',"String", ["Original time-series without FIR task regression"],"Units", "normalized",'fontunits','normalized', 'fontSize', 0.22);
-    GP_G2_A = uicontrol(GPPI_1,'Style','text',"String", "Not done","ForegroundColor","red","Units", "normalized",'fontunits','normalized', 'fontSize', 0.6);
- 
-    GP_Help = uicontrol(GPPI_1,'Style','pushbutton', "String", "Help","Units", "normalized",'fontunits','normalized', 'fontSize', 0.35);
+    GPPI_ADD = uicontrol(GPPI_GUI,'Style','pushbutton',"String", "Add selected","Units", "normalized","Position",[0.045 0.50 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
+    GPPI_ADA = uicontrol(GPPI_GUI,'Style','pushbutton',"String", "Add all","Units", "normalized","Position",[0.360 0.50 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
+    GPPI_HELP = uicontrol(GPPI_GUI,'Style','pushbutton',"String", "Help","Units", "normalized","Position",[0.680 0.50 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
+    
+    GPPI_E2  = uicontrol(GPPI_GUI,'Style','text',"String", "Conditions of interest:","Units", "normalized", "Position",[0.045 0.425 0.450 0.05],"HorizontalAlignment", "left",'fontunits','normalized', 'fontSize', 0.50,'backgroundcolor','w');
+    GPPI_E2_lst = uicontrol(GPPI_GUI , 'Style', 'listbox', "String", ["CondA (Sess1)","CondB (Sess1)","CondA (Sess2)","CondB (Sess2)"],'Max', 100,"Units", "normalized", "Position",[0.045 0.135 0.900 0.300],'fontunits','normalized', 'fontSize', 0.07);
+    
+    GPPI_OK = uicontrol(GPPI_GUI,'Style','pushbutton',"String", "OK","Units", "normalized","Position",[0.045 0.05 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
+    GPPI_REV = uicontrol(GPPI_GUI,'Style','pushbutton',"String", "Remove selected","Units", "normalized","Position",[0.360 0.05 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
+    GPPI_REVA = uicontrol(GPPI_GUI,'Style','pushbutton',"String", "Remove all","Units", "normalized","Position",[0.680 0.05 0.270 0.065],'fontunits','normalized', 'fontSize', 0.32);
+    
+    
+    
+    set(GPPI_HELP, 'callback', @GPPI_H);
+    
+    function GPPI_H(~,~)
 
-    % Assigning Positions of elements
-    % FORMAT OF Position: X, Y, width, height
-    
-    GPPI_M.Position = [0.32 0.75 0.350 0.180];
-    
-    GP_G1_Q.Position = [0.05 0.58 0.660 0.230];
-    GP_G1_A.Position = [0.75 0.64 0.200 0.090];
-    
-    GP_G2_Q.Position = [0.05 0.28 0.660 0.230];
-    GP_G2_A.Position = [0.75 0.34 0.200 0.090];
-    
-    GP_Help.Position = [0.42 0.08 0.180 0.130];
-    
-    set(GPPI_M,'backgroundcolor',get(GPPI_1,'color'));
-    set(GP_G1_A,'backgroundcolor',get(GPPI_1,'color'));
-    set(GP_G2_A,'backgroundcolor',get(GPPI_1,'color'));
-    
-    set(GP_Help, 'callback', @GP_help_details)
-  
-    
-    function GP_help_details(~,~)
-        GP_2 = figure("Name", "FIR task regression: Help", "NumberTitle", "off", "Units", "normalized", "Position", [0.65 0.36 0.26 0.37],'Resize','off'); %X Y W H
-        set(gcf,'color','w');
-        set(GP_2, 'MenuBar', 'none');
-        set(GP_2, 'ToolBar', 'none');
+        GPPI_H_W = figure("Name", "LSS regression: Help", "NumberTitle", "off", "Units", "normalized", "Position", [0.65 0.15 0.22 0.40],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
 
-        THE_DETAILS = ["Finite impulse response (FIR) task regression are used to remove co-activations from BOLD time-series.","",...
-            "Co-activations are simultaneous (de)activations without communication between brain regions. ",...
-            "",...
-            "Co-activations spuriously inflate task-modulated functional connectivity (TMFC) estimates.","",...
-            "FIR model regress out (1) co-activations with any possible shape and (2) confounds specified in the original SPM.mat file (e.g., motion, physiological noise, etc).",...
-            "","Functional images for residual time-series (Res_*.nii in FIR_GLM folders) can be further used for TMFC analysis."];
+        Data_1 = ["Suppose you have two separate sessions.","","Both sessions contains task regressors for", "“Cond A”, “Cond B” and “Errors”", "","If you are only interested in “Cond A” and “Cond B” comparison, the following conditions should be selected:",...
+            "","1)  Cond A (Sess1)","2)  Cond B (Sess1)","3)  Cond A (Sess2)","4)  Cond B (Sess2)","","For all selected conditions of interest, the TMFC toolbox will create psycho-physiological (PPI) regressors. Thus, for each condition of interest, the generalized PPI (gPPI) model will contain two regressors: (1) psychological regressor and (2) PPI regressor."...
+            "","For trials of no interest (here, “Errors”), the gPPI model will contain only the psychological regressor."];
 
-        GP2_DTS = uicontrol(GP_2,'Style','text',"String", THE_DETAILS,"Units", "normalized", "HorizontalAlignment", "left",'fontunits','normalized', 'fontSize', 0.054);
-        GP2_OK = uicontrol(GP_2,'Style','pushbutton', "String", "OK","Units", "normalized",'fontunits','normalized', 'fontSize', 0.35);
+        GPPI_W1 = uicontrol(GPPI_H_W,'Style','text',"String",Data_1 ,"Units", "normalized", "Position", [0.05 0.15 0.89 0.83], "HorizontalAlignment", "left",'fontunits','normalized', 'fontSize', 0.041,'backgroundcolor','w');
+        GPPI_H_OK = uicontrol(GPPI_H_W,'Style','pushbutton',"String", "OK","Units", "normalized", "Position", [0.34 0.04 0.30 0.08]);%,'fontunits','normalized', 'fontSize', 0.35
 
-        set(GP2_DTS,'backgroundcolor',get(GP_2,'color'));
-        GP2_DTS.Position = [0.06 0.16 0.885 0.800];
-        GP2_OK.Position = [0.39 0.04 0.240 0.100];
-        
-        set(GP2_OK, "callback", @CLOSE_GP2_OK);
-        
-        function CLOSE_GP2_OK(~,~)
-            close(GP_2);
+        set(GPPI_H_OK, "callback", @GPPI_H_close);
+
+
+        function GPPI_H_close(~,~);
+            close(GPPI_H_W);
         end
     end
-    
-    
+
     
     
 end
