@@ -106,11 +106,13 @@ end
 switch tmfc.defaults.parallel
     case 0                                      % Sequential
         w = waitbar(0,'Please wait...','Name','gPPI GLM estimation');
+        cleanupObj = onCleanup(@cleanMeUp);
     case 1                                      % Parallel
         w = waitbar(0,'Please wait...','Name','gPPI GLM estimation');
         D = parallel.pool.DataQueue;            % Creation of parallel pool 
         afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
         tmfc_parfor_waitbar(w,N);     
+        cleanupObj = onCleanup(@cleanMeUp);
 end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
@@ -489,7 +491,24 @@ end
 
 % Close waitbar
 try
-    close(w)
+    delete(w);
+end
+
+
+function cleanMeUp()
+    
+    try
+        GUI = guidata(findobj('Tag','TMFC_GUI')); 
+        set([GUI.TMFC_GUI_B1, GUI.TMFC_GUI_B2, GUI.TMFC_GUI_B3, GUI.TMFC_GUI_B4,...
+            GUI.TMFC_GUI_B5a, GUI.TMFC_GUI_B5b, GUI.TMFC_GUI_B6, GUI.TMFC_GUI_B7,...
+            GUI.TMFC_GUI_B8, GUI.TMFC_GUI_B9, GUI.TMFC_GUI_B10, GUI.TMFC_GUI_B11,...
+            GUI.TMFC_GUI_B12,GUI.TMFC_GUI_B13a,GUI.TMFC_GUI_B13b,GUI.TMFC_GUI_B14a...
+            GUI.TMFC_GUI_B14b], 'Enable', 'on');
+        delete(findall(0,'type', 'Figure','Tag', 'tmfc_waitbar'));
+    end
+    try                                                                 
+        delete(findall(0,'type','Figure','Tag', 'tmfc_waitbar'));
+    end
 end
 
 end

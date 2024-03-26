@@ -200,7 +200,7 @@ for i = start_sub:N
 end
 
 try
-    delete(w)
+    delete(w);
 end
 
 function cleanMeUp()
