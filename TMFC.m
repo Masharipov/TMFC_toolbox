@@ -222,14 +222,18 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
             
                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1
                     
-                    
-                    if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 0
+                    if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 0 && ~isfield(tmfc, 'gPPI_FIR') 
+                            
+                            [tmfc.gPPI_FIR.window,tmfc.gPPI_FIR.bins] = TMFC_BW_GUI(0);
+                            
+                            if ~isnan(tmfc.gPPI_FIR.window) || ~isnan(tmfc.gPPI_FIR.bins)
+                                sub_check = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, 1);
+                                for i=1:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = sub_check(i);
+                                end
+                                disp('gPPI FIR computation completed');
+                            end
                         
-                        sub_check = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, 1);
-                        for i=1:length(tmfc.subjects)
-                            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = sub_check(i);
-                        end
-                        disp('gPPI FIR computation completed');
                     else
                         
                         if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 1
@@ -733,7 +737,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
         if ~isfield(tmfc, 'FIR') 
         % Checking if FIR has not been executed before
         
-            [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+            [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
             % Eneter bins & windows
             
              if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
@@ -748,7 +752,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             
             % Exeuction if CTLR + C is pressed 
             % Can add code for exuection from last complied .mat file
-            [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+            [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
             
              if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
                 sub_check = tmfc_FIR(tmfc, 1);
@@ -767,7 +771,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                     % Restart case
                     STATUS = TMFC_RES_GUI(1);
                     if STATUS == 1
-                        [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+                        [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                            
                             disp('Restarting FIR regression');
                             sub_check = tmfc_FIR(tmfc, 1);
@@ -796,7 +800,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                             tmfc.subjects(i).FIR = con_run(i);
                         end
                     elseif FIR_dec == 1
-                        [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_FIR_BW_GUI();
+                        [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                                                    
                             con_run = tmfc_FIR(tmfc,1);
                             for i=1:length(tmfc.subjects)
@@ -2118,40 +2122,57 @@ function [STATUS] = TMFC_RES_GUI(option)
     uiwait();
 end
 
-function [win, bin] = TMFC_FIR_BW_GUI(~,~)
+function [win, bin] = TMFC_BW_GUI(cases)
 
-    TMFC_FIR_BW = figure('Name', 'FIR task regression', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off',...
-        'MenuBar', 'none', 'ToolBar', 'none','Tag','FIR_REG_NUM', 'WindowStyle','modal','CloseRequestFcn', @TMFC_FIR_BW_stable_Exit); 
+     % case 0 = FIR 
+     % case 1 = gPPI FIR
+     switch (cases)
+        case 0
+            Title_BW = 'FIR task regression'; 
+            ST1 = 'Enter FIR window length (in seconds):';
+            ST2 = 'Enter the number of FIR time bins:';
+            ST_HP = 'FIR task regression: Help';
+    
+        case 1
+            Title_BW = 'gPPI FIR computation'; 
+            ST1 = 'Enter FIR window length (in seconds) for gPPI:';
+            ST2 = 'Enter the number of FIR time bins for gPPI:';
+            ST_HP = 'gPPI FIR: Help';
+     end
+    
+    
+    TMFC_BW = figure('Name', Title_BW, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off',...
+        'MenuBar', 'none', 'ToolBar', 'none','Tag','TMFC_WB_NUM', 'WindowStyle','modal','CloseRequestFcn', @TMFC_BW_stable_Exit); 
     set(gcf,'color','w');
     
-    TMFC_FIR_BW_S1 = uicontrol(TMFC_FIR_BW,'Style','text','String', 'Enter FIR window length (in seconds):','Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40, 'Position',[0.08 0.62 0.65 0.200]);
-    TMFC_FIR_BW_S2 = uicontrol(TMFC_FIR_BW,'Style','text','String', 'Enter the number of FIR time bins:','Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40,'Position',[0.08 0.37 0.65 0.200]);
-    TMFC_FIR_BW_E1 = uicontrol(TMFC_FIR_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.67 0.185 0.170]);%,'InputType', 'digits');
-    TMFC_FIR_BW_E2 = uicontrol(TMFC_FIR_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.42 0.185 0.170]);
-    TMFC_FIR_BW_OK = uicontrol(TMFC_FIR_BW,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.21 0.13 0.230 0.170]);
-    TMFC_FIR_BW_HELP = uicontrol(TMFC_FIR_BW,'Style','pushbutton', 'String', 'Help','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.52 0.13 0.230 0.170]);
+    TMFC_BW_S1 = uicontrol(TMFC_BW,'Style','text','String', ST1,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40, 'Position',[0.08 0.62 0.65 0.200]);
+    TMFC_BW_S2 = uicontrol(TMFC_BW,'Style','text','String', ST2,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40,'Position',[0.08 0.37 0.65 0.200]);
+    TMFC_BW_E1 = uicontrol(TMFC_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.67 0.185 0.170]);%,'InputType', 'digits');
+    TMFC_BW_E2 = uicontrol(TMFC_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.42 0.185 0.170]);
+    TMFC_BW_OK = uicontrol(TMFC_BW,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.21 0.13 0.230 0.170]);
+    TMFC_BW_HELP = uicontrol(TMFC_BW,'Style','pushbutton', 'String', 'Help','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.52 0.13 0.230 0.170]);
 
-    set(TMFC_FIR_BW_S1,'backgroundcolor',get(TMFC_FIR_BW,'color'));
-    set(TMFC_FIR_BW_S2,'backgroundcolor',get(TMFC_FIR_BW,'color'));
-    set(TMFC_FIR_BW_OK, 'callback', @TMFC_FIR_BW_EXTRACT);
-    set(TMFC_FIR_BW_HELP, 'callback', @TMFC_FIR_BW_HELP_POP);
+    set(TMFC_BW_S1,'backgroundcolor',get(TMFC_BW,'color'));
+    set(TMFC_BW_S2,'backgroundcolor',get(TMFC_BW,'color'));
+    set(TMFC_BW_OK, 'callback', @TMFC_BW_EXTRACT);
+    set(TMFC_BW_HELP, 'callback', @TMFC_BW_HELP_POP);
 
    
-    function TMFC_FIR_BW_stable_Exit(~,~)
+    function TMFC_BW_stable_Exit(~,~)
        %h76 = findobj('Tag', 'MAIN_WINDOW');
        %setappdata(h76, 'NO_COND', 1); 
        win = NaN; 
        bin = NaN; 
-       delete(TMFC_FIR_BW);
+       delete(TMFC_BW);
     end
 
     % Generates the HELP WINDOW within the GUI 
-    function TMFC_FIR_BW_HELP_POP(~,~)
+    function TMFC_BW_HELP_POP(~,~)
 
-            TMFC_FIR_BW_HELPWW = figure('Name', 'FIR task regression: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.22 0.48],'Resize','off','MenuBar', 'none','ToolBar', 'none');
+            TMFC_BW_HELPWW = figure('Name', ST_HP, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.62 0.26 0.22 0.48],'Resize','off','MenuBar', 'none','ToolBar', 'none');
             set(gcf,'color','w');
 
-            TMFC_FIR_BW_DETAILS = {'Finite impulse response (FIR) task regression are used to remove co-activations from BOLD time-series.','',...
+            TMFC_BW_DETAILS = {'Finite impulse response (FIR) task regression are used to remove co-activations from BOLD time-series.','',...
                 'Co-activations are simultaneous (de)activations', 'without communication between brain regions.',...
                 '',...
                 'Co-activations spuriously inflate task-modulated','functional connectivity (TMFC) estimates.','',...
@@ -2164,28 +2185,28 @@ function [win, bin] = TMFC_FIR_BW_GUI(~,~)
                 'duration of the hemodynamic response.','',...
                 'Typically, the FIR time bin is equal to one repetition time',...
                 '(TR). Therefore, the number of FIR time bins is equal to:',''};
-                TMFC_FIR_BW_DETAILS_2 = {'Number of FIR bins = FIR window length/TR'};
+                TMFC_BW_DETAILS_2 = {'Number of FIR bins = FIR window length/TR'};
 
-            TMFC_FIR_BW_LS2_DTS_1 = uicontrol(TMFC_FIR_BW_HELPWW,'Style','text','String', TMFC_FIR_BW_DETAILS,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.035, 'Position',[0.06 0.16 0.885 0.800]);
-            TMFC_FIR_BW_LS2_DTS_2 = uicontrol(TMFC_FIR_BW_HELPWW,'Style','text','String', TMFC_FIR_BW_DETAILS_2,'Units', 'normalized', 'HorizontalAlignment', 'Center','fontunits','normalized', 'fontSize', 0.30, 'Position',[0.06 0.10 0.885 0.10]);
-            TMFC_FIR_BW_LS2_OK = uicontrol(TMFC_FIR_BW_HELPWW,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.35, 'Position',[0.39 0.04 0.240 0.070]);
+            TMFC_BW_LS2_DTS_1 = uicontrol(TMFC_BW_HELPWW,'Style','text','String', TMFC_BW_DETAILS,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.035, 'Position',[0.06 0.16 0.885 0.800]);
+            TMFC_BW_LS2_DTS_2 = uicontrol(TMFC_BW_HELPWW,'Style','text','String', TMFC_BW_DETAILS_2,'Units', 'normalized', 'HorizontalAlignment', 'Center','fontunits','normalized', 'fontSize', 0.30, 'Position',[0.06 0.10 0.885 0.10]);
+            TMFC_BW_LS2_OK = uicontrol(TMFC_BW_HELPWW,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.35, 'Position',[0.39 0.04 0.240 0.070]);
 
-            set(TMFC_FIR_BW_LS2_DTS_1,'backgroundcolor',get(TMFC_FIR_BW_HELPWW,'color'));
-            set(TMFC_FIR_BW_LS2_DTS_2,'backgroundcolor',get(TMFC_FIR_BW_HELPWW,'color'));
-            set(TMFC_FIR_BW_LS2_OK, 'callback', @TMFC_FIR_BW_CLOSE_LS2_OK);
+            set(TMFC_BW_LS2_DTS_1,'backgroundcolor',get(TMFC_BW_HELPWW,'color'));
+            set(TMFC_BW_LS2_DTS_2,'backgroundcolor',get(TMFC_BW_HELPWW,'color'));
+            set(TMFC_BW_LS2_OK, 'callback', @TMFC_BW_CLOSE_LS2_OK);
 
-            function TMFC_FIR_BW_CLOSE_LS2_OK(~,~)
-                close(TMFC_FIR_BW_HELPWW);
+            function TMFC_BW_CLOSE_LS2_OK(~,~)
+                close(TMFC_BW_HELPWW);
             end
     end
 
 
 
     % Function to extract the entered number from the user
-    function TMFC_FIR_BW_EXTRACT(~,~)
+    function TMFC_BW_EXTRACT(~,~)
 
-       Window = str2double(get(TMFC_FIR_BW_E1, 'String'));
-       bins = str2double(get(TMFC_FIR_BW_E2, 'String'));
+       Window = str2double(get(TMFC_BW_E1, 'String'));
+       bins = str2double(get(TMFC_BW_E2, 'String'));
 
        if isnan(Window)
            warning('Please enter a numeric value for the number of windows');
@@ -2200,7 +2221,7 @@ function [win, bin] = TMFC_FIR_BW_GUI(~,~)
            bin = bins;   
            %h76_b = findobj('Tag', 'MAIN_WINDOW');
            %setappdata(h76_b, 'NO_COND', 0); 
-           delete(TMFC_FIR_BW);
+           delete(TMFC_BW);
        end
 
     end
