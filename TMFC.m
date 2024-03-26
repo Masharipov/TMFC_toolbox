@@ -189,6 +189,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
         
         MW_Freeze(1);
         V_gPPI_FIR = 0;
+        try
         %% Check gPPI FIR
         R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
         for subi = 1:length(tmfc.subjects)
@@ -202,7 +203,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
             end
         end
         clear R
-
+        end
         try
             SZ_tmfc = size(tmfc.subjects);
             V_gPPI_FIR = 0;
@@ -242,7 +243,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                                 end
                                 disp('gPPI FIR computation completed');
                             else
-                                warning('gPPI FIR computation not initiated');
+                                disp('gPPI FIR computation not initiated');
                             end
                              
                         end
@@ -337,7 +338,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                                 end
                                 disp('gPPI computation completed');
                             else
-                                warning('gPPI computation not initiated');
+                                disp('gPPI computation not initiated');
                             end
                              
                         end
@@ -2055,6 +2056,7 @@ function [STATUS] = TMFC_CON_GUI(INDEX, option)
             STATUS = 1;
             delete(TMFC_CONT);
         else
+            STATUS = -2;
             delete(TMFC_CONT);
         end
     end
