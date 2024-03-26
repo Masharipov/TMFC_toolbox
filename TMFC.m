@@ -120,6 +120,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B1, 'callback', {@select_subjects, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B2, 'callback', {@ROI_sel, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B3, 'callback', {@VOI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B4, 'callback', {@PPI, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
@@ -179,15 +180,143 @@ function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
 end
 
+%% =============================== [ PPIs ] ===============================
+function PPI(ButtonH, EventData, TMFC_GUI)
+    
+    try
+        cd(tmfc.project_path);       
+        MW_Freeze(1);
+        V_PPI = 0;
+        
+        cond_list = tmfc.gPPI.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+
+        for subi = 1:length(tmfc.subjects)
+            SPM = load(tmfc.subjects(subi).path);
+            for k = 1:R
+                for j = 1:N_sess
+                    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(subi,'%04.f')], ...
+                                ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name,' ','_') ...
+                                ']_[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') '].mat']), 'file')
+                        check(j) = 1;
+                    else
+                        check(j) = 0;
+                    end
+                end
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).PPI = double(~any(check==0));
+                clear check 
+            end
+            clear SPM
+        end
+        clear cond_list sess sess_num N_sess R
+
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_PPI = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of VOI completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI == 0
+                    V_PPI = i ;
+                    break;
+                end
+            end
+        end
+      
+        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+            
+             if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
+                
+                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 1
+                     disp('Initiating PPIs computation');
+                     
+                     if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 0
+               
+                        sub_check = tmfc_PPI(tmfc,tmfc.ROI_set_number, 1);
+                        for i=1:length(tmfc.subjects)
+                            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = sub_check(i);
+                        end
+                        
+                     else
+                         
+                         if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1
+                             PPI_OKAY();
+                             disp('Recompute VOIs to change conditions');
+                            %disp('restart');
+%                             STATUS = TMFC_RES_GUI(5);
+%                             if STATUS == 1
+%                                 sub_check = tmfc_PPI(tmfc,tmfc.ROI_set_number, 1);
+%                                 for i=1:length(tmfc.subjects)
+%                                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = sub_check(i);
+%                                 end                                
+%                             end
+                        else
+                            % Continue case
+                            %V_PPI ----------------------------
+                            STATUS = TMFC_CON_GUI(V_PPI, 5);
+                            if STATUS == 0
+                                sub_check = tmfc_PPI(tmfc,tmfc.ROI_set_number, V_PPI);
+                                for i=V_PPI:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = sub_check(i);
+                                end
+
+                            elseif STATUS == 1                                
+                                    sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
+                                    for i=1:length(tmfc.subjects)
+                                        tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = sub_check(i);
+                                    end
+                            else
+                                warning('PPI computation not initiated');
+                            end
+
+                        end
+                         
+                     end
+                 
+                 
+                     
+                 else
+                     warning('Please complete VOI computation to proceed with PPI computation');
+                     
+                 end
+
+             else
+                 
+             warning('Please select ROIs to continue with PPI computation');
+             end
+             
+            
+        else
+            warning('Please select subjects to continue with PPI computation');
+        end
+
+
+        
+        MW_Freeze(0);
+        
+    catch 
+        warning('Please select subjects & project path to perform PPI computation');
+    end   
+    
+end
+
+
 %% ================================[ VOIs ]================================
 function VOI(ButtonH, EventData, TMFC_GUI)
+    
      try 
         cd(tmfc.project_path);       
         
         MW_Freeze(1);
         
         %% Check VOI
-        V_gPPI = 0;
+        V_VOI = 0;
         try
         cond_list = tmfc.gPPI.conditions;
         sess = []; sess_num = []; N_sess = [];
@@ -217,11 +346,11 @@ function VOI(ButtonH, EventData, TMFC_GUI)
         
         try
             SZ_tmfc = size(tmfc.subjects);
-            V_gPPI = 0;
+            V_VOI = 0;
             for i = 1:SZ_tmfc(2)
                 % checking status of VOI completion
                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
-                    V_gPPI = i ;
+                    V_VOI = i ;
                     break;
                 end
             end
@@ -229,7 +358,9 @@ function VOI(ButtonH, EventData, TMFC_GUI)
         
         % Computation
         if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-            disp('Initiating VOI computation');
+            
+             if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
+                 disp('Initiating VOI computation');
             if ~isfield(tmfc, 'gPPI')
                 % first time execution 
                 
@@ -237,7 +368,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                 tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                 
                 if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
-               
+                    tmfc = reset_VPGPPI(tmfc, 1);
                     sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                     for i=1:length(tmfc.subjects)
                         tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
@@ -248,7 +379,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
             elseif isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
                 
                 tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
-                
+                tmfc = reset_VPGPPI(tmfc, 1);
                 if isstruct(tmfc.gPPI.conditions)
                     sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                     for i=1:length(tmfc.subjects)
@@ -258,27 +389,28 @@ function VOI(ButtonH, EventData, TMFC_GUI)
             else
                 
                 if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 1
-                    disp('restart');
+                    %disp('restart');
                     STATUS = TMFC_RES_GUI(4);
                     if STATUS == 1
                         verify_old = tmfc.gPPI.conditions;
                         tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.gPPI.conditions)
+                            tmfc = reset_VPGPPI(tmfc, 1);
                             sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
                             end
                         else
-                            tmfc.LSS.conditions = verify_old;                            
+                            tmfc.gPPI.conditions = verify_old;                            
                         end
                     end
                 else
                     % Continue case
-                    %V_gPPI
-                    STATUS = TMFC_CON_GUI(V_gPPI, 4);
+                    %V_VOI
+                    STATUS = TMFC_CON_GUI(V_VOI, 4);
                     if STATUS == 0
-                        sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, V_gPPI);
-                        for i=V_gPPI:length(tmfc.subjects)
+                        sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, V_VOI);
+                        for i=V_VOI:length(tmfc.subjects)
                             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
                         end
                         
@@ -286,6 +418,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                         verify_old = tmfc.gPPI.conditions;
                         tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.gPPI.conditions)
+                            tmfc = reset_VPGPPI(tmfc, 2);
                             sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
@@ -300,39 +433,21 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                 end
                 
             end
+            else
+            
+            warning('Please select ROIs to continue with VOI computation');
+            end
             
         else
             warning('Please select subjects to continue with VOI computation');
         end
-        
-        
-        
+               
         MW_Freeze(0);
         
         
      catch
          warning('Please select subjects & project path to perform VOI computation');
      end
-    % CD project path
-    
-    % freeze window 
-    
-    % tracking progress 
-    
-    % CHECK - Subjects, should be selected, 
-    % CHECK - ROIs should be selected
-
-    % Select gPPI Conditions =  tmfc_gPPI_GUI();
-    % perform VOIs
-    
-    % check conditions for restart & continue 
-    
-
-    % send back to tmfc 
-
-    % open contrasts 
-
-    % unfreeze
 end
 
 %% ========================[ Select Subjects ]=============================
@@ -1250,9 +1365,10 @@ function ROI_sel(ButtonH, EventData, TMFC_GUI)
            tmfc.ROI_set_number = 1;
            tmfc.ROI_set(1) = ROI_hold;
            set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+           tmfc = ROI_initializer(tmfc);
        end
 
-       tmfc = ROI_initializer(tmfc);
+       
    else
 
 
@@ -1367,11 +1483,62 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
         
         if V_FIR == 0
             set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+        elseif V_FIR == 1
+            set(handles.TMFC_GUI_S8,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
         else
             set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
         end
 
     end
+    
+    
+    % update VOI
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_VOI = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of VOI completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
+                    V_VOI = i ;
+                    break;
+                end
+            end
+            
+            if V_VOI == 0
+                set(handles.TMFC_GUI_S3,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_VOI == 1
+                set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S3,'String', strcat(num2str(V_VOI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+            
+        end
+    
+       
+    
+    
+    % Update PPI
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_PPI = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of VOI completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI == 0
+                    V_PPI = i ;
+                    break;
+                end
+            end
+            disp('VPPI'); 
+            disp(V_PPI);
+            if V_PPI == 0
+                set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_PPI == 1
+                set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S4,'String', strcat(num2str(V_PPI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+        end
+       
     
     % update LSS
      try   
@@ -1421,13 +1588,15 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_LSS == 1
+                set(handles.TMFC_GUI_S6,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
      end
     
     
-     
+     % LSS after FIR
      try   
             L_break = 0;
             V_LSS = 0;
@@ -1475,6 +1644,8 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_LSS == 1
+                set(handles.TMFC_GUI_S10,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
@@ -1585,6 +1756,32 @@ set(handles.TMFC_GUI_S8,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.
 set(handles.TMFC_GUI_S10,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
 
 end
+
+function [tmfc] = reset_VPGPPI(tmfc, cases)                            
+
+switch (cases)
+    
+    case 1
+        % reset all three        
+        for i=1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = 0;
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = 0;
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI = 0;
+        end
+        set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+    case 2 
+        % reset PPI, gPPI 
+        for i=1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = 0;
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI = 0;
+        end
+        set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+end
+
+end
+
+
+
 end  
 %%
 function TMFC_SS_select_proj_path(S)
@@ -1626,8 +1823,12 @@ function [STATUS] = TMFC_CON_GUI(INDEX, option)
             res_str_1 = {'Continue LSS after FIR regression from'};
         case 4 
             % VOIs
-            res_str_0 = 'VOIs computation';
+            res_str_0 = 'VOI computation';
             res_str_1 = {'Continue VOI computation from'};
+        case 5
+            % PPIs
+            res_str_0 = 'PPI computation';
+            res_str_1 = {'Continue PPI computation from'};
     end
     
     
@@ -1688,8 +1889,12 @@ function [STATUS] = TMFC_RES_GUI(option)
             res_str_1 = {'Recompute LSS after FIR', 'regression for all subjects?'};
         case 4
             % VOIs
-            res_str_0 = 'VOIs computation';
+            res_str_0 = 'VOI computation';
             res_str_1 = {'Recompute VOI', 'computations for all subjects?'};
+        case 5
+            % PPIs
+            res_str_0 = 'PPI computation';
+            res_str_1 = {'Recompute PPI', 'computations for all subjects?'};
     end
     
     TMFC_RES = figure('Name', res_str_0, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_WIN','CloseRequestFcn', @CANCEL); %X Y W H
@@ -1889,6 +2094,21 @@ function [tmfc] = ROI_initializer(tmfc)
    
 
 end
+
+function PPI_OKAY()
+TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'PPI');
+    PPI_details = {'PPI computation completed. To change conditions of interest, recompute VOIs'};
+    TMFC_PPI_S1 = uicontrol(TMFC_PPI_Diag,'Style','text','String',PPI_details,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.38);
+    OK = uicontrol(TMFC_PPI_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.2],'fontunits','normalized','fontSize', 0.38);
+    set(OK, 'callback', @OKAY);
+    
+    function OKAY(~,~)
+        delete(TMFC_PPI_Diag);
+    end
+    uiwait();
+
+end
+
 
 % OUTLINE
     
