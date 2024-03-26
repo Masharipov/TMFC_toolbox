@@ -283,6 +283,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
         
         MW_Freeze(1);
         % check gPPI 
+        try
         V_gPPI = 0;
         R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
         for subi = 1:length(tmfc.subjects)
@@ -296,7 +297,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
             end
         end
         clear R
-
+        end
         try
             SZ_tmfc = size(tmfc.subjects);
             V_gPPI = 0;
