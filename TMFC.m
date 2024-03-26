@@ -1720,8 +1720,6 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
                     break;
                 end
             end
-            disp('VPPI'); 
-            disp(V_PPI);
             if V_PPI == 0
                 set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             elseif V_PPI == 1
