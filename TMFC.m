@@ -1020,7 +1020,7 @@ function load_project(ButtonH, EventData, TMFC_GUI)
         %tmfc = load(variable_value_L);
         %disp(tmfc);
         % Supporting Function - To Update TMFC GUI when loading data
-        evaluate_file(tmfc);
+        tmfc = evaluate_file(tmfc);
 
     else
         warning('No file selected');
@@ -1709,7 +1709,7 @@ function SAVER_STAT =  Saver(save_path)
 end
 
 %%
-function evaluate_file(tmfc) % function to update the TMFC window after loading a tmfc project
+function tmfc = evaluate_file(tmfc) % function to update the TMFC window after loading a tmfc project
     
     try
         cd(tmfc.project_path); 
@@ -1733,38 +1733,90 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
     
     % update FIR
     try
-        SZ_tmfc = size(tmfc.subjects);
-        V_FIR = 0;
-        %V_LSS_A_FIR = 0;
-        for i = 1:SZ_tmfc(2)
-            % checking status of FIR completion
-            if tmfc.subjects(i).FIR == 0
-                V_FIR = i ;
-                break;
+       % track
+        for subi = 1:length(tmfc.subjects)              
+            SPM = load(tmfc.subjects(subi).path);
+            if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(subi,'%04.f')],['Res_' num2str(sum(SPM.SPM.nscan),'%04.f') '.nii']), 'file')
+
+               tmfc.subjects(subi).FIR = 1;
+            else           
+               tmfc.subjects(subi).FIR = 0;       
             end
-    %         checkinf status of LSS completion
-    %         if ~isnan(BPL.subjects(i).LSS_after_FIR)
-    %             V_LSS_A_FIR = V_LSS_A_FIR + 1;
-    %         end
 
         end
-        
-        if V_FIR == 0
-            set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        elseif V_FIR == 1
-            set(handles.TMFC_GUI_S8,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-        else
-            set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        end
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_FIR = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of FIR completion
+                if tmfc.subjects(i).FIR == 0
+                    V_FIR = i ;
+                    break;
+                end
+            end
 
+            if V_FIR == 0
+                set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_FIR == 1
+                set(handles.TMFC_GUI_S8,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+        end
+        pause(0.1); 
     end
+
     
     tmfc = update_VP_PP_GP(tmfc);
-                
+    
     % update LSS
-     try   
-            L_break = 0;
-            V_LSS = 0;
+     try
+     
+     % code-----
+        L_break = 0;
+        V_LSS = 0;
+        cond_list = tmfc.LSS.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+
+        for subi = 1:length(tmfc.subjects)              
+            SPM = load(tmfc.subjects(subi).path);
+            for j = 1:N_sess 
+                % Trials of interest
+                E = 0;
+                trial.cond = [];
+                trial.number = [];
+                for k = 1:length(cond_list)
+                    if cond_list(k).sess == sess_num(j)
+                        E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
+                        trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
+                        trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
+                    end
+                end
+                % Check
+                for k = 1:E
+                    if exist(fullfile(tmfc.project_path,'LSS_regression',['Subject_' num2str(subi,'%04.f')],'GLM_batches', ...
+                                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' ...
+                                            regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' ...
+                                            num2str(trial.number(k)) '].mat']), 'file')
+                       condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                    else           
+                       condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                    end
+                end
+                tmfc.subjects(subi).LSS.session(sess_num(j)).condition = condition;
+                clear condition
+            end
+            clear SPM E trial
+        end
+        clear cond_list sess sess_num N_sess
+        % code ---
+        
+        try
             SZ_tmfc = size(tmfc.subjects);
             allValues = [tmfc.LSS.conditions.sess];
             SZS_tmfc = max(allValues); % maximum Sessions
@@ -1809,18 +1861,64 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            elseif V_LSS == 1
+            elseif V_FIR == 1
                 set(handles.TMFC_GUI_S6,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
+        end
+        pause(0.1); 
      end
      
              
      % LSS after FIR
-     try   
-            L_break = 0;
-            V_LSS = 0;
+     try
+     L_break = 0;
+     V_LSS = 0;
+
+     % code-----
+        cond_list = tmfc.LSS_after_FIR.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+
+        for subi = 1:length(tmfc.subjects)              
+            SPM = load(tmfc.subjects(subi).path);
+            for j = 1:N_sess 
+                % Trials of interest
+                E = 0;
+                trial.cond = [];
+                trial.number = [];
+                for k = 1:length(cond_list)
+                    if cond_list(k).sess == sess_num(j)
+                        E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
+                        trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
+                        trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
+                    end
+                end
+                % Check
+                for k = 1:E
+                    if exist(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(subi,'%04.f')],'GLM_batches', ...
+                                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' ...
+                                            regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' ...
+                                            num2str(trial.number(k)) '].mat']), 'file')
+                       condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                    else           
+                       condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                    end
+                end
+                tmfc.subjects(subi).LSS_after_FIR.session(sess_num(j)).condition = condition;
+                clear condition
+            end
+            clear SPM E trial
+        end
+        clear cond_list sess sess_num N_sess
+        % code ---
+
+        try
             SZ_tmfc = size(tmfc.subjects);
             allValues = [tmfc.LSS_after_FIR.conditions.sess];
             SZS_tmfc = max(allValues); % maximum Sessions
@@ -1830,7 +1928,7 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
                 socket = tmfc.LSS_after_FIR.conditions.number;
             end
             for i = 1:SZ_tmfc(2)
-                % Checking status of LSS completion
+                % Checking status of LSS after FIR completion
                 if L_break == 1
                     break;
                 else
@@ -1865,11 +1963,13 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            elseif V_LSS == 1
+            elseif V_FIR == 1
                 set(handles.TMFC_GUI_S10,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
+        end
+        pause(0.1); 
     end
      
      switch tmfc.defaults.parallel
@@ -1971,6 +2071,33 @@ end
 
 function [tmfc] = update_VP_PP_GP(tmfc)
     % update VOI
+        V_VOI = 0;
+        try
+        cond_list = tmfc.gPPI.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+
+        for subi = 1:length(tmfc.subjects)    
+            for k = 1:R
+                for j = 1:N_sess
+                    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs',['Subject_' num2str(subi,'%04.f')], ...
+                            ['VOI_' tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']), 'file')
+                        check(j) = 1;
+                    else
+                        check(j) = 0;
+                    end
+                end
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).VOI = double(~any(check==0));
+                clear check 
+            end
+        end
+        clear cond_list sess sess_num N_sess R
+        end
         try
             SZ_tmfc = size(tmfc.subjects);
             V_VOI = 0;
@@ -1996,6 +2123,37 @@ function [tmfc] = update_VP_PP_GP(tmfc)
 
 
     % Update PPI
+        V_PPI = 0;
+        try
+        cond_list = tmfc.gPPI.conditions;
+        sess = []; sess_num = []; N_sess = [];
+        for i = 1:length(cond_list)
+            sess(i) = cond_list(i).sess;
+        end
+        sess_num = unique(sess);
+        N_sess = length(sess_num);
+        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+
+        for subi = 1:length(tmfc.subjects)
+            SPM = load(tmfc.subjects(subi).path);
+            for k = 1:R
+                for j = 1:N_sess
+                    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(subi,'%04.f')], ...
+                                ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name,' ','_') ...
+                                ']_[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') '].mat']), 'file')
+                        check(j) = 1;
+                    else
+                        check(j) = 0;
+                    end
+                end
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).PPI = double(~any(check==0));
+                clear check 
+            end
+            clear SPM
+        end
+        clear cond_list sess sess_num N_sess R
+        end 
         try
             SZ_tmfc = size(tmfc.subjects);
             V_PPI = 0;
@@ -2017,6 +2175,21 @@ function [tmfc] = update_VP_PP_GP(tmfc)
 
 
      % gPPI
+      try
+        V_gPPI = 0;
+        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+        for subi = 1:length(tmfc.subjects)
+            for k = 1:R
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                        ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
+                else            
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
+                end
+            end
+        end
+        clear R
+     end
      try
         R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
         for subi = 1:length(tmfc.subjects)
@@ -2034,7 +2207,24 @@ function [tmfc] = update_VP_PP_GP(tmfc)
         clear R
      end
 
+     
    % Check gPPI-FIR
+    V_gPPI_FIR = 0;
+    try
+        %% Check gPPI FIR
+        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+        for subi = 1:length(tmfc.subjects)
+            for k = 1:R
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                ['Subject_' num2str(subi,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 1;
+                else            
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 0;
+                end
+            end
+        end
+        clear R
+    end
    try
     R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
     for subi = 1:length(tmfc.subjects)
@@ -2048,7 +2238,9 @@ function [tmfc] = update_VP_PP_GP(tmfc)
         end
     end
     clear R       
-           end
+   end
+           
+   
 end
 
 end  
