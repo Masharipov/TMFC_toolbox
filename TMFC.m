@@ -821,6 +821,9 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                             disp('Restarting FIR regression');
                             try
                                 rmdir(fullfile(tmfc.project_path,'FIR_regression'),'s');
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'),'s');
+                                end
                                 disp('Deleting old files');
                             end
                             sub_check = tmfc_FIR(tmfc, 1);
@@ -852,8 +855,11 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                         [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)   
                             try
-                                disp('Deleting old files');
                                 rmdir(fullfile(tmfc.project_path,'FIR_regression'),'s');
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'),'s');
+                                end
+                                disp('Deleting old files');
                             end
                             con_run = tmfc_FIR(tmfc,1);
                             for i=1:length(tmfc.subjects)
@@ -1320,6 +1326,9 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                         if isstruct(tmfc.LSS.conditions)
                             try
                                 rmdir(fullfile(tmfc.project_path,'LSS_regression'),'s');
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'),'s');
+                                end
                                 disp('Deleting old files');
                             end
                             sub_check = tmfc_LSS(tmfc,1);
@@ -1345,6 +1354,9 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                         if isstruct(tmfc.LSS.conditions)
                             try
                                 rmdir(fullfile(tmfc.project_path,'LSS_regression'),'s');
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'),'s');
+                                end
                                 disp('Deleting old files');
                             end
                             sub_check = tmfc_LSS(tmfc,1);
@@ -1533,6 +1545,9 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                             if isstruct(tmfc.LSS_after_FIR.conditions)
                                 try
                                     rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
+                                    if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
+                                        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
+                                    end
                                     disp('Deleting old files');
                                 end
                                 sub_check = tmfc_LSS_after_FIR(tmfc,1);
@@ -1561,6 +1576,9 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                             if isstruct(tmfc.LSS_after_FIR.conditions)
                                 try
                                     rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
+                                    if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
+                                        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
+                                    end
                                     disp('Deleting old files');
                                 end
                                 sub_check = tmfc_LSS_after_FIR(tmfc,1);
