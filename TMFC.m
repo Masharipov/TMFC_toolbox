@@ -598,6 +598,24 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                         tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.gPPI.conditions)
                             tmfc = reset_VPGPPI(tmfc, 1);
+                            disp('test 1');
+                            try
+                                % VOI
+                                rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs'),'s');                                
+                                % PPIs
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs'),'s');
+                                end
+                                % gPPI
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI'),'s');
+                                end
+                                % gPPI-FIR
+                                if fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR')
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR'),'s');
+                                end
+                                disp('Deleting old files');
+                            end
                             sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
@@ -623,6 +641,22 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                         tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.gPPI.conditions)
                             tmfc = reset_VPGPPI(tmfc, 2);
+                            try
+                                rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs'),'s');                             
+                                % PPIs
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs'),'s');
+                                end
+                                % gPPI
+                                if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI'))
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI'),'s');
+                                end
+                                % gPPI-FIR
+                                if fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR')
+                                    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR'),'s');
+                                end
+                                disp('Deleting old files');
+                            end
                             sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
@@ -785,6 +819,10 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                         [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
                         if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                            
                             disp('Restarting FIR regression');
+                            try
+                                rmdir(fullfile(tmfc.project_path,'FIR_regression'),'s');
+                                disp('Deleting old files');
+                            end
                             sub_check = tmfc_FIR(tmfc, 1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.subjects(i).FIR = sub_check(i);
@@ -812,7 +850,11 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                         end
                     elseif FIR_dec == 1
                         [tmfc.FIR.window,tmfc.FIR.bins] = TMFC_BW_GUI(0);
-                        if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)                                                    
+                        if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)   
+                            try
+                                disp('Deleting old files');
+                                rmdir(fullfile(tmfc.project_path,'FIR_regression'),'s');
+                            end
                             con_run = tmfc_FIR(tmfc,1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.subjects(i).FIR = con_run(i);
@@ -940,31 +982,6 @@ function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, TMFC_GUI)
         %fprintf('File saved successfully in path: %s\n', fullpath);
     end
           
-end
-
-%% ====================[ Background Connectivity ]=========================
-function BGFC_EX(ButtonH, EventData, TMFC_GUI)
-    % -1 = no selection or creation 
-    % 0 reutrn = NEW ROI Created and have to select it 
-    % 1 ROI selected from existing list
-    D = tmfc_select_ROIs_GUI();
-    fprintf('Continue BGFC with ROI # = %d \n', D);
-    
-end
-
-%% =====================[ Beta Series Corelation ]=========================
-function BSC_EX(ButtonH, EventData, TMFC_GUI)
-    BSC_entry = tmfc_select_ROIs_GUI();
-    fprintf('Continue BSC with ROI # = %d \n', BSC_entry);
-    if BSC_entry ~= -1
-        tmfc_BSC_GUI(tmfc,BSC_entry);
-    end
-end
-
-%% =============================[ Close ]==================================
-function gPPI_EX(ButtonH, EventData, TMFC_GUI)
-    D = tmfc_select_ROIs_GUI();
-    fprintf('Continue gPPI with ROI # = %d \n', D);
 end
 
 %% ==========================[ Load Project ]==============================
@@ -1109,7 +1126,7 @@ function tmfc_settings(ButtonH, EventData, TMFC_GUI)
        % details -> Change TMFC variable -> END
        DG4_STR = get(TMFC_SET_E1,'String');
        DG4 = eval(DG4_STR);
-       if DG4 ~= 2^31
+       if DG4 > 2^30
            set(TMFC_SET_E1, 'String', DG4_STR);
            tmfc.defaults.maxmem = DG4;
        end
@@ -1301,6 +1318,10 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                         verify_old = tmfc.LSS.conditions;
                         tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.LSS.conditions)
+                            try
+                                rmdir(fullfile(tmfc.project_path,'LSS_regression'),'s');
+                                disp('Deleting old files');
+                            end
                             sub_check = tmfc_LSS(tmfc,1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.subjects(i).LSS = sub_check(i);
@@ -1322,6 +1343,10 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                         verify_old = tmfc.LSS.conditions;
                         tmfc.LSS.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.LSS.conditions)
+                            try
+                                rmdir(fullfile(tmfc.project_path,'LSS_regression'),'s');
+                                disp('Deleting old files');
+                            end
                             sub_check = tmfc_LSS(tmfc,1);
                             for i=1:length(tmfc.subjects)
                                 tmfc.subjects(i).LSS = sub_check(i);
@@ -1506,6 +1531,10 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                             verify_old = tmfc.LSS_after_FIR.conditions;
                             tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
                             if isstruct(tmfc.LSS_after_FIR.conditions)
+                                try
+                                    rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
+                                    disp('Deleting old files');
+                                end
                                 sub_check = tmfc_LSS_after_FIR(tmfc,1);
                                 for i=1:length(tmfc.subjects)
                                     tmfc.subjects(i).LSS_after_FIR = sub_check(i);
@@ -1530,6 +1559,10 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                             verify_old = tmfc.LSS_after_FIR.conditions;
                             tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
                             if isstruct(tmfc.LSS_after_FIR.conditions)
+                                try
+                                    rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
+                                    disp('Deleting old files');
+                                end
                                 sub_check = tmfc_LSS_after_FIR(tmfc,1);
                                 for i=1:length(tmfc.subjects)
                                     tmfc.subjects(i).LSS_after_FIR = sub_check(i);
