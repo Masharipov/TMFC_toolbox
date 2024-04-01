@@ -130,14 +130,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14a, 'callback', {@CP_GUI, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
-    
-    
-    
-    % VOI
-    % PPI
-    % gPPI
-    % gPPI_FIR
-    
+       
     % BSC
     % BGFC
     % BSC_after_FIR
@@ -424,6 +417,13 @@ function PPI(ButtonH, EventData, TMFC_GUI)
                     break;
                 end
             end
+            if V_PPI == 0
+                set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_FIR == 1
+                set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S4,'String', strcat(num2str(V_PPI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
         end
       
         if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
@@ -545,6 +545,15 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                     break;
                 end
             end
+            
+            if V_VOI == 0
+                set(handles.TMFC_GUI_S3,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_FIR == 1
+                set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S3,'String', strcat(num2str(V_VOI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+            
         end
         
         % Computation
@@ -721,6 +730,8 @@ function FIR(ButtonH, EventData, TMFC_GUI)
 
             if V_FIR == 0
                 set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_FIR == 1
+                set(handles.TMFC_GUI_S8,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
@@ -1235,6 +1246,8 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_FIR == 1
+                set(handles.TMFC_GUI_S6,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
@@ -1436,6 +1449,8 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_FIR == 1
+                set(handles.TMFC_GUI_S10,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
             else
                 set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
@@ -1581,13 +1596,18 @@ function ROI_sel(ButtonH, EventData, TMFC_GUI)
 
            % Add new ROI set
            new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
-           tmfc = ROI_initializer(tmfc);
+           
 
            if isstruct(new_ROI_set)
-               tmfc.ROI_set(SZ_4(1)+1) = new_ROI_set;
+               %tmfc.ROI_set(SZ_4(1)+1) = new_ROI_set;
+               tmfc.ROI_set(SZ_4(1)+1).set_name = new_ROI_set.set_name;
+               tmfc.ROI_set(SZ_4(1)+1).ROIs = new_ROI_set.ROIs;
                tmfc.ROI_set_number = SZ_4(1)+1;
                disp('ROIs have been succesfully selected');
                set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(SZ_4(1)+1).set_name, ' (',num2str(length(tmfc.ROI_set(SZ_4(1)+1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+               tmfc = ROI_initializer(tmfc);
+               set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);    
+               set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
            end
 
         elseif R_ans == 0 && pos ~=0
@@ -1595,6 +1615,7 @@ function ROI_sel(ButtonH, EventData, TMFC_GUI)
             fprintf('Selected ROI for processing is: %s \n', char(lst_4(pos,2)));
             tmfc.ROI_set_number = pos;
             set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(pos).set_name, ' (',num2str(length(tmfc.ROI_set(pos).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+            tmfc = update_VP_PP_GP(tmfc);
         else
             disp('ROIs have not been selected');
 
@@ -1687,53 +1708,8 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
 
     end
     
-    
-    % update VOI
-        try
-            SZ_tmfc = size(tmfc.subjects);
-            V_VOI = 0;
-            for i = 1:SZ_tmfc(2)
-                % checking status of VOI completion
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
-                    V_VOI = i ;
-                    break;
-                end
-            end
-            
-            if V_VOI == 0
-                set(handles.TMFC_GUI_S3,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            elseif V_VOI == 1
-                set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-            else
-                set(handles.TMFC_GUI_S3,'String', strcat(num2str(V_VOI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            end
-            
-        end
-    
-       
-    
-    
-    % Update PPI
-        try
-            SZ_tmfc = size(tmfc.subjects);
-            V_PPI = 0;
-            for i = 1:SZ_tmfc(2)
-                % checking status of VOI completion
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI == 0
-                    V_PPI = i ;
-                    break;
-                end
-            end
-            if V_PPI == 0
-                set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            elseif V_PPI == 1
-                set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-            else
-                set(handles.TMFC_GUI_S4,'String', strcat(num2str(V_PPI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            end
-        end
-       
-    
+    tmfc = update_VP_PP_GP(tmfc);
+                
     % update LSS
      try   
             L_break = 0;
@@ -1788,8 +1764,8 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end
      end
-    
-    
+     
+             
      % LSS after FIR
      try   
             L_break = 0;
@@ -1867,24 +1843,6 @@ function evaluate_file(tmfc) % function to update the TMFC window after loading 
          case 3
              SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI'};
      end
-
-%     V_LSS = 0;
-    %for i = 1:BPL_LEN
-    %    if ~isnan(BPL.subjects(i).LSS_residual_ts)
-    %    V_LSS = V_LSS + 1 ;
-    %    end
-    %end
-    
-    %if V_LSS ~= 0
-    %    set(handles.LSS_R_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-    %    set(handles.LSS_R_stat,'String',strcat(num2str(V_LSS), '/', num2str(BPL_LEN), ' done'));
-    %end
-    
-    
-    %if BPL.ROIs(1).paths ~= ""
-    %    set(handles.ROI_stat,'ForegroundColor',[0.219, 0.341, 0.137]);
-    %    set(handles.ROI_stat,'String',length(BPL.ROIs)+' selected');
-    %end
     
 end
 
@@ -1960,7 +1918,87 @@ end
 
 end
 
+function [tmfc] = update_VP_PP_GP(tmfc)
+    % update VOI
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_VOI = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of VOI completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
+                    V_VOI = i ;
+                    break;
+                end
+            end
 
+            if V_VOI == 0
+                set(handles.TMFC_GUI_S3,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_VOI == 1
+                set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S3,'String', strcat(num2str(V_VOI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+
+        end
+
+
+
+
+    % Update PPI
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_PPI = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of VOI completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI == 0
+                    V_PPI = i ;
+                    break;
+                end
+            end
+            if V_PPI == 0
+                set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            elseif V_PPI == 1
+                set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+            else
+                set(handles.TMFC_GUI_S4,'String', strcat(num2str(V_PPI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            end
+        end
+
+
+     % gPPI
+     try
+        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+        for subi = 1:length(tmfc.subjects)
+            for k = 1:R
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                        ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
+                    %tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).subjects(subi).gPPI = 1;
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
+                else
+                    %tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).subjects(subi).gPPI = 0;
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
+                end
+            end
+        end
+        clear R
+     end
+
+   % Check gPPI-FIR
+   try
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+    for subi = 1:length(tmfc.subjects)
+        for k = 1:R
+            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                    ['Subject_' num2str(subi,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 1;
+            else
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 0;
+            end
+        end
+    end
+    clear R       
+           end
+end
 
 end  
 %%

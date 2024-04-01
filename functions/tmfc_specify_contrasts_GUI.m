@@ -1,10 +1,10 @@
-function tmfc_specify_contrasts_GUI(~,~)
+function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis)
 
     LST_1 = {};
     LST_2 = {};
     
 
-    SC_G1 = figure('Name', 'Contrast manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.30 0.24 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off');
+    SC_G1 = figure('Name', 'Contrast manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.30 0.24 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle','modal','CloseRequestFcn', @stable_Exit);
     SC_Title  = uicontrol(SC_G1,'Style','text','String', 'Define contrasts','Units', 'normalized', 'Position',[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.64,'backgroundcolor','w');
     
     SC_B1_T  = uicontrol(SC_G1,'Style','text','String', 'Existing contrasts:','Units', 'normalized', 'Position',[0.045 0.86 0.300 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
@@ -28,23 +28,18 @@ function tmfc_specify_contrasts_GUI(~,~)
     
     set(SC_ADD, 'callback', @action3)
     set(SC_REM, 'callback', @action4)
-    set(SC_REVA, 'callback', @action5)
+    set(SC_REVA, 'callback', @action5w)
     set(SC_OK, 'callback', @action6)
     set(SC_HELP, 'callback', @action7)
     
     selection_1 = {};
     selection_2 = {};
-    
-    %set(BSC_E2_lst_1,'backgroundcolor',get(BSC_G1,'color'));
-    %set(BSC_E2_lst_1, 'Enable', 'off');  
+%%
 
-%     function LSS_stable_Exit(~,~)
-%         try
-%            h88 = findobj('Tag', 'MAIN_WINDOW');
-%            setappdata(h88, 'LSS_NO_COND', 1); 
-%         end
-%         delete(LSS_GUI);
-%     end
+    function stable_Exit (~,~)
+        delete(SC_G1);
+        %conditions = NaN;
+    end
 
 % Selection from list box
     function action_select_1(~,~)
@@ -57,8 +52,6 @@ function tmfc_specify_contrasts_GUI(~,~)
         selection_2 = index;             
     end
     
-
-
 %  Add new contrast
     function action3(~,~)
         [D, c1, c2, c3, c4] = tmfc_BSC_MINI();
@@ -66,17 +59,21 @@ function tmfc_specify_contrasts_GUI(~,~)
            fprintf('Dataset %s:',D);
         end
     end
+
 % Remove a Contrast
     function action4(~,~)
         disp('Remove Contrasts');
     end
-% Remova all Contrasts
+
+% Remove all Contrasts
     function action5(~,~)
         disp('Remove all contrasts');
     end
+
 %  OKAY Confirm
     function action6(~,~)
-        disp('Okay Confimr existing list of contrast');
+        disp('Okay confirm existing list of contrast');
+        delete(SC_G1);
     end
 % Help Window
     function action7(~,~)   
@@ -87,7 +84,7 @@ end
 
 function [TTL,C1,C2,C3,C4] = tmfc_BSC_MINI()
 
-    SC_G2 = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.4 0.45 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'CloseRequestFcn', @stable_exit);
+    SC_G2 = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.4 0.45 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'CloseRequestFcn', @stable_exit, 'WindowStyle','modal');
 
     SC_G2_E0  = uicontrol(SC_G2,'Style','text','String', 'Define contrast title and contrast weights','Units', 'normalized', 'Position',[0.115 0.82 0.800 0.12],'fontunits','normalized', 'fontSize', 0.70,'backgroundcolor','w');
 
