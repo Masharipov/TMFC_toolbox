@@ -220,7 +220,11 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                             [tmfc.gPPI_FIR.window,tmfc.gPPI_FIR.bins] = TMFC_BW_GUI(0);
                             
                             if ~isnan(tmfc.gPPI_FIR.window) || ~isnan(tmfc.gPPI_FIR.bins)
-                                sub_check = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, 1);
+                                [sub_check, contrasts] = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, 1);
+                                for i = 1:length(contrasts)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).title = contrasts(i).title;
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).weights = contrasts(i).weights;
+                                end
                                 for i=1:length(tmfc.subjects)
                                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = sub_check(i);
                                 end
@@ -317,7 +321,12 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                     
                     if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 0
                         
-                        sub_check = tmfc_gPPI(tmfc,tmfc.ROI_set_number, 1);
+                        [sub_check, contrasts] = tmfc_gPPI(tmfc,tmfc.ROI_set_number, 1);
+                        % assigning contrasts to tmfc
+                        for i = 1:length(contrasts)
+                            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title = contrasts(i).title;
+                            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights = contrasts(i).weights;
+                        end
                         for i=1:length(tmfc.subjects)
                             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI = sub_check(i);
                         end
@@ -598,7 +607,6 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                         tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.gPPI.conditions)
                             tmfc = reset_VPGPPI(tmfc, 1);
-                            disp('test 1');
                             try
                                 % VOI
                                 rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs'),'s');                                
@@ -2057,6 +2065,7 @@ switch (cases)
             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = 0;
         end
         set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        tmfc.gPPI.conditions = [];
     case 2 
         % reset PPI, gPPI 
         for i=1:length(tmfc.subjects)
@@ -2065,6 +2074,7 @@ switch (cases)
             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = 0;
         end
         set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+        tmfc.gPPI.conditions = [];
 end
 
 end

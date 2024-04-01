@@ -490,13 +490,6 @@ for j = 1:length(cond_list)
 end
 
 
-% assigning contrasts to tmfc
-for i = 1:length(contrasts)
-    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title = contrasts(i).title;
-    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights = contrasts(i).weights;
-end
-
-
 % Close waitbar
 try
     delete(w);
