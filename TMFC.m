@@ -35,7 +35,7 @@ function TMFC
 %                                     regression after FIR regression
 %                                     (based on residual time series)
 %
-%   tmfc.gPPI.conditions            - Conditions of interest for gPPI and
+%   tmfc.ROI_set(i).gPPI.conditions            - Conditions of interest for gPPI and
 %                                     gPPI-FIR regression
 %
 % =========================================================================
@@ -215,11 +215,11 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
             
                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1
                     
-                    if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 0 && ~isfield(tmfc, 'gPPI_FIR') 
+                    if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 0 && ~isfield(tmfc, 'gPPI_FIR') 
                             
-                            [tmfc.gPPI_FIR.window,tmfc.gPPI_FIR.bins] = TMFC_BW_GUI(0);
+                            [tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.window,tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.bins] = TMFC_BW_GUI(0);
                             
-                            if ~isnan(tmfc.gPPI_FIR.window) || ~isnan(tmfc.gPPI_FIR.bins)
+                            if ~isnan(tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.window) || ~isnan(tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.bins)
                                 [sub_check, contrasts] = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, 1);
                                 for i = 1:length(contrasts)
                                     tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).title = contrasts(i).title;
@@ -233,7 +233,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                         
                     else
                         
-                        if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 1
+                        if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 1
                              disp('Continue to select contrasts');
                         else
                             STATUS = TMFC_CON_GUI(V_gPPI_FIR, 7);
@@ -319,7 +319,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1
                     
                     
-                    if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 0
+                    if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 0
                         
                         [sub_check, contrasts] = tmfc_gPPI(tmfc,tmfc.ROI_set_number, 1);
                         % assigning contrasts to tmfc
@@ -333,7 +333,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                         disp('gPPI computation completed');
                     else
                         
-                        if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 1
+                        if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 1
                              disp('Continue to select contrasts');
                         else
                             STATUS = TMFC_CON_GUI(V_gPPI, 6);
@@ -386,7 +386,7 @@ function PPI(ButtonH, EventData, TMFC_GUI)
         MW_Freeze(1);
         V_PPI = 0;
         try
-        cond_list = tmfc.gPPI.conditions;
+        cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
         sess = []; sess_num = []; N_sess = [];
         for i = 1:length(cond_list)
             sess(i) = cond_list(i).sess;
@@ -442,7 +442,7 @@ function PPI(ButtonH, EventData, TMFC_GUI)
                  if tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 1
                      disp('Initiating PPIs computation');
                      
-                     if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 0
+                     if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 0
                          
                         sub_check = tmfc_PPI(tmfc,tmfc.ROI_set_number, 1);
                         for i=1:length(tmfc.subjects)
@@ -451,7 +451,7 @@ function PPI(ButtonH, EventData, TMFC_GUI)
                         disp('PPI computation completed');
                      else
                          
-                         if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1
+                         if isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1
                              PPI_OKAY();
                              disp('Recompute VOIs to change conditions');
                             %disp('restart');
@@ -518,7 +518,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
         %% Check VOI
         V_VOI = 0;
         try
-        cond_list = tmfc.gPPI.conditions;
+        cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
         sess = []; sess_num = []; N_sess = [];
         for i = 1:length(cond_list)
             sess(i) = cond_list(i).sess;
@@ -570,14 +570,14 @@ function VOI(ButtonH, EventData, TMFC_GUI)
             
              if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
                  disp('Initiating VOI computation');
-            if ~isfield(tmfc, 'gPPI')
+            if ~isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI')
                 % first time execution 
                 
                 % selection gPPI conditions
-                tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
+                tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                 
-                if isstruct(tmfc.gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
-                    tmfc = reset_VPGPPI(tmfc, 1);
+                if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
+                    tmfc = reset_VPGPPI(tmfc, 3);
                     sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                     for i=1:length(tmfc.subjects)
                         tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
@@ -586,11 +586,11 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                 
                 end
                 
-            elseif isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
+            elseif isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
                 
-                tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
+                tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                 tmfc = reset_VPGPPI(tmfc, 3);
-                if isstruct(tmfc.gPPI.conditions)
+                if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions)
                     sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                     for i=1:length(tmfc.subjects)
                         tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = sub_check(i);
@@ -599,13 +599,13 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                 end
             else
                 
-                if isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 1
+                if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 1
                     %disp('restart');
                     STATUS = TMFC_RES_GUI(4);
                     if STATUS == 1
-                        verify_old = tmfc.gPPI.conditions;
-                        tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
-                        if isstruct(tmfc.gPPI.conditions)
+                        verify_old = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
+                        tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
+                        if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions)
                             tmfc = reset_VPGPPI(tmfc, 3);
                             try
                                 % VOI
@@ -630,7 +630,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                             end
                             disp('VOI computation completed');
                         else
-                            tmfc.gPPI.conditions = verify_old;                            
+                            tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = verify_old;                            
                         end
                     end
                 else
@@ -645,9 +645,9 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                         disp('VOI computation completed');
                         
                     elseif STATUS == 1
-                        verify_old = tmfc.gPPI.conditions;
-                        tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
-                        if isstruct(tmfc.gPPI.conditions)
+                        verify_old = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
+                        tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
+                        if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions)
                             tmfc = reset_VPGPPI(tmfc, 2);
                             try
                                 rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs'),'s');                             
@@ -671,7 +671,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                             end
                             disp('VOI computation completed');
                         else
-                            tmfc.gPPI.conditions = verify_old;                            
+                            tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = verify_old;                            
                         end
                     else
                         warning('VOI computation not initiated');
@@ -2065,7 +2065,7 @@ switch (cases)
             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = 0;
         end
         set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        tmfc.gPPI.conditions = [];
+        tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = [];
     case 2 
         % reset PPI, gPPI 
         for i=1:length(tmfc.subjects)
@@ -2074,7 +2074,7 @@ switch (cases)
             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = 0;
         end
         set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        %tmfc.gPPI.conditions = [];
+        %tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = [];
     case 3
         % reset all three        
         for i=1:length(tmfc.subjects)
@@ -2093,7 +2093,8 @@ function [tmfc] = update_VP_PP_GP(tmfc)
     % update VOI
         V_VOI = 0;
         try
-        cond_list = tmfc.gPPI.conditions;
+        cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
+        %maybe require gPPI FIR conditions
         sess = []; sess_num = []; N_sess = [];
         for i = 1:length(cond_list)
             sess(i) = cond_list(i).sess;
@@ -2145,7 +2146,7 @@ function [tmfc] = update_VP_PP_GP(tmfc)
     % Update PPI
         V_PPI = 0;
         try
-        cond_list = tmfc.gPPI.conditions;
+        cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions; %tmfc.gPPI.conditions;
         sess = []; sess_num = []; N_sess = [];
         for i = 1:length(cond_list)
             sess(i) = cond_list(i).sess;

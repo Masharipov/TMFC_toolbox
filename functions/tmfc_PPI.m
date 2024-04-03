@@ -17,10 +17,10 @@ function [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set.ROIs.path_masked - Paths to the ROI images masked by group
 %                                   mean binary mask 
 %
-%   tmfc.gPPI.conditions                  - List of conditions of interest
-%   tmfc.gPPI.conditions.sess             - Session number
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;                  - List of conditions of interest
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;.sess             - Session number
 %                                          (as specified in SPM.Sess)
-%   tmfc.gPPI.conditions.number           - Condition number
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;.number           - Condition number
 %                                          (as specified in SPM.Sess.U)
 %
 % Session number and condition number must match the original SPM.mat file.
@@ -29,14 +29,14 @@ function [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub)
 % you are only interested in comparing "Cond A" and "Cond B", the following
 % structure must be specified:
 %
-%   tmfc.gPPI.conditions(1).sess   = 1;   
-%   tmfc.gPPI.conditions(1).number = 1; - "Cond A", 1st session
-%   tmfc.gPPI.conditions(2).sess   = 1;
-%   tmfc.gPPI.conditions(2).number = 2; - "Cond B", 1st session
-%   tmfc.gPPI.conditions(3).sess   = 2;
-%   tmfc.gPPI.conditions(3).number = 1; - "Cond A", 2nd session
-%   tmfc.gPPI.conditions(4).sess   = 2;
-%   tmfc.gPPI.conditions(4).number = 2; - "Cond B", 2nd session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(1).sess   = 1;   
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(1).number = 1; - "Cond A", 1st session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(2).sess   = 1;
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(2).number = 2; - "Cond B", 1st session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(3).sess   = 2;
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(3).number = 1; - "Cond A", 2nd session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(4).sess   = 2;
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;(4).number = 2; - "Cond B", 2nd session
 %
 % Example of the ROI set:
 %
@@ -86,7 +86,7 @@ end
 
 N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
-cond_list = tmfc.gPPI.conditions;
+cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;;
 
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
