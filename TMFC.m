@@ -589,7 +589,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
             elseif isfield(tmfc.gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).VOI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).VOI == 0
                 
                 tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
-                tmfc = reset_VPGPPI(tmfc, 1);
+                tmfc = reset_VPGPPI(tmfc, 3);
                 if isstruct(tmfc.gPPI.conditions)
                     sub_check = tmfc_VOI(tmfc,tmfc.ROI_set_number, 1);
                     for i=1:length(tmfc.subjects)
@@ -606,7 +606,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                         verify_old = tmfc.gPPI.conditions;
                         tmfc.gPPI.conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);
                         if isstruct(tmfc.gPPI.conditions)
-                            tmfc = reset_VPGPPI(tmfc, 1);
+                            tmfc = reset_VPGPPI(tmfc, 3);
                             try
                                 % VOI
                                 rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs'),'s');                                
@@ -2074,7 +2074,17 @@ switch (cases)
             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = 0;
         end
         set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
-        tmfc.gPPI.conditions = [];
+        %tmfc.gPPI.conditions = [];
+    case 3
+        % reset all three        
+        for i=1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI = 0;
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI = 0;
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI = 0;
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = 0;
+        end
+        set(handles.TMFC_GUI_S4, 'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);
+
 end
 
 end
