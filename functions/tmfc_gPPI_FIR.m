@@ -95,7 +95,7 @@ end
 
 N = length(tmfc.subjects);
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
-cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;;
+cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
 SPM = load(tmfc.subjects(1).path);
 sess = []; sess_num = []; N_sess = []; PPI_num = []; PPI_sess = [];
 for i = 1:length(cond_list)

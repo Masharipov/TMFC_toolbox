@@ -235,6 +235,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                         
                         if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 1
                              disp('Continue to select contrasts');
+                             tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 2);
                         else
                             STATUS = TMFC_CON_GUI(V_gPPI_FIR, 7);
                             if STATUS == 0
@@ -335,6 +336,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                         
                         if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 1
                              disp('Continue to select contrasts');
+                             tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 1);
                         else
                             STATUS = TMFC_CON_GUI(V_gPPI, 6);
                             if STATUS == 0

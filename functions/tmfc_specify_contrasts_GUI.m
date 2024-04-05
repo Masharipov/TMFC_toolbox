@@ -2,89 +2,245 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
 
     LST_1 = {};
     LST_2 = {};
+    carbs = struct;
+    ctr = 1;
     
-
-    SC_G1 = figure('Name', 'Contrast manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.30 0.24 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle','modal','CloseRequestFcn', @stable_Exit);
-    SC_Title  = uicontrol(SC_G1,'Style','text','String', 'Define contrasts','Units', 'normalized', 'Position',[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.64,'backgroundcolor','w');
+    LST_1 = genset_1(tmfc,TMFC_analysis);
+    ctr_L1 = size(LST_1);
     
-    SC_B1_T  = uicontrol(SC_G1,'Style','text','String', 'Existing contrasts:','Units', 'normalized', 'Position',[0.045 0.86 0.300 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-    SC_B1_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', '№### :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.816 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
-    SC_B1_lst = uicontrol(SC_G1 , 'Style', 'listbox', 'String', LST_1,'Max', 100,'Units', 'normalized', 'Position',[0.045 0.62 0.920 0.200],'fontunits','normalized', 'fontSize', 0.15);
-        
-    SC_B2_T  = uicontrol(SC_G1,'Style','text','String', 'Add new contrasts:','Units', 'normalized', 'Position',[0.045 0.535 0.450 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-    SC_B2_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', '№### :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.492 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
-    SC_B2_lst = uicontrol(SC_G1 , 'Style', 'listbox', 'String', LST_2,'Max',100,'Units', 'normalized', 'Position',[0.045 0.26 0.920 0.230],'fontunits','normalized', 'fontSize', 0.12);
-      
-    SC_ADD = uicontrol(SC_G1,'Style','pushbutton','String', 'Add new','Units', 'normalized','Position',[0.045 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    SC_REM = uicontrol(SC_G1,'Style','pushbutton','String', 'Remove selected','Units', 'normalized','Position',[0.360 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    SC_REVA = uicontrol(SC_G1,'Style','pushbutton','String', 'Remove all','Units', 'normalized','Position',[0.680 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    SC_OK = uicontrol(SC_G1,'Style','pushbutton','String', 'OK','Units', 'normalized','Position',[0.045 0.05 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-    SC_HELP = uicontrol(SC_G1,'Style','pushbutton','String', 'Help','Units', 'normalized','Position',[0.680 0.05 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
-
-    set(SC_B1_lst, 'Value', []);    
-    set(SC_B1_lst, 'callback', @action_select_1)
-    set(SC_B2_lst, 'Value', []);
-    set(SC_B2_lst, 'callback', @action_select_2)
-    
-    set(SC_ADD, 'callback', @action3)
-    set(SC_REM, 'callback', @action4)
-    set(SC_REVA, 'callback', @action5w)
-    set(SC_OK, 'callback', @action6)
-    set(SC_HELP, 'callback', @action7)
-    
-    selection_1 = {};
-    selection_2 = {};
-%%
-
-    function stable_Exit (~,~)
-        delete(SC_G1);
-        %conditions = NaN;
-    end
-
-% Selection from list box
-    function action_select_1(~,~)
-        index = get(SC_B1_lst, 'Value');  % Retrieves the users selection LIVE
-        selection_1 = index;      
-    end
-
-    function action_select_2(~,~)
-        index = get(SC_B2_lst, 'Value');  % Retrieves the users selection LIVE
-        selection_2 = index;             
-    end
-    
-%  Add new contrast
-    function action3(~,~)
-        [D, c1, c2, c3, c4] = tmfc_BSC_MINI();
-        if ~isempty(D)
-           fprintf('Dataset %s:',D);
+    if ctr_L1(1) == 0 
+        switch(TMFC_analysis)
+                case 1
+                    warning('Default Contrasts do not exist for gPPI processing');
+                case 2 
+                    warning('Default Contrasts do not exist for gPPI FIR processing');
+                case 3
+                    warning('Default Contrasts do not exist for BSC processing');
+                case 4
+                    warning('Default Contrasts do not exist for BSC FIR processing');
         end
+    else
+        worker();
+    end
+    function worker()
+        SC_G1 = figure('Name', 'Contrast manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.30 0.24 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle','modal','CloseRequestFcn', @stable_Exit);
+        SC_Title  = uicontrol(SC_G1,'Style','text','String', 'Define contrasts','Units', 'normalized', 'Position',[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.64,'backgroundcolor','w');
+
+        SC_B1_T  = uicontrol(SC_G1,'Style','text','String', 'Existing contrasts:','Units', 'normalized', 'Position',[0.045 0.86 0.300 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
+        SC_B1_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', '№## :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.816 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
+        SC_B1_lst = uicontrol(SC_G1 , 'Style', 'listbox', 'String', LST_1,'Max', 100,'Units', 'normalized', 'Position',[0.045 0.62 0.920 0.200],'fontunits','normalized', 'fontSize', 0.15,'Enable','inactive');
+
+        SC_B2_T  = uicontrol(SC_G1,'Style','text','String', 'Add new contrasts:','Units', 'normalized', 'Position',[0.045 0.535 0.450 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
+        SC_B2_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', '№## :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.492 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
+        SC_B2_lst = uicontrol(SC_G1 , 'Style', 'listbox', 'String', LST_2,'Max',100,'Units', 'normalized', 'Position',[0.045 0.26 0.920 0.230],'fontunits','normalized', 'fontSize', 0.14);
+
+        SC_ADD = uicontrol(SC_G1,'Style','pushbutton','String', 'Add new','Units', 'normalized','Position',[0.045 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
+        SC_REM = uicontrol(SC_G1,'Style','pushbutton','String', 'Remove selected','Units', 'normalized','Position',[0.360 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
+        SC_REVA = uicontrol(SC_G1,'Style','pushbutton','String', 'Remove all','Units', 'normalized','Position',[0.680 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
+        SC_OK = uicontrol(SC_G1,'Style','pushbutton','String', 'OK','Units', 'normalized','Position',[0.045 0.05 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
+        SC_HELP = uicontrol(SC_G1,'Style','pushbutton','String', 'Help','Units', 'normalized','Position',[0.680 0.05 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
+
+        set(SC_B1_lst, 'Value', []);    
+        set(SC_B1_lst, 'callback', @action_select_1)
+        set(SC_B2_lst, 'Value', []);
+        set(SC_B2_lst, 'callback', @action_select_2)
+
+        set(SC_ADD, 'callback', @action3)
+        set(SC_REM, 'callback', @action4)
+        set(SC_REVA, 'callback', @action5)
+        set(SC_OK, 'callback', @action6)
+        set(SC_HELP, 'callback', @action7)
+
+        selection_2 = {};
+    %% Exit
+        function stable_Exit (~,~)
+            delete(SC_G1);
+            disp('Contrasts not confirmed');
+        end
+
+    %% Selection from list box
+        function action_select_2(~,~)
+            index = get(SC_B2_lst, 'Value');  % Retrieves the users selection LIVE
+            selection_2 = index;             
+        end
+
+    %%  Add new contrast
+        function action3(~,~)
+            [D, c1, c2, c3, c4] = tmfc_BSC_MINI();
+            if ~isempty(D)
+                if ~isfield(carbs, 'no')
+                    % first addition
+                    carbs(ctr).no = ctr_L1(1)+1;
+                    carbs(ctr).title = D;
+                    carbs(ctr).weights = [str2double(c1),str2double(c2),str2double(c3),str2double(c4)];
+
+
+                    biege = horzcat('№ ',num2str(carbs(ctr).no),' :: ',carbs(ctr).title,' :: ', 'c = [',num2str(carbs(ctr).weights),']');
+                    LST_2 = vertcat(LST_2, biege);
+                    set(SC_B2_lst, 'string', LST_2);
+                    ctr = ctr + 1;
+                    
+                else
+                    % future additions
+                    carbs(ctr).no = ctr_L1(1)+ctr;
+                    carbs(ctr).title = D;
+                    carbs(ctr).weights = [str2double(c1),str2double(c2),str2double(c3),str2double(c4)];
+
+                    biege = horzcat('№ ',num2str(carbs(ctr).no),' :: ',carbs(ctr).title,' :: ', 'c = [',num2str(carbs(ctr).weights),']');
+                    LST_2 = vertcat(LST_2, biege);
+                    set(SC_B2_lst, 'string', LST_2);
+                    ctr = ctr + 1;
+                    
+                end
+
+                fprintf('Contrast added :%s\n',D);
+            else
+                disp('New contrast not added');
+            end
+        end
+
+    %% Remove a Contrast
+        function action4(~,~)
+            if isfield(carbs, 'no')
+                if isempty(selection_2)
+                    warning('No contrasts selected to remove');
+                else
+                    hold = length(selection_2);
+                    if hold>1
+                        disp('Selected contrasts have been removed');
+                    else
+                        disp('Selected contrast has been removed');
+                    end
+
+                    carbs(selection_2) = [];
+                    ctr = ctr - length(selection_2);
+
+                    LST_2 = {};
+                    selection_2 = {};
+                    for i = 1:length(carbs)
+                       carbs(i).no = ctr_L1(1)+i;
+                       biege = horzcat('№ ',num2str(carbs(i).no),' :: ',carbs(i).title,' :: ', 'c = [',carbs(i).weights,']');
+                       LST_2 = vertcat(LST_2, biege);
+                    end
+
+                    set(SC_B2_lst,'Value',[]);               
+                    set(SC_B2_lst, 'string', LST_2);
+                end
+            else
+                warning('No contrasts present to remove');
+            end
+
+        end
+
+    %% Remove all Contrasts
+        function action5(~,~)
+            if isfield(carbs, 'no')
+                carbs = struct;
+                LST_2 = {};
+                selection_2 = {};
+                ctr = 1;
+                set(SC_B2_lst,'Value',[]);
+                set(SC_B2_lst, 'string', LST_2);
+                disp('All Contrasts have been removed');
+            else
+                warning('No contrasts present to remove');
+            end
+        end
+
+    %%  OKAY Confirm
+        function action6(~,~)
+            
+            if isempty(LST_2)
+                disp('No newely added contrasts, proceeding with ROI-to-ROI generation and seed-to_voxel-contrast generation');
+            else
+                tmfc = Finisher(tmfc, carbs, TMFC_analysis);
+                fprintf('Number of newly added contrast for processing: %d\n',length(LST_2));
+            end
+            delete(SC_G1);
+
+        end
+
+    %% Help Window
+        function action7(~,~)   
+            disp('Help window');
+        end
+    uiwait();
     end
 
-% Remove a Contrast
-    function action4(~,~)
-        disp('Remove Contrasts');
-    end
 
-% Remove all Contrasts
-    function action5(~,~)
-        disp('Remove all contrasts');
-    end
+end
+%%
+function [constructor_2] = genset_1(tmfc, A_case)
 
-%  OKAY Confirm
-    function action6(~,~)
-        disp('Okay confirm existing list of contrast');
-        delete(SC_G1);
-    end
-% Help Window
-    function action7(~,~)   
-        disp('Help window');
-    end
+switch (A_case)
+    
+    % gPPI
+    case 1        
+        constructor = {};
+        for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)
+            constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title);
+        end
+
+        eject = size(constructor);
+        constructor_2 = {};
+        for i = 1:eject(1)
+            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights),']');
+            constructor_2 = vertcat(constructor_2, biege);
+        end
+    
+        
+        % gPPI FIR
+    case 2        
+        constructor = {};
+        for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR)
+            constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).title);
+        end
+
+        eject = size(constructor);
+        constructor_2 = {};
+        for i = 1:eject(1)
+            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).weights),']');
+            constructor_2 = vertcat(constructor_2, biege);
+        end
+        
+    
+        % BSC
+    case 3        
+        constructor = {};
+        for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
+            constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title);
+        end
+
+        eject = size(constructor);
+        constructor_2 = {};
+        for i = 1:eject(1)
+            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights),']');
+            constructor_2 = vertcat(constructor_2, biege);
+        end
+        
+        
+        
+    % BSC_after_FIR
+    case 4        
+        constructor = {};
+        for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)
+            constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title);
+        end
+
+        eject = size(constructor);
+        constructor_2 = {};
+        for i = 1:eject(1)
+            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights),']');
+            constructor_2 = vertcat(constructor_2, biege);
+        end
+end
 
 end
 
+%%
 function [TTL,C1,C2,C3,C4] = tmfc_BSC_MINI()
 
-    SC_G2 = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.4 0.45 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'CloseRequestFcn', @stable_exit, 'WindowStyle','modal');
+    SC_G2 = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.64 0.46 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'CloseRequestFcn', @stable_exit, 'WindowStyle','modal');
 
     SC_G2_E0  = uicontrol(SC_G2,'Style','text','String', 'Define contrast title and contrast weights','Units', 'normalized', 'Position',[0.115 0.82 0.800 0.12],'fontunits','normalized', 'fontSize', 0.70,'backgroundcolor','w');
 
@@ -153,11 +309,6 @@ function [TTL,C1,C2,C3,C4] = tmfc_BSC_MINI()
             
         else
             
-            fprintf('Name set %s\n', TT_L);
-            fprintf('Contrast 1 is %s\n', C1_L);
-            fprintf('Contrast 2 is %s\n', C2_L);
-            fprintf('Contrast 3 is %s\n', C3_L);
-            fprintf('Contrast 4 is %s\n', C4_L);
             delete(SC_G2);       
             TTL = TT_L;
             C1 = C1_L;
@@ -182,3 +333,44 @@ function [TTL,C1,C2,C3,C4] = tmfc_BSC_MINI()
 end
 
 
+%%
+function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
+
+    switch (TMFC_analysis)
+
+        case 1
+            % gPPI
+            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI);
+            for i = 1:length(carbs)
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).weights = carbs(i).weights; 
+            end
+
+        case 2
+            % gPPI FIR
+            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR);
+            for i = 1:length(carbs)
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+1).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+1).weights = carbs(i).weights; 
+               
+            end
+
+        case 3
+            % BSC
+            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
+            for i = 1:length(carbs)
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+1).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+1).weights = carbs(i).weights; 
+            end
+
+
+        case 4
+            % BSC FIR
+            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
+            for i = 1:length(carbs)
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+1).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+1).weights = carbs(i).weights; 
+            end
+
+    end
+end
