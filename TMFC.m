@@ -125,14 +125,15 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B5b, 'callback', {@gPPI_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B9, 'callback', {@BGFC, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14a, 'callback', {@CP_GUI, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
        
+       
     % BSC
-    % BGFC
     % BSC_after_FIR
     
     % Results
@@ -174,6 +175,120 @@ end
 function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
 end
+%% ============================= [ BGFC ] =============================
+function BGFC(buttonG, EventData, TMFC_GUI)
+
+    %try 
+       cd(tmfc.project_path); 
+       MW_Freeze(1);
+       V_BGFC = 0;
+       
+       try
+           SPM = load(tmfc.subjects(1).path); 
+            for subi = 1:length(tmfc.subjects)
+               for j = 1:length(SPM.SPM.Sess)       
+                   if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC','ROI_to_ROI', ... 
+                               ['Subject_' num2str(subi,'%04.f') '_Session_' num2str(j) '.mat']), 'file')
+                       check(j) = 1;
+                   else
+                       check(j) = 0;
+                   end
+               end
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BGFC = double(~any(check==0));
+                clear check
+            end
+            clear SPM
+       end
+       
+       try
+            SZ_tmfc = size(tmfc.subjects);
+            V_BGFC = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of BGFC completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC == 0
+                    V_BGFC = i ;
+                    break;
+                end
+            end
+        end
+
+              
+       
+       if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+           
+           if isfield(tmfc.subjects, 'FIR') 
+
+               if ~tmfc.subjects(length(tmfc.subjects)).FIR == 0 
+                   
+                 if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
+                    disp('Initiating BGFC computation');
+                 
+                    if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BGFC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BGFC == 0
+                    % First time execution
+
+                        sub_check = tmfc_BGFC(tmfc,tmfc.ROI_set_number, 1);
+                        for i=1:length(tmfc.subjects)
+                            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = sub_check(i);
+                        end
+                        disp('BGFC computation completed');
+                    
+                    else
+                        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BGFC == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BGFC == 1
+                            fprintf('BGFC has been completely calcualted using the FIR settings of %d Windows and %d bins. \n', tmfc.FIR.window,tmfc.FIR.bins);
+                            fprintf('To calcualte BGFC with different settings, please recompute FIR with desrided combination of windows and bins \n');         
+                            BGFC_OKAY(tmfc);
+                        else
+                            % Continue computations
+                            STATUS = TMFC_CON_GUI(V_BGFC, 8);
+                            if STATUS == 0
+                                sub_check = tmfc_BGFC(tmfc,tmfc.ROI_set_number, V_BGFC);
+                                for i=V_BGFC:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = sub_check(i);
+                                end
+                                disp('BGFC computation completed');
+                            else
+                                warning('BGFC computation not initiated');
+                            end
+                                
+                        end
+                        
+                        
+                        
+                    end
+                    
+                    
+                 else
+                     
+                    warning('Please select ROIs to continue with BGFC computation');
+                 end
+
+
+
+               else
+                   warning('Please complete FIR computation to proceed with BGFC computation');
+               end
+               
+               
+               
+           else
+               warning('Please compute FIR for the selected subjects to proceed with computation of Background connectivity function');
+           end
+           
+       else
+           warning('Please select subjects and compute FIR to proceed with BGFC computaiton');
+       end
+        MW_Freeze(0);
+        
+    %catch
+        
+%        warning('Please select subjects & compute FIRs to perform BGFC computaiton');
+%    end
+    
+    
+    
+
+end
+
 %% ============================= [ gPPI FIR ] =============================
 function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
             
@@ -801,6 +916,9 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                 for i=1:length(tmfc.subjects)
                     tmfc.subjects(i).FIR = sub_check(i);
                 end
+                try
+                    % reset BGFC is ROI set exists
+                end
              end
              
         elseif isfield(tmfc, 'FIR') && tmfc.subjects(1).FIR == 0 %~isfield(tmfc.subjects, 'FIR')
@@ -833,6 +951,11 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                                 rmdir(fullfile(tmfc.project_path,'FIR_regression'),'s');
                                 if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'))
                                     rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'),'s');
+                                end
+                                try
+                                    for i = 1:length(tmfc.subjects)
+                                        tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = 0;
+                                    end 
                                 end
                                 disp('Deleting old files');
                             end
@@ -868,6 +991,11 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                                 rmdir(fullfile(tmfc.project_path,'FIR_regression'),'s');
                                 if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'))
                                     rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC'),'s');
+                                end
+                                try
+                                    for i = 1:length(tmfc.subjects)
+                                        tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = 0;
+                                    end 
                                 end
                                 disp('Deleting old files');
                             end
@@ -1776,6 +1904,37 @@ function tmfc = evaluate_file(tmfc) % function to update the TMFC window after l
         pause(0.1); 
     end
 
+    % update BGFC
+    try
+       try
+       SPM = load(tmfc.subjects(1).path); 
+        for subi = 1:length(tmfc.subjects)
+           for j = 1:length(SPM.SPM.Sess)       
+               if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC','ROI_to_ROI', ... 
+                           ['Subject_' num2str(subi,'%04.f') '_Session_' num2str(j) '.mat']), 'file')
+                   check(j) = 1;
+               else
+                   check(j) = 0;
+               end
+           end
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BGFC = double(~any(check==0));
+            clear check
+        end
+        clear SPM
+       end
+       try
+            SZ_tmfc = size(tmfc.subjects);
+            V_BGFC = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of BGFC completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC == 0
+                    V_BGFC = i ;
+                    break;
+                end
+            end
+       end
+    end
+    
     
     tmfc = update_VP_PP_GP(tmfc);
     
@@ -2054,6 +2213,12 @@ set(handles.TMFC_GUI_S10,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0
 
 end
 
+function [tmfc] = reset_BGFC(tmfc)
+    if isfield(tmfc.ROI_set(tmfc.ROI_set_number).subjects(1),'BGFC') 
+        
+    end
+end
+
 function [tmfc] = reset_VPGPPI(tmfc, cases)                            
 
 switch (cases)
@@ -2327,6 +2492,11 @@ function [STATUS] = TMFC_CON_GUI(INDEX, option)
             % gPPI FIR
             res_str_0 = 'gPPI FIR computation';
             res_str_1 = {'Continue gPPI FIR computation from'};
+            b_res = 'Cancel';
+        case 8
+            % BGFC
+            res_str_0 = 'BGFC computation';
+            res_str_1 = {'Continue BGFC computation from'};
             b_res = 'Cancel';
     end
     
@@ -2630,7 +2800,20 @@ TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized
 
 end
 
+function BGFC_OKAY(tmfc)
+TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal');%,'CloseRequestFcn', @OKAY, 'Tag', 'BGFC');    
+    B1 = {strcat('BGFC computation completed using ',32,num2str(tmfc.FIR.window),' Windows & ',32,num2str(tmfc.FIR.bins),' Bins.'),'To change the number of windows & bins, recompute FIRs'};
+    TMFC_BGFC_S1 = uicontrol(TMFC_BGFC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'fontunits','normalized','fontSize', 0.38,'backgroundcolor','w');
+    OK = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.24],'fontunits','normalized','fontSize', 0.40);
+    
+    set(OK, 'callback', @OKAY);
+    
+    function OKAY(~,~)
+        delete(TMFC_BGFC_Diag);
+    end
+    uiwait();
 
+end
 % OUTLINE
     
     % CD project path

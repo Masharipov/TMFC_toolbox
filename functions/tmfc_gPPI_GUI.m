@@ -248,16 +248,16 @@ end
             % Creation of GUI window for Help description
             gPPI_H_W = figure('Name', 'gPPI: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.67 0.31 0.22 0.50],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'WindowStyle', 'Modal');
 
-            Data_1 = ["Suppose you have two separate sessions.","","Both sessions contains task regressors for", "“Cond A”, “Cond B” and “Errors”", "","If you are only interested in “Cond A” and “Cond B” comparison, the following conditions should be selected:",...
-            "","1)  Cond A (Sess1)","2)  Cond B (Sess1)","3)  Cond A (Sess2)","4)  Cond B (Sess2)","","For all selected conditions of interest, the TMFC toolbox will create psycho-physiological (PPI) regressors. Thus, for each condition of interest, the generalized PPI (gPPI) model will contain two regressors: (1) psychological regressor and (2) PPI regressor."...
-            "","For trials of no interest (here, “Errors”), the gPPI model will contain only the psychological regressor."];
+            Data_1 = {'Suppose you have two separate sessions.','','Both sessions contains task regressors for', '“Cond A”, “Cond B” and “Errors”', '','If you are only interested in “Cond A” and “Cond B” comparison, the following conditions should be selected:',...
+            '','1)  Cond A (Sess1)','2)  Cond B (Sess1)','3)  Cond A (Sess2)','4)  Cond B (Sess2)','','For all selected conditions of interest, the TMFC toolbox will create psycho-physiological (PPI) regressors. Thus, for each condition of interest, the generalized PPI (gPPI) model will contain two regressors: (1) psychological regressor and (2) PPI regressor.'...
+            '','For trials of no interest (here, “Errors”), the gPPI model will contain only the psychological regressor.'};
 
             gPPI_W1 = uicontrol(gPPI_H_W,'Style','text','String',Data_1 ,'Units', 'normalized', 'Position', [0.05 0.12 0.89 0.85], 'HorizontalAlignment', 'left','backgroundcolor','w','fontunits','normalized', 'fontSize', 0.0301);
             gPPI_H_OK = uicontrol(gPPI_H_W,'Style','pushbutton','String', 'OK','Units', 'normalized', 'Position', [0.34 0.06 0.30 0.06]);%,'fontunits','normalized', 'fontSize', 0.35
 
             set(gPPI_H_OK, 'callback', @gPPI_H_close);
 
-            function gPPI_H_close(~,~);
+            function gPPI_H_close(~,~)
                 close(gPPI_H_W);
             end
         end

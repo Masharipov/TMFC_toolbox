@@ -289,7 +289,7 @@ end
 
             set(LSS_H_OK, 'callback', @LSS_H_close);
 
-            function LSS_H_close(~,~);
+            function LSS_H_close(~,~)
                 close(LSS_H_W);
             end
         end

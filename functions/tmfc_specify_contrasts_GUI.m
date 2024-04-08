@@ -95,7 +95,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
 
                 fprintf('Contrast added :%s\n',D);
             else
-                disp('New contrast not added');
+                disp('No contrasts added');
             end
         end
 
