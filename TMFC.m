@@ -128,6 +128,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B9, 'callback', {@BGFC, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B11, 'callback', {@BSC_after_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14a, 'callback', {@CP_GUI, handles.TMFC_GUI});
@@ -172,6 +173,120 @@ end
 %% ===========================[ TMP Save ]=============REMOVE later========
 function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
+end
+
+%% =========================== [ BSC After FIR] ===========================
+function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
+
+    try
+       cd(tmfc.project_path);
+       MW_Freeze(1);
+       V_BSC = 0;
+       try
+            for subi = 1:length(tmfc.subjects)
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR','Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 1;
+                else
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 0;
+                end
+            end 
+       end
+       try
+           SZ_tmfc = size(tmfc.subjects);
+            V_BSC = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of BSC completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR == 0
+                    V_BSC = i ;
+                    break;
+                end
+            end    
+       end
+       try
+           SZC_tmfc = size(tmfc.LSS_after_FIR.conditions);
+           post = tmfc.subjects(length(tmfc.subjects)).LSS_after_FIR.session(max(tmfc.LSS_after_FIR.conditions.sess)).condition(SZC_tmfc(2)).trials; 
+       end
+       
+       if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+           
+           if isfield(tmfc.subjects, 'LSS_after_FIR')
+               
+               if ~any(post == 0)
+                   
+                   if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
+                       disp('Initiating BSC FIR computation');   
+                   
+                        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 0
+                        % first time execution
+                                [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+                                for i = 1:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
+                                end
+                                for i = 1:length(contrasts)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title = contrasts(i).title;
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights = contrasts(i).weights;
+                                end
+                                disp('BSC FIR computation completed');
+                        else
+                            % Recompute case
+                            if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 1
+                                fprintf('BSC FIR has been completely calcualted using the LSS FIR settings of %d Sessions and %d Conditions. \n', max(tmfc.LSS_after_FIR.conditions.sess), SZC_tmfc(2));
+                                fprintf('To calcualte BSC FIR with different settings, please recompute LSS FIR with desrided combination of sessions and conditions \n');         
+                                disp('Continue to select contrasts');
+                                verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
+                                 % Select contrasts
+                                 tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 4);
+
+                                 if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)                                 
+                                     sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 4, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR), tmfc.ROI_set_number);                           
+                                     if sub_check_roi(length(tmfc.subjects)) == 1
+                                         disp('ROI-ROI contrasts succefully generated');
+                                     else
+                                         disp('ROI-ROI contrasts failed');
+                                     end
+                                     sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, 4, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR), tmfc.ROI_set_number);
+                                      if sub_check_svox(length(tmfc.subjects)) == 1
+                                         disp('Seed-Voxel contrasts succefully generated');
+                                     else
+                                         disp('Seed-Voxel contrasts failed');
+                                      end
+                                 end
+                                 disp('BSC FIR Contrast Computation completed');
+                            else
+                                % restart computations
+                                sub_check = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+                                for i = 1:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
+                                end
+                                disp('BSC FIR computation completed');
+                            end
+                        end
+                   
+                   else
+                        warning('Please select ROIs to continue with BSC computation');
+                   end
+                       
+               else
+                   warning('Please complete LSS FIR computation to proceed with BSC FIR computation');
+               end
+               
+           else
+                warning('Please compute LSS FIR for the selected subjects to proceed with computation of Beta Series Correlation');
+           end
+           
+       else
+           warning('Please select subjects and compute LSS FIR to proceed with BSC FIR computaiton');
+       end
+       
+       
+        MW_Freeze(0);
+    catch
+        warning('Please select subjects & compute LSS FIR to perform BSC FIR computation');    
+    end
+    
+    
+    
+    
 end
 %% ================================ [ BSC ] ===============================
 function BSC(buttonH, EventData, TMFC_GUI)
@@ -267,7 +382,7 @@ function BSC(buttonH, EventData, TMFC_GUI)
                     end
                     
                 else
-                    warning('Please complete GLM BSC computation to proceed with BSC computation');
+                    warning('Please complete LSS GLM computation to proceed with BSC computation');
                 end
                 
             else
@@ -1997,6 +2112,8 @@ end
 function tmfc = evaluate_file(tmfc) % function to update the TMFC window after loading a tmfc project
     
     try
+        MW_Freeze(1);
+    try
         cd(tmfc.project_path); 
     end
     
@@ -2310,6 +2427,11 @@ function tmfc = evaluate_file(tmfc) % function to update the TMFC window after l
          case 3
              SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI'};
      end
+     
+     MW_Freeze(0);
+    catch
+        warning('Error with reading save file');
+    end
     
 end
 
