@@ -23,15 +23,15 @@ function [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_se
 %   tmfc.ROI_set.ROIs.path_masked - Paths to the ROI images masked by group
 %                                   mean binary mask 
 %
-%   tmfc.gPPI.conditions        - List of conditions of interest for gPPI
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions        - List of conditions of interest for gPPI
 %                                 and gPPI-FIR analyses
 %                                 (rename the gPPI field to BSC_LSS or
 %                                 BSC_after_FIR to perform the
 %                                 corresponsing TMFC analysis)
 %
-%   tmfc.gPPI.conditions.sess   - Session number
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions.sess   - Session number
 %                                 (as specified in SPM.Sess)
-%   tmfc.gPPI.conditions.number - Condition number
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions.number - Condition number
 %                                 (as specified in SPM.Sess.U)
 %
 % Session number and condition number must match the original SPM.mat file.
@@ -40,14 +40,14 @@ function [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_se
 % you are only interested in comparing "Cond A" and "Cond B", the following
 % structure must be specified:
 %
-%   tmfc.gPPI.conditions(1).sess   = 1;   
-%   tmfc.gPPI.conditions(1).number = 1; - "Cond A", 1st session
-%   tmfc.gPPI.conditions(2).sess   = 1;
-%   tmfc.gPPI.conditions(2).number = 2; - "Cond B", 1st session
-%   tmfc.gPPI.conditions(3).sess   = 2;
-%   tmfc.gPPI.conditions(3).number = 1; - "Cond A", 2nd session
-%   tmfc.gPPI.conditions(4).sess   = 2;
-%   tmfc.gPPI.conditions(4).number = 2; - "Cond B", 2nd session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(1).sess   = 1;   
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(1).number = 1; - "Cond A", 1st session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(2).sess   = 1;
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(2).number = 2; - "Cond B", 1st session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(3).sess   = 2;
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(3).number = 1; - "Cond A", 2nd session
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(4).sess   = 2;
+%   tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions(4).number = 2; - "Cond B", 2nd session
 %
 % Example of the ROI set:
 %
@@ -98,7 +98,7 @@ switch type
         for i = 1:N
             tic
             % Load default contrasts for conditions of interest
-            cond_list = tmfc.gPPI.conditions;
+            cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
             for j = 1:length(cond_list)               
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
@@ -139,7 +139,7 @@ switch type
         for i = 1:N
             tic
             % Load default contrasts for conditions of interest
-            cond_list = tmfc.gPPI.conditions;
+            cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
             for j = 1:length(cond_list)               
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...

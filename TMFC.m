@@ -350,7 +350,24 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                         
                         if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 1
                              disp('Continue to select contrasts');
+                             verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR);
+                             % Select contrasts
                              tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 2);
+
+                             if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR)                                 
+                                 sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 2, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR), tmfc.ROI_set_number);                           
+                                 if sub_check_roi(length(tmfc.subjects)) == 1
+                                     disp('ROI-ROI contrasts succefully generated');
+                                 else
+                                     disp('ROI-ROI contrasts failed');
+                                 end
+                                 sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, 2, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR), tmfc.ROI_set_number);
+                                  if sub_check_svox(length(tmfc.subjects)) == 1
+                                     disp('Seed-Voxel contrasts succefully generated');
+                                 else
+                                     disp('Seed-Voxel contrasts failed');
+                                  end
+                             end
                         else
                             STATUS = TMFC_CON_GUI(V_gPPI_FIR, 7);
                             if STATUS == 0
@@ -396,7 +413,7 @@ end
 %% =============================== [ gPPI ] ===============================
 function gPPI(ButtonH, EventData, TMFC_GUI)
             
-    try 
+   % try 
         cd(tmfc.project_path);    
         
         MW_Freeze(1);
@@ -451,7 +468,25 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                         
                         if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 1
                              disp('Continue to select contrasts');
+                             verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI);
+                             % Select contrasts
                              tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 1);
+
+                             if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)                                 
+                                 sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 1, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI), tmfc.ROI_set_number);                           
+                                 if sub_check_roi(length(tmfc.subjects)) == 1
+                                     disp('ROI-ROI contrasts succefully generated');
+                                 else
+                                     disp('ROI-ROI contrasts failed');
+                                 end
+                                 sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, 1, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI), tmfc.ROI_set_number);
+                                  if sub_check_svox(length(tmfc.subjects)) == 1
+                                     disp('Seed-Voxel contrasts succefully generated');
+                                 else
+                                     disp('Seed-Voxel contrasts failed');
+                                  end
+                             end
+                             
                         else
                             STATUS = TMFC_CON_GUI(V_gPPI, 6);
                             if STATUS == 0
@@ -486,9 +521,9 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
         
         
         MW_Freeze(0);
-    catch
-        warning('Please select subjects & compute PPIs to perform gPPI computation');
-    end
+    %catch
+%        warning('Please select subjects & compute PPIs to perform gPPI computation');
+%    end
     
     
     
