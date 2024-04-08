@@ -7,7 +7,6 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
     
     LST_1 = genset_1(tmfc,TMFC_analysis);
     ctr_L1 = size(LST_1);
-    disp('test');
     if ctr_L1(1) == 0 
         switch(TMFC_analysis)
                 case 1

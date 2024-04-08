@@ -124,6 +124,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B5a, 'callback', {@gPPI, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B5b, 'callback', {@gPPI_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B7, 'callback', {@BSC, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B9, 'callback', {@BGFC, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
@@ -137,11 +138,8 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     % BSC_after_FIR
     
     % Results
-
     % save_project
     % change_paths
-
-    %
 
     set(handles.TMFC_GUI_B13b, 'callback', {@tempsave, handles.TMFC_GUI});
 
@@ -175,10 +173,125 @@ end
 function tempsave(ButtonH, EventData, TMFC_GUI)
     assignin('base', 'tmfc', tmfc);
 end
-%% ============================= [ BGFC ] =============================
-function BGFC(buttonG, EventData, TMFC_GUI)
+%% ================================ [ BSC ] ===============================
+function BSC(buttonH, EventData, TMFC_GUI)
 
-    %try 
+    try
+        cd(tmfc.project_path);
+        MW_Freeze(1);
+        V_BSC = 0;
+        try
+            
+            for subi = 1:length(tmfc.subjects)
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS','Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 1;
+                else
+                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 0;
+                end
+            end
+            
+        end
+        try
+            SZ_tmfc = size(tmfc.subjects);
+            V_BSC = 0;
+            for i = 1:SZ_tmfc(2)
+                % checking status of BSC completion
+                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC == 0
+                    V_BSC = i ;
+                    break;
+                end
+            end           
+        end
+        try
+           SZC_tmfc = size(tmfc.LSS.conditions);
+           post = tmfc.subjects(length(tmfc.subjects)).LSS.session(max(tmfc.LSS.conditions.sess)).condition(SZC_tmfc(2)).trials; 
+        end
+        
+        
+        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
+            
+            if isfield(tmfc.subjects, 'LSS')
+                
+                if ~any(post == 0)
+                    
+                    if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
+                        disp('Initiating BSC LSS computation');   
+                        
+                        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 0
+                        % first time execution
+                                [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
+                                for i = 1:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
+                                end
+                                for i = 1:length(contrasts)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title = contrasts(i).title;
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights = contrasts(i).weights;
+                                end
+                                disp('BSC computation completed');
+                        else
+                            % Recompute case
+                            if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 1
+                                fprintf('BSC has been completely calcualted using the LSS settings of %d Sessions and %d Conditions. \n', max(tmfc.LSS.conditions.sess), SZC_tmfc(2));
+                                fprintf('To calcualte BSC with different settings, please recompute LSS BSC with desrided combination of sessions and conditions \n');         
+                                BSC_OKAY(tmfc);
+                                disp('Continue to select contrasts');
+                                verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
+                                 % Select contrasts
+                                 tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 3);
+
+                                 if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)                                 
+                                     sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 3, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC), tmfc.ROI_set_number);                           
+                                     if sub_check_roi(length(tmfc.subjects)) == 1
+                                         disp('ROI-ROI contrasts succefully generated');
+                                     else
+                                         disp('ROI-ROI contrasts failed');
+                                     end
+                                     sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, 3, length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC), tmfc.ROI_set_number);
+                                      if sub_check_svox(length(tmfc.subjects)) == 1
+                                         disp('Seed-Voxel contrasts succefully generated');
+                                     else
+                                         disp('Seed-Voxel contrasts failed');
+                                      end
+                                 end
+                                 disp('BSC Contrast Computation completed');
+                            else
+                                % restart computations
+                                sub_check = tmfc_BSC(tmfc,tmfc.ROI_set_number);
+                                for i = 1:length(tmfc.subjects)
+                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
+                                end
+                                disp('BSC computation completed');
+                            end
+                        end
+                    else
+                        warning('Please select ROIs to continue with BSC computation');
+                    end
+                    
+                else
+                    warning('Please complete GLM BSC computation to proceed with BSC computation');
+                end
+                
+            else
+                warning('Please compute LSS GLM for the selected subjects to proceed with computation of Beta Series Correlation');
+            end
+            
+        else
+            warning('Please select subjects and compute LSS GLM to proceed with BSC computaiton');
+        end
+        
+        
+        
+        
+        MW_Freeze(0);
+    catch
+        warning('Please select subjects & compute LSS GLM to perform BSC computation');    
+    end
+    
+end
+%% =============================== [ BGFC ] ===============================
+function BGFC(buttonH, EventData, TMFC_GUI)
+
+    try 
        cd(tmfc.project_path); 
        MW_Freeze(1);
        V_BGFC = 0;
@@ -279,10 +392,10 @@ function BGFC(buttonG, EventData, TMFC_GUI)
        end
         MW_Freeze(0);
         
-    %catch
+    catch
         
-%        warning('Please select subjects & compute FIRs to perform BGFC computaiton');
-%    end
+        warning('Please select subjects & compute FIRs to perform BGFC computaiton');
+    end
     
     
     
@@ -413,7 +526,7 @@ end
 %% =============================== [ gPPI ] ===============================
 function gPPI(ButtonH, EventData, TMFC_GUI)
             
-   % try 
+    try 
         cd(tmfc.project_path);    
         
         MW_Freeze(1);
@@ -521,9 +634,9 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
         
         
         MW_Freeze(0);
-    %catch
-%        warning('Please select subjects & compute PPIs to perform gPPI computation');
-%    end
+    catch
+        warning('Please select subjects & compute PPIs to perform gPPI computation');
+    end
     
     
     
@@ -1556,9 +1669,9 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
        warning('Please select subjects & project path to perform LSS GLM regression');
     end
         
-end % closing LSS regression
+end 
 
-%% ============================[ LSS GLM ]=================================
+%% ============================[ LSS FIR ]=================================
 function LSS_FIR(ButtonH, EventData, TMFC_GUI)
 
     try
@@ -2532,7 +2645,7 @@ function [STATUS] = TMFC_CON_GUI(INDEX, option)
             % BGFC
             res_str_0 = 'BGFC computation';
             res_str_1 = {'Continue BGFC computation from'};
-            b_res = 'Cancel';
+            b_res = 'Cancel';            
     end
     
     
@@ -2836,7 +2949,7 @@ TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized
 end
 
 function BGFC_OKAY(tmfc)
-TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal');%,'CloseRequestFcn', @OKAY, 'Tag', 'BGFC');    
+TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'BGFC');    
     B1 = {strcat('BGFC computation completed using ',32,num2str(tmfc.FIR.window),' Windows & ',32,num2str(tmfc.FIR.bins),' Bins.'),'To change the number of windows & bins, recompute FIRs'};
     TMFC_BGFC_S1 = uicontrol(TMFC_BGFC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'fontunits','normalized','fontSize', 0.38,'backgroundcolor','w');
     OK = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.24],'fontunits','normalized','fontSize', 0.40);
@@ -2849,6 +2962,23 @@ TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normaliz
     uiwait();
 
 end
+
+function BSC_OKAY(tmfc)
+SZC_tmfc = size(tmfc.LSS.conditions);
+TMFC_BSC_Diag = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.20],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'BSC');    
+    B1 = {strcat('BSC computation completed using ',32,num2str(max(tmfc.LSS.conditions.sess)),' Sessions & ',32,num2str(SZC_tmfc(2)),' Conditions.','To change the number of sessions & conditions',' recompute LSS GLM.'),'','Proceed with contrasts selection'};
+    TMFC_BSC_S1 = uicontrol(TMFC_BSC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.25 0.90 0.60],'fontunits','normalized','fontSize', 0.12,'backgroundcolor','w');
+    OK = uicontrol(TMFC_BSC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.16 0.3 0.16],'fontunits','normalized','fontSize', 0.40);
+    
+    set(OK, 'callback', @OKAY);
+    
+    function OKAY(~,~)
+        delete(TMFC_BSC_Diag);
+    end
+    uiwait();
+
+end
+
 % OUTLINE
     
     % CD project path
