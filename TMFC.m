@@ -233,7 +233,6 @@ function BSC(buttonH, EventData, TMFC_GUI)
                             if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 1
                                 fprintf('BSC has been completely calcualted using the LSS settings of %d Sessions and %d Conditions. \n', max(tmfc.LSS.conditions.sess), SZC_tmfc(2));
                                 fprintf('To calcualte BSC with different settings, please recompute LSS BSC with desrided combination of sessions and conditions \n');         
-                                BSC_OKAY(tmfc);
                                 disp('Continue to select contrasts');
                                 verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
                                  % Select contrasts
@@ -2963,21 +2962,6 @@ TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normaliz
 
 end
 
-function BSC_OKAY(tmfc)
-SZC_tmfc = size(tmfc.LSS.conditions);
-TMFC_BSC_Diag = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.20],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'BSC');    
-    B1 = {strcat('BSC computation completed using ',32,num2str(max(tmfc.LSS.conditions.sess)),' Sessions & ',32,num2str(SZC_tmfc(2)),' Conditions.','To change the number of sessions & conditions',' recompute LSS GLM.'),'','Proceed with contrasts selection'};
-    TMFC_BSC_S1 = uicontrol(TMFC_BSC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.25 0.90 0.60],'fontunits','normalized','fontSize', 0.12,'backgroundcolor','w');
-    OK = uicontrol(TMFC_BSC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.16 0.3 0.16],'fontunits','normalized','fontSize', 0.40);
-    
-    set(OK, 'callback', @OKAY);
-    
-    function OKAY(~,~)
-        delete(TMFC_BSC_Diag);
-    end
-    uiwait();
-
-end
 
 % OUTLINE
     
