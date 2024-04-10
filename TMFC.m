@@ -128,7 +128,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B11, 'callback', {@BSC_after_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});                 % Results button - Development in progress
-    set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B13a, 'callback', {@OPEN_Project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13b, 'callback', {@SAVE_PROJ, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14a, 'callback', {@CP_GUI, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@tmfc_settings, handles.TMFC_GUI});
@@ -1264,6 +1264,7 @@ end % Closing LSS GLM function
 %       - tmfc_specify_contrasts_GUI.m       (External)
 %       - tmfc_ROI_to_ROI_contrast.m         (External)
 %       - tmfc_seed_to_voxel_contrast.m      (External)
+
 function BSC(buttonH, EventData, TMFC_GUI)
 
     % Checking for subjects selection
@@ -1351,7 +1352,7 @@ function BSC(buttonH, EventData, TMFC_GUI)
                                  % if new contrasts added then proceed with processing
                                  if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)       
                                      
-                                     % Perform computation of gPPI for all newly added contrasts
+                                     % Perform computation of BSC for all newly added contrasts
                                      for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
                                          
                                          % ROI to ROI generation
@@ -1762,246 +1763,304 @@ function BGFC(buttonH, EventData, TMFC_GUI)
 end % Closing BGFC function
 
 %% ============================[ LSS FIR ]=================================
+% Performing LSS FIR processing 
+% Dependencies: 
+%       - tmfc_LSS_GUI.m       (External)
+%       - tmfc_LSS_after_FIR.m (External)
+%       - TMFC_RES_GUI()       (Internal)
+%       - TMFC_CON_GUI()       (Internal)
+    
 function LSS_FIR(ButtonH, EventData, TMFC_GUI)
 
+    % Checking for subjects selection
     try
+        % Change to Project directory & Freeze TMFC Window
         cd(tmfc.project_path);           
-    
+        MW_Freeze(1);
 
-    
-    % Freezing the Main window
-    MW_Freeze(1);
-    L_break = 0;
-    V_LSS = 0;
-     try
-     
-     % code-----
-        cond_list = tmfc.LSS_after_FIR.conditions;
-        sess = []; sess_num = []; N_sess = [];
-        for i = 1:length(cond_list)
-            sess(i) = cond_list(i).sess;
-        end
-        sess_num = unique(sess);
-        N_sess = length(sess_num);
-
-        for subi = 1:length(tmfc.subjects)              
-            SPM = load(tmfc.subjects(subi).path);
-            for j = 1:N_sess 
-                % Trials of interest
-                E = 0;
-                trial.cond = [];
-                trial.number = [];
-                for k = 1:length(cond_list)
-                    if cond_list(k).sess == sess_num(j)
-                        E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
-                        trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
-                        trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
-                    end
-                end
-                % Check
-                for k = 1:E
-                    if exist(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(subi,'%04.f')],'GLM_batches', ...
-                                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' ...
-                                            regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' ...
-                                            num2str(trial.number(k)) '].mat']), 'file')
-                       condition(trial.cond(k)).trials(trial.number(k)) = 1;
-                    else           
-                       condition(trial.cond(k)).trials(trial.number(k)) = 0;
-                    end
-                end
-                tmfc.subjects(subi).LSS_after_FIR.session(sess_num(j)).condition = condition;
-                clear condition
-            end
-            clear SPM E trial
-        end
-        clear cond_list sess sess_num N_sess
-        % code ---
+        % Variables to store progress of LSS FIR progression
+        L_break = 0;
+        V_LSS = 0;
         
+        % Track & Update LSS FIR progress to TMFC variable & Window 
         try
-            SZ_tmfc = size(tmfc.subjects);
-            allValues = [tmfc.LSS_after_FIR.conditions.sess];
-            SZS_tmfc = max(allValues); % maximum Sessions
-            SZC_tmfc = size(tmfc.LSS_after_FIR.conditions); % maximum Conditions
-            socket = 0;
-            if SZC_tmfc(2) == 1 
-                socket = tmfc.LSS_after_FIR.conditions.number;
+            cond_list = tmfc.LSS_after_FIR.conditions;
+            sess = []; sess_num = []; N_sess = [];
+            for i = 1:length(cond_list)
+                sess(i) = cond_list(i).sess;
             end
-            for i = 1:SZ_tmfc(2)
-                % Checking status of LSS after FIR completion
-                if L_break == 1
-                    break;
-                else
-                    for j = 1:SZS_tmfc
-                        if L_break == 1
-                            break;
-                        else
-                            for k = 1:SZC_tmfc(2)
-                                if L_break == 1
-                                    break;
-                                else
-                                    if ~socket==0
-                                        % if there is only one condition
-                                        if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(socket).trials == 0)
-                                            V_LSS = i ;
-                                            L_break = 1;
-                                            break;
-                                        end
-                                    else
-                                        if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(k).trials == 0)
-                                            V_LSS = i ;
-                                            L_break = 1;
-                                            break;
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end                
-                end
-            end
+            sess_num = unique(sess);
+            N_sess = length(sess_num);
 
-            if V_LSS == 0
-                set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            elseif V_LSS == 1
-                set(handles.TMFC_GUI_S10,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-            else
-                set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            for subi = 1:length(tmfc.subjects)              
+                SPM = load(tmfc.subjects(subi).path);
+                for j = 1:N_sess 
+                    % Trials of interest
+                    E = 0;
+                    trial.cond = [];
+                    trial.number = [];
+                    for k = 1:length(cond_list)
+                        if cond_list(k).sess == sess_num(j)
+                            E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
+                            trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
+                            trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
+                        end
+                    end
+                    % Check
+                    for k = 1:E
+                        if exist(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(subi,'%04.f')],'GLM_batches', ...
+                                                ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' ...
+                                                regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' ...
+                                                num2str(trial.number(k)) '].mat']), 'file')
+                           condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                        else           
+                           condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                        end
+                    end
+                    tmfc.subjects(subi).LSS_after_FIR.session(sess_num(j)).condition = condition;
+                    clear condition
+                end
+                clear SPM E trial
             end
+            clear cond_list sess sess_num N_sess
         end
-        pause(0.1); 
-    end
-    
-    if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-        % Checking if subjects has been selected
-        last_size = size(tmfc.subjects);
-        if isfield(tmfc.subjects, 'FIR') && tmfc.subjects(last_size(2)).FIR == 1
-        disp('Initiating LSS after FIR');        
         
-            if ~isfield(tmfc, 'LSS_after_FIR') 
-            % First time exeuction
-
-                % select conditions    
-                tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
-
-                if isstruct(tmfc.LSS_after_FIR.conditions) && ~isfield(tmfc.subjects, 'LSS_after_FIR')
-
-                    sub_check = tmfc_LSS_after_FIR(tmfc,1);
-                    for i=1:length(tmfc.subjects)
-                        tmfc.subjects(i).LSS_after_FIR = sub_check(i);
-                    end
-
+        % Update LSS FIR progress to TMFC variable & Window 
+        try
+                SZ_tmfc = size(tmfc.subjects);
+                allValues = [tmfc.LSS_after_FIR.conditions.sess];
+                SZS_tmfc = max(allValues); % maximum Sessions
+                SZC_tmfc = size(tmfc.LSS_after_FIR.conditions); % maximum Conditions
+                socket = 0;
+                if SZC_tmfc(2) == 1 
+                    socket = tmfc.LSS_after_FIR.conditions.number;
                 end
-
-            elseif isfield(tmfc.LSS_after_FIR, 'conditions') && ~isfield(tmfc.subjects, 'LSS_after_FIR')
-                % Execution if CTLR + C is pressed 
-                % Can add code for exuection from last complied .mat file
-
-                tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
-
-                if isstruct(tmfc.LSS_after_FIR.conditions)
-
-                    sub_check = tmfc_LSS_after_FIR(tmfc,1);
-                    for i=1:length(tmfc.subjects)
-                        tmfc.subjects(i).LSS_after_FIR = sub_check(i);
-                    end
-
-                end
-
-            else
-                if isfield(tmfc.LSS_after_FIR, 'conditions') && isfield(tmfc.subjects, 'LSS_after_FIR') 
-
-                    % Restart case
-                    % if last subject's LSS is proccessed, then restart
-                    if any(tmfc.subjects(SZ_tmfc(2)).LSS_after_FIR.session(SZS_tmfc).condition(tmfc.LSS_after_FIR.conditions.number).trials == 1)
-
-                        STATUS = TMFC_RES_GUI(3);
-                        if STATUS == 1
-                            verify_old = tmfc.LSS_after_FIR.conditions;
-                            tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
-                            if isstruct(tmfc.LSS_after_FIR.conditions)
-                                try
-                                    rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
-                                    if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
-                                        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
-                                    end
-                                    disp('Deleting old files');
-                                end
-                                sub_check = tmfc_LSS_after_FIR(tmfc,1);
-                                for i=1:length(tmfc.subjects)
-                                    tmfc.subjects(i).LSS_after_FIR = sub_check(i);
-                                end
-                            else
-                                tmfc.LSS_after_FIR.conditions = verify_old;                            
-                            end
-                        end
-
+                for i = 1:SZ_tmfc(2)
+                    % Checking status of LSS after FIR completion
+                    if L_break == 1
+                        break;
                     else
-                        % continue case
-                        STATUS = TMFC_CON_GUI(V_LSS, 3);
-                        % THE ERROR occures somewhere here
-                        if STATUS == 0
-                            disp(V_LSS);
-                            sub_check = tmfc_LSS_after_FIR(tmfc,V_LSS);
-                            % THE ERROR TO here
-                            for i=V_LSS:length(tmfc.subjects)
-                                tmfc.subjects(i).LSS_after_FIR = sub_check(i);
-                            end
-                        elseif STATUS == 1
-                            verify_old = tmfc.LSS_after_FIR.conditions;
-                            tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
-                            if isstruct(tmfc.LSS_after_FIR.conditions)
-                                try
-                                    rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
-                                    if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
-                                        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
-                                    end
-                                    disp('Deleting old files');
-                                end
-                                sub_check = tmfc_LSS_after_FIR(tmfc,1);
-                                for i=1:length(tmfc.subjects)
-                                    tmfc.subjects(i).LSS_after_FIR = sub_check(i);
-                                end
+                        for j = 1:SZS_tmfc
+                            if L_break == 1
+                                break;
                             else
-                                tmfc.LSS_after_FIR.conditions = verify_old;                            
+                                for k = 1:SZC_tmfc(2)
+                                    if L_break == 1
+                                        break;
+                                    else
+                                        if ~socket==0
+                                            % if there is only one condition
+                                            if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(socket).trials == 0)
+                                                V_LSS = i ;
+                                                L_break = 1;
+                                                break;
+                                            end
+                                        else
+                                            if any(tmfc.subjects(i).LSS_after_FIR.session(j).condition(k).trials == 0)
+                                                V_LSS = i ;
+                                                L_break = 1;
+                                                break;
+                                            end
+                                        end
+                                    end
+                                end
                             end
-                        else
-                            warning('LSS after FIR regression not initiated');
-                        end
+                        end                
                     end
                 end
-            end
-        
-        
-        else
-            warning('Please complete FIR regression to continue with LSS regression');
+
+                if V_LSS == 0
+                    set(handles.TMFC_GUI_S10,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+                elseif V_LSS == 1
+                    set(handles.TMFC_GUI_S10,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+                else
+                    set(handles.TMFC_GUI_S10,'String', strcat(num2str(V_LSS-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+                end
         end
+
+        % Check if subjects have been selected
+        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
             
-    else
-        warning('Please select subjects to continue with LSS Regression');
-    end
+            % Checking the progression of the subjects
+            last_size = size(tmfc.subjects);
+            if isfield(tmfc.subjects, 'FIR') && tmfc.subjects(last_size(2)).FIR == 1
+                           
+                % Check if LSS FIR has been computed
+                if ~isfield(tmfc, 'LSS_after_FIR') 
+                    % First time exeuction
+
+                    % Select LSS conditions    
+                    tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+
+                    % If LSS conditions has been selected by user
+                    if isstruct(tmfc.LSS_after_FIR.conditions) && ~isfield(tmfc.subjects, 'LSS_after_FIR')
+
+                        fprintf('\nInitializing LSS FIR Computation\n');
+                        sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                        for i=1:length(tmfc.subjects)
+                            tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                        end
+                        fprintf('LSS FIR Computation Completed\n');
+                        
+                    end
+
+                elseif isfield(tmfc.LSS_after_FIR, 'conditions') && ~isfield(tmfc.subjects, 'LSS_after_FIR')
+                    % Execution if CTLR + C is pressed 
+                    
+                    % Select LSS conditions    
+                    tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+
+                    % If LSS conditions has been selected by user
+                    if isstruct(tmfc.LSS_after_FIR.conditions)
+
+                        fprintf('\nInitializing LSS FIR Computation\n');
+                        sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                        for i=1:length(tmfc.subjects)
+                            tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                        end
+                        fprintf('LSS FIR Computation Completed\n');
+                        
+                    end
+
+                else
+                    
+                    % For other conditions of exeuction 
+                    if isfield(tmfc.LSS_after_FIR, 'conditions') && isfield(tmfc.subjects, 'LSS_after_FIR') 
+
+                        % Restart case
+                        if any(tmfc.subjects(SZ_tmfc(2)).LSS_after_FIR.session(SZS_tmfc).condition(tmfc.LSS_after_FIR.conditions.number).trials == 1)
+
+                            % Ask user if Restart or cancel 
+                            STATUS = TMFC_RES_GUI(3);
+                            
+                            if STATUS == 1
+                                
+                                % Storage of conditions for restoration
+                                verify_old = tmfc.LSS_after_FIR.conditions;
+                                
+                                % Ask user for New conditions
+                                tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+                                
+                                % IF conditions are selected
+                                if isstruct(tmfc.LSS_after_FIR.conditions)
+                                    
+                                    % Remove previously generated files & directories
+                                    try
+                                        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
+                                        if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
+                                            rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
+                                        end
+                                        fprintf('\nDeleting old files\n');
+                                    end
+                                    
+                                    fprintf('\nRestarting LSS FIR Computation\n');
+                                    sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                                    for i=1:length(tmfc.subjects)
+                                        tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                                    end
+                                    fprintf('LSS FIR Computation Completed\n');
+                                    
+                                else
+                                    % Restoring Previous LSS FIR Conditions if user cancels operation
+                                    tmfc.LSS_after_FIR.conditions = verify_old;                            
+                                end
+                                
+                            end
+
+                        else
+                            % Continue case
+                            
+                            % Ask user if Continue, Cancel, restart
+                            STATUS = TMFC_CON_GUI(V_LSS, 3);
+                            
+                            % If Continue
+                            if STATUS == 0
+                                
+                                fprintf('\nContinuing LSS FIR Computation\n');
+                                sub_check = tmfc_LSS_after_FIR(tmfc,V_LSS);
+                                for i=V_LSS:length(tmfc.subjects)
+                                    tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                                end
+                                fprintf('LSS FIR Computation Completed\n');
+                                
+                            elseif STATUS == 1
+                                
+                                % Storage of conditions for restoration
+                                verify_old = tmfc.LSS_after_FIR.conditions;
+                                
+                                % Ask user for New conditions
+                                tmfc.LSS_after_FIR.conditions = tmfc_LSS_GUI(tmfc.subjects(1).path);
+                                
+                                % IF conditions are selected
+                                if isstruct(tmfc.LSS_after_FIR.conditions)
+                                    
+                                    % Remove previously generated files & directories
+                                    try
+                                        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR'),'s');
+                                        if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
+                                            rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
+                                        end
+                                        disp('Deleting old files');
+                                    end
+                                    
+                                    fprintf('\nRestarting LSS FIR Computation\n');
+                                    sub_check = tmfc_LSS_after_FIR(tmfc,1);
+                                    for i=1:length(tmfc.subjects)
+                                        tmfc.subjects(i).LSS_after_FIR = sub_check(i);
+                                    end
+                                    fprintf('LSS FIR Computation Completed\n');
+                                    
+                                else
+                                    % Restoring Previous LSS FIR Conditions if user cancels operation
+                                    tmfc.LSS_after_FIR.conditions = verify_old;                            
+                                end
+                                
+                            else
+                                warning('LSS after FIR regression not initiated');
+                            end
+                            
+                        end
+                        
+                    end
+                    
+                end
+
+            else
+                warning('Please complete FIR regression to continue with LSS regression');
+            end
+
+        else
+            warning('Please select subjects to continue with LSS Regression');
+        end
     
-    
+        % Unfreeze TMFC Main Window
         MW_Freeze(0);
+        
     catch
        warning('Please select subjects & project path to perform LSS after FIR regression');
     end
         
-end
-
-%% ==============================[ Reset ]=============REMOVE later========
-function reset(ButtonH, EventData, TMFC_GUI)
-    assignin('base', 'tmfc', tmfc);
-    fprintf('\nCurrent TMFC variable has been saved to workspace\n');
-end
+end % Closing LSS FIR function
 
 %% =========================== [ BSC After FIR] ===========================
+% Performing BSC FIR processing 
+% Dependencies: 
+%       - tmfc_BSC_after_FIR.m            (External)
+%       - tmfc_specify_contrasts_GUI.m    (External)
+%       - tmfc_ROI_to_ROI_contrast.m      (External)
+%       - tmfc_seed_to_voxel_contrast.m   (External)
+
 function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
 
+    % Checking for subjects selection
     try
+       % Change to Project directory & Freeze TMFC Window
        cd(tmfc.project_path);
        MW_Freeze(1);
-       V_BSC = 0;
+       
+       % Track & Update BSC FIR progress to TMFC variable & Window
        try
+           V_BSC = 0;
             for subi = 1:length(tmfc.subjects)
                 if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR','Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 1;
@@ -2010,6 +2069,8 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                 end
             end 
        end
+       
+       % Update BSC progress to TMFC variable 
        try
            SZ_tmfc = size(tmfc.subjects);
             V_BSC = 0;
@@ -2021,23 +2082,34 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                 end
             end    
        end
+       
+       % Track & Store the number of Conditions, Sessions, trial LSS for FIR
        try
            SZC_tmfc = size(tmfc.LSS_after_FIR.conditions);
            post = tmfc.subjects(length(tmfc.subjects)).LSS_after_FIR.session(max(tmfc.LSS_after_FIR.conditions.sess)).condition(SZC_tmfc(2)).trials; 
        end
        
+       % Check if Seubjects have been selected
        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
            
+           % Check if LSS FIR has been computed
            if isfield(tmfc.subjects, 'LSS_after_FIR')
                
+               % Check if all LSS FIR variables have been processed
                if ~any(post == 0)
                    
+                   % Check if ROI set has been selected
                    if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
-                       disp('Initiating BSC FIR computation');   
-                   
+                       
                         if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 0
-                        % first time execution
+                                % First time execution of BSC
+                                
+                                fprinft('\nInitiating BSC FIR computation\n');  
+                                
+                                % Processing BSC LSS & generation of default contrasts
                                 [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+                                
+                                % Assigning progress of contrasts, BSC FIR to TMFC
                                 for i = 1:length(tmfc.subjects)
                                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
                                 end
@@ -2045,46 +2117,59 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                                     tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title = contrasts(i).title;
                                     tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights = contrasts(i).weights;
                                 end
-                                disp('BSC FIR computation completed');
+                                fprintf('BSC FIR computation completed\n');
+                                
                         else
-                            % Recompute case
+                            
+                            % Restart case
                             if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 1
                                 fprintf('BSC FIR has been completely calcualted using the LSS FIR settings of %d Sessions and %d Conditions. \n', max(tmfc.LSS_after_FIR.conditions.sess), SZC_tmfc(2));
                                 fprintf('To calcualte BSC FIR with different settings, please recompute LSS FIR with desrided combination of sessions and conditions \n');         
                                 disp('Continue to select contrasts');
+                                
+                                % Variable to store length of previously selected contrasts
                                 verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
-                                 % Select contrasts
+                                
+                                 % Selection of Contrasts
                                  tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 4);
 
+                                 % if new contrasts added then proceed with processing
                                  if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)      
                                      
+                                     % Perform computation of BSC FIR for all newly added contrasts
                                      for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)
                                          
+                                         % ROI to ROI generation
                                          sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 4, i, tmfc.ROI_set_number);                           
                                          if sub_check_roi(length(tmfc.subjects)) == 1
-                                             fprintf('ROI-ROI contrasts succefully generated for contrast №: %d\n', i);
+                                             fprintf('\nROI-ROI contrasts succefully generated for contrast №: %d\n', i);
                                          else
-                                             disp('ROI-ROI contrasts failed');
+                                             fprintf('ROI-ROI contrasts failed\n');
                                          end
+                                         
+                                         % Seed to Voxel generation
                                          sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, 4, i, tmfc.ROI_set_number);
                                           if sub_check_svox(length(tmfc.subjects)) == 1
-                                             fprintf('Seed-Voxel contrasts succefully generated for contrast №: %d\n', i);
+                                             fprintf('\nSeed-Voxel contrasts succefully generated for contrast №: %d\n', i);
                                          else
-                                             disp('Seed-Voxel contrasts failed');
+                                             fprintf('Seed-Voxel contrasts failed\n');
                                          end
                                           
                                      end
                                     
                                  end
-                                 disp('BSC FIR Contrast Computation completed');
+                                 
                             else
-                                % restart computations
+                                % Restart Computation
+                                
+                                % Processing BSC FIR computation
                                 sub_check = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
                                 for i = 1:length(tmfc.subjects)
                                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
                                 end
-                                disp('BSC FIR computation completed');
+                                fprintf('\nBSC FIR computation completed\n');
                             end
+                            
                         end
                    
                    else
@@ -2103,88 +2188,54 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
            warning('Please select subjects and compute LSS FIR to proceed with BSC FIR computaiton');
        end
        
-       
-        MW_Freeze(0);
+       % Unfreeze TMFC Main Window
+       MW_Freeze(0);
     catch
         warning('Please select subjects & compute LSS FIR to perform BSC FIR computation');    
     end
     
-    
-    
-    
-end
+end % Closing BSC FIR function
 
+%% ==========================[ Load Project ]==============================
+% Loading of (.m) into TMFC toolbox
+% Dependencies:
+%       - evaluate_file() (Internal)
 
-       
+function OPEN_Project(ButtonH, EventData, TMFC_GUI)
 
-%% =============================[ Close ]==================================
- 
-% Function to peform Save & Exit from TMFC function. This function is 
-% linked to the close button on the top right handside of the Window
+    % Get File name, Directory of File to be loaded
+    [filename_LO, pathname_LO] = uigetfile(pwd,'*.mat', 'Select .mat file');
 
-% NEED TO ADD CONDITION WHEN TMFC VARIABLE IS DELETED BUT TRY TO EXIT
-% DELETE TMFC in WS-> Close TMFC -> DO NOT ASK TO SAVE (Give warning)
-function close_GUI(ButtonH, EventData, TMFC_GUI) 
-    
-        % Exit Dialouge GUI
-        EXIT_PROMPT = figure('Name', 'TMFC: Exit', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.25 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'EXIT_FIN', 'WindowStyle','modal'); %X Y W H
+    % If user has selected a file the proceed else warning
+    if filename_LO ~= 0                                              
+        % Construct Full Path to file
+        fullpath_L = fullfile(pathname_LO, filename_LO);            
 
-        % Content - Can be changed to a single sentence using \html or
-        % sprtinf
-        EX_Q1 = uicontrol(EXIT_PROMPT,'Style','text','String', 'Would you like to save your progress','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
-        EX_Q2 = uicontrol(EXIT_PROMPT,'Style','text','String', 'before exiting TMFC toolbox?', 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
+        % Load Data from File into temporary variable
+        loaded_data_L = load(fullpath_L);            
 
-        % Buttons of the GUI
-        EX_YES = uicontrol(EXIT_PROMPT,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.38);
-        EX_NO = uicontrol(EXIT_PROMPT,'Style','pushbutton', 'String', 'No','Units', 'normalized','fontunits','normalized', 'fontSize', 0.38);
+        % Get the name of the variable as in file 
+        variable_name_L = fieldnames(loaded_data_L);                
 
-        % Spawn Positions of the GUI text boxes & buttons
-        EX_Q1.Position = [0.04 0.55 0.94 0.260];
-        EX_Q2.Position = [0.10 0.40 0.80 0.260];
-        EX_YES.Position = [0.16 0.18 0.300 0.200];
-        EX_NO.Position = [0.57 0.18 0.300 0.200];
+        % Get value of the variable as in file
+        tmfc = loaded_data_L.(variable_name_L{1});      
 
-        % Colour of Text boxes & actions of buttons
-        set([EX_Q1,EX_Q2],'backgroundcolor',get(EXIT_PROMPT,'color'));
-        set(EX_NO, 'callback', @EX_WO_SAVE);
-        set(EX_YES, 'callback', @EX_W_SAVE);
-        
-        % EX_NO = Exit without saving TMFC toolbox
-        % EX_YES = Save & then Exit TMFC toolbox
-        
-    % Function to Exit toolbox WITHOUT saving TMFC variable
-    function EX_WO_SAVE(~,~)
-        % Closes dialouge box -> closes Main GUI
-        close(EXIT_PROMPT);
-        delete(handles.TMFC_GUI);
-        disp('Goodbye!');
+        % Evaluate file & Update TMFC, TMFC window with progress
+        tmfc = evaluate_file(tmfc);
+        fprintf('Successfully loaded file "%s.m"\n', filename_LO);
+    else
+        warning('No file selected to load');
     end
-    
-    % Function to Exit toolbox AFTER saving TMFC variable
-    function EX_W_SAVE(~,~)
-        % Performs saving of TMFC variable using SAVE_PROJECT function
-        CT_1 = SAVE_PROJ();
-        
-        % Based on the result of successful save, TMFC toolbox is
-        % closed (i.e. Save->Save Status-> Close Main GUI)
-        if CT_1 == 1
-            close(EXIT_PROMPT);
-            delete(handles.TMFC_GUI);
-            disp('Goodbye!');
-        end
-    end
-end
-    
+
+end  % Closing Load project function
+
 %% ==========================[ Save Project ]==============================
-
-% Function to perform Saving of TMFC variable from workspace to
-% individual .m file in user desired location
+% Function to perform Saving of TMFC variable from workspace to individual .m file in user desired location
+% Dependencies:
+%       - Saver() (Internal)
 
 function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, TMFC_GUI)
-   
-    % Acquire variable from Workspace
-    %TMFC = evalin('base', 'tmfc');
-    
+       
     % Ask user for Filename & location name:
     [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as'); %pwd
     
@@ -2213,58 +2264,34 @@ function SAVE_STAT = SAVE_PROJ(ButtonH, EventData, TMFC_GUI)
         else
             fprintf('File not saved ');
         end
-        %save(pathname, replace( filename, '.mat' , "" ));
-        %save(fullpath, 'TMFC');
-        %fprintf('File saved successfully in path: %s\n', fullpath);
     end
           
-end
-
-%% ==========================[ Load Project ]==============================
-function load_project(ButtonH, EventData, TMFC_GUI)
-
-    % Get File name, Directory of File to be loaded
-    [filename_LO, pathname_LO] = uigetfile(pwd,'*.mat', 'Select .mat file');
-
-    % If user has selected a file the proceed else warning
-    if filename_LO ~= 0                                              
-        % Construct Full Path to file
-        fullpath_L = fullfile(pathname_LO, filename_LO);            
-
-        % Load Data from File into temporary variable
-        loaded_data_L = load(fullpath_L);            
-
-        % Get the name of the variable as in file 
-        variable_name_L = fieldnames(loaded_data_L);                
-
-        % Get value of the variable as in file
-        tmfc = loaded_data_L.(variable_name_L{1});      
-
-        tmfc = evaluate_file(tmfc);
-        fprintf('Successfully loaded file "%s.m"\n', filename_LO);
-
-    else
-        warning('No file selected to load');
-    end
-
-end   
+end % Closing Save project Function
 
 %% ==========================[ Change Paths ]==============================
+% Function to perform Change paths of TMFC subjects
+% Dependencies:
+%       - tmfc_select_subjects_GUI.m (External)
+
 function CP_GUI(ButtonH, EventData, TMFC_GUI)
     
-    disp('Select subjects whose paths are to be changed');
+    fprintf('\nSelect subjects whose paths are to be changed...\n');
     
+        % Use Select subjects.m WITHOUT 4 Stage file check
         D = tmfc_select_subjects_GUI(0);  
         
         if ~isempty(D)
             tmfc_change_paths_GUI(D);  
         else
-            disp('No subject files selected for path change');
+            fprintf('\nNo subject files selected for path change\n');
         end
     
-end
+end % Closing ChangePath Function
 
 %% ============================[ Settings ]================================
+% Function to setup & change presets of TMFC Toolbox
+
+% Variables for Settings GUI
 SET_COMPUTING = {'Sequential computing', 'Parallel computing'};
 SET_STORAGE = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
 SET_SEED = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI','Seed-to-voxel only'};
@@ -2307,9 +2334,7 @@ function tmfc_settings(ButtonH, EventData, TMFC_GUI)
 
     TMFC_SET_COPY = tmfc;
 
-    % The following functions perform Synchronization after OK
-    % button has been pressed 
-    
+% The following functions perform Synchronization after OK button has been pressed 
     function OK_SYNC(~,~)
 
         % Create a local copy of the TMFC variable
@@ -2380,18 +2405,79 @@ function tmfc_settings(ButtonH, EventData, TMFC_GUI)
           TMFC_SET_COPY.defaults.analysis == tmfc.defaults.analysis 
            disp('Settings have not been changed');
        else
-           
            disp('Settings have been updated');
-           
        end
+       
        close(TMFC_SET);
        
     end   
+end % Closing Settings Function
+
+%% =============================[ Close ]==================================
+ 
+% Function to peform Save & Exit from TMFC function. 
+% This function is linked to the close button on the top right handside of the Window
+
+% NEED TO ADD CONDITION WHEN TMFC VARIABLE IS DELETED BUT TRY TO EXIT
+% DELETE TMFC in WS-> Close TMFC -> DO NOT ASK TO SAVE (Give warning)
+function close_GUI(ButtonH, EventData, TMFC_GUI) 
+    
+        % Exit Dialouge GUI
+        EXIT_PROMPT = figure('Name', 'TMFC: Exit', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.25 0.20],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'EXIT_FIN', 'WindowStyle','modal'); %X Y W H
+
+        % Content - Can be changed to a single sentence using \html or
+        % sprtinf
+        EX_Q1 = uicontrol(EXIT_PROMPT,'Style','text','String', 'Would you like to save your progress','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
+        EX_Q2 = uicontrol(EXIT_PROMPT,'Style','text','String', 'before exiting TMFC toolbox?', 'Units','normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.38);
+
+        % Buttons of the GUI
+        EX_YES = uicontrol(EXIT_PROMPT,'Style','pushbutton','String', 'Yes','Units', 'normalized','fontunits','normalized', 'fontSize', 0.38);
+        EX_NO = uicontrol(EXIT_PROMPT,'Style','pushbutton', 'String', 'No','Units', 'normalized','fontunits','normalized', 'fontSize', 0.38);
+
+        % Spawn Positions of the GUI text boxes & buttons
+        EX_Q1.Position = [0.04 0.55 0.94 0.260];
+        EX_Q2.Position = [0.10 0.40 0.80 0.260];
+        EX_YES.Position = [0.16 0.18 0.300 0.200];
+        EX_NO.Position = [0.57 0.18 0.300 0.200];
+
+        % Colour of Text boxes & actions of buttons
+        set([EX_Q1,EX_Q2],'backgroundcolor',get(EXIT_PROMPT,'color'));
+        set(EX_NO, 'callback', @EX_WO_SAVE);
+        set(EX_YES, 'callback', @EX_W_SAVE);
+        
+        % EX_NO = Exit without saving TMFC toolbox
+        % EX_YES = Save & then Exit TMFC toolbox
+        
+    % Function to Exit toolbox WITHOUT saving TMFC variable
+    function EX_WO_SAVE(~,~)
+        % Closes dialouge box -> closes Main GUI
+        close(EXIT_PROMPT);
+        delete(handles.TMFC_GUI);
+        disp('Goodbye!');
+    end
+    
+    % Function to Exit toolbox AFTER saving TMFC variable
+    function EX_W_SAVE(~,~)
+        % Performs saving of TMFC variable using SAVE_PROJECT function
+        CT_1 = SAVE_PROJ();
+        
+        % Based on the result of successful save, TMFC toolbox is
+        % closed (i.e. Save->Save Status-> Close Main GUI)
+        if CT_1 == 1
+            close(EXIT_PROMPT);
+            delete(handles.TMFC_GUI);
+            disp('Goodbye!');
+        end
+        
+    end
+    
+end % Closing Close prompt function
+
+%% ==============================[ Reset ]=============REMOVE later========
+function reset(ButtonH, EventData, TMFC_GUI)
+    assignin('base', 'tmfc', tmfc);
+    fprintf('\nCurrent TMFC variable has been saved to workspace\n');
 end
-
-
-
-
 
 %% =====================[ Supporting Functions ]===========================
 
@@ -2623,14 +2709,9 @@ end
 
 
 % Function to perform Independent saving & return of save status, where
-% 0 - Successfull save, 1 - Failed save
 function SAVER_STAT =  Saver(save_path)
-
+% 0 - Successfull save, 1 - Failed save
     try 
-        % Major change may affect the funcitoning of TMFC variable
-        %EXPORT = evalin('base', 'tmfc');
-        %save(save_path, 'EXPORT');
-        %tmfc = evalin('base', 'tmfc');
         save(save_path, 'tmfc');
         SAVER_STAT = 1;
         % Save Success
@@ -3018,7 +3099,7 @@ end
 % =================================[ END ]=================================
 
 end  
-%% =====================[ Independent Supporting Functions ]===========================
+%% =================[ Independent Supporting Functions ]===================
 
 %% Project Path Selection Diagloue 
 function TMFC_SS_select_proj_path(S)
@@ -3399,26 +3480,4 @@ TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normaliz
 
 end
 
-%% ================================[ END ]=================================
-% OUTLINE
-    
-    % CD project path
-    
-    % freeze window 
-    
-    % tracking progress 
-    
-    % CHECK - Subjects, should be selected, 
-    % CHECK - ROIs should be selected
-
-    % Select gPPI Conditions =  tmfc_gPPI_GUI();
-    % perform VOIs
-    
-    % check conditions for restart & continue 
-    
-
-    % send back to tmfc 
-
-    % open contrasts 
-
-    % unfreeze
+% =================================[ END ]=================================
