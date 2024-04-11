@@ -295,6 +295,7 @@ function file_func = action_5(~,~)
         end
         if SPM_check == 0
             paths = file_address; 
+            GUI_freeze(0);
         end
     end                                                                 
 end      
