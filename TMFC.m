@@ -275,14 +275,14 @@ function ROI_sel(ButtonH, EventData, TMFC_GUI)
         end
 
    end % Closing Outermost IF statement
-
-   % Unfreeze TMFC Main Window
-   MW_Freeze(0);
+   
 
    else
        % Warning if user has not selected subjects
         warning('Please select subjects to continue with ROI set selection');
    end
+   % Unfreeze TMFC Main Window
+   MW_Freeze(0);
    
 end % Closing ROI selection
 
@@ -536,12 +536,13 @@ function VOI(ButtonH, EventData, TMFC_GUI)
         else
            warning('Please select subjects to continue with VOI computation');
         end
-               
-        MW_Freeze(0);
-        
+                
      catch
          warning('Please select subjects & project path to perform VOI computation');
      end
+     
+     % Unfreeze TMFC Main Window
+     MW_Freeze(0);
      
 end % Closing VOI Function
 
@@ -671,13 +672,13 @@ function PPI(ButtonH, EventData, TMFC_GUI)
         else
             warning('Please select subjects & compute VOIs to continue with PPI computation');
         end
-        
-        % UnFreeze TMFC Main Window
-        MW_Freeze(0);
-        
+                
     catch 
         warning('Please select subjects & compute VOIs to perform PPI computation');
     end   
+    
+    % UnFreeze TMFC Main Window
+    MW_Freeze(0);
     
 end % Closing PPI function
 
@@ -822,12 +823,13 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
            warning('Please select subjects & compute PPIs to continue with gPPI computation');
         end
         
-        % Unfreeze TMFC Main Window
-        MW_Freeze(0);
     catch
         warning('Please select subjects & compute PPIs to perform gPPI computation');
     end
     
+    % Unfreeze TMFC Main Window
+    MW_Freeze(0);
+            
 end % Closing gPPI function
 
 %% ============================= [ gPPI FIR ] =============================
@@ -980,11 +982,11 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
            warning('Please select subjects & compute PPIs to continue with gPPI computation');
         end
         
-        % Unfreeze TMFC Main Window
-        MW_Freeze(0);
     catch
         warning('Please select subjects & compute PPIs to perform gPPI computation');
     end
+    % Unfreeze TMFC Main Window
+    MW_Freeze(0);
     
 end % Closing gPPI FIR function
 
@@ -1248,12 +1250,13 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
         else
             warning('Please select subjects to continue with LSS Regression');
         end
-    
-        % Unfreeze TMFC Main Window
-        MW_Freeze(0);
+
     catch
        warning('Please select subjects & project path to perform LSS GLM regression');
     end
+        
+    % Unfreeze TMFC Main Window
+    MW_Freeze(0);
         
 end % Closing LSS GLM function
 
@@ -1320,7 +1323,7 @@ function BSC(buttonH, EventData, TMFC_GUI)
                         if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 0                           
                                 % First time execution of BSC
                                 
-                                fprinft('\nInitiating BSC LSS computation\n');   
+                                fprintf('\nInitiating BSC LSS computation\n');   
                                 
                                  % Processing BSC LSS & generation of default contrasts
                                 [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
@@ -1379,7 +1382,7 @@ function BSC(buttonH, EventData, TMFC_GUI)
                                 % Restart computations
                                 
                                 % Processing BSC computation
-                                fprinft('\nInitiating BSC LSS computation\n'); 
+                                fprintf('\nInitiating BSC LSS computation\n'); 
                                 sub_check = tmfc_BSC(tmfc,tmfc.ROI_set_number);
                                 for i = 1:length(tmfc.subjects)
                                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
@@ -1406,11 +1409,13 @@ function BSC(buttonH, EventData, TMFC_GUI)
             warning('Please select subjects and compute LSS GLM to proceed with BSC computaiton');
         end
         
-        % Unfreeze TMFC Main Window
-        MW_Freeze(0);
+        
     catch
         warning('Please select subjects & compute LSS GLM to perform BSC computation');    
     end
+    
+    % Unfreeze TMFC Main Window
+    MW_Freeze(0);
     
 end % Closing BSC LSS function
 
@@ -1623,12 +1628,12 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             warning('Please select subjects to perform FIR Regression');
         end
 
-         % Unfreeze TMFC Main Window
-        MW_Freeze(0);
-
     catch
        warning('Please select subjects & project path to perform FIR regression');
     end 
+    
+     % Unfreeze TMFC Main Window
+    MW_Freeze(0);
     
 end % Closing FIR Regress Function
 
@@ -1752,13 +1757,13 @@ function BGFC(buttonH, EventData, TMFC_GUI)
        else
            warning('Please select subjects and compute FIR to proceed with BGFC computaiton');
        end
-       
-       % Unfreeze TMFC Main Window
-       MW_Freeze(0);
-        
+               
     catch
         warning('Please select subjects & compute FIRs to perform BGFC computaiton');
     end
+    
+   % Unfreeze TMFC Main Window
+   MW_Freeze(0);
     
 end % Closing BGFC function
 
@@ -2032,13 +2037,13 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
         else
             warning('Please select subjects to continue with LSS Regression');
         end
-    
-        % Unfreeze TMFC Main Window
-        MW_Freeze(0);
-        
+            
     catch
        warning('Please select subjects & project path to perform LSS after FIR regression');
     end
+    
+    % Unfreeze TMFC Main Window
+    MW_Freeze(0);
         
 end % Closing LSS FIR function
 
@@ -2104,7 +2109,7 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                         if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 0
                                 % First time execution of BSC
                                 
-                                fprinft('\nInitiating BSC FIR computation\n');  
+                                fprintf('\nInitiating BSC FIR computation\n');  
                                 
                                 % Processing BSC LSS & generation of default contrasts
                                 [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
@@ -2188,11 +2193,12 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
            warning('Please select subjects and compute LSS FIR to proceed with BSC FIR computaiton');
        end
        
-       % Unfreeze TMFC Main Window
-       MW_Freeze(0);
     catch
         warning('Please select subjects & compute LSS FIR to perform BSC FIR computation');    
     end
+    
+   % Unfreeze TMFC Main Window
+   MW_Freeze(0);
     
 end % Closing BSC FIR function
 
