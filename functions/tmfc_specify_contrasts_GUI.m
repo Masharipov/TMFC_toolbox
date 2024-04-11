@@ -420,10 +420,11 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
 
         case 2
             % gPPI FIR
+            disp(carbs);
             yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+1).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+1).weights = carbs(i).weights; 
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).weights = carbs(i).weights; 
                
             end
 
@@ -431,8 +432,8 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
             % BSC
             yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+1).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+1).weights = carbs(i).weights; 
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).weights = carbs(i).weights; 
             end
 
 
@@ -440,8 +441,8 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
             % BSC FIR
             yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+1).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+1).weights = carbs(i).weights; 
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).weights = carbs(i).weights; 
             end
 
     end

@@ -1348,12 +1348,12 @@ function BSC(buttonH, EventData, TMFC_GUI)
                                  
                                  % Selection of Contrasts
                                  tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 3);
-
+                                 
                                  % if new contrasts added then proceed with processing
                                  if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)       
                                      
                                      % Perform computation of BSC for all newly added contrasts
-                                     for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
+                                     for i = verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
                                          
                                          % ROI to ROI generation
                                          sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 3, i, tmfc.ROI_set_number);                           
