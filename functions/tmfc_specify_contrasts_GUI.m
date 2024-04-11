@@ -65,7 +65,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
 
     %%  Add new contrast
         function action3(~,~)
-            [D, c] = tmfc_BSC_MINI(tmfc);
+            [D, c] = tmfc_BSC_MINI(tmfc, TMFC_analysis);
             if ~isempty(D)
                 if ~isfield(carbs, 'no')
                     % first addition
@@ -238,9 +238,21 @@ end
 
 %%
 
-function [TTL,C1] = tmfc_BSC_MINI(tmfc)
-
-    Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(1).weights);
+function [TTL,C1] = tmfc_BSC_MINI(tmfc,TMFC_analysis)
+switch(TMFC_analysis)
+    
+    case 1
+        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(1).weights);
+    case 2 
+        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(1).weights);
+    case 3 
+        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(1).weights);
+    case 4 
+        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(1).weights);
+        
+end
+    
+    
     ddr = {};
     if Czs >1
         ddr = strcat('C1 -', 32, 'C', num2str(Czs));
@@ -286,9 +298,9 @@ function [TTL,C1] = tmfc_BSC_MINI(tmfc)
              warning('Contrast C1 is not numeric, please re-enter');
                        
         elseif length(str2num(C1_L)) > Czs
-            warning('The number of contrasts entered is greater than existing contrasts, please re-enter');
+            warning('Entered contrast length is greater than the number of conditions of interest", please re-enter');
         elseif length(str2num(C1_L)) < Czs
-            warning('The number of contrasts entered is lesser than the existing contrasts, please re-enter');
+            warning('Entered contrast length is greater than the number of conditions of interest", please re-enter');
        
         
         else
