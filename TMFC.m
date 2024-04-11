@@ -691,7 +691,7 @@ end % Closing PPI function
 %       - TMFC_CON_GUI()                (Internal)
 
 function gPPI(ButtonH, EventData, TMFC_GUI)
-               (Internal)
+               
             
     % Checking for subjects selection
     try 
