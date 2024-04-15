@@ -94,11 +94,18 @@ switch tmfc.defaults.parallel
         w = waitbar(0,'Please wait...','Name','PPI regressors calculation','Tag','tmfc_waitbar');
         cleanupObj = onCleanup(@cleanMeUp);
     case 1                                      % Parallel
+        try
+            parpool
+        end
         w = waitbar(0,'Please wait...','Name','PPI regressors calculation','Tag','tmfc_waitbar');
         D = parallel.pool.DataQueue;            % Creation of parallel pool 
         afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
         tmfc_parfor_waitbar(w,N);     
         cleanupObj = onCleanup(@cleanMeUp);
+
+        try % Bring TMFC main window to the front 
+            figure(findobj('Tag','TMFC_GUI'));
+        end
 end
 
 spm('defaults','fmri');

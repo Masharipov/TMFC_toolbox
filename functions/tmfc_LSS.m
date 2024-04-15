@@ -102,11 +102,18 @@ switch tmfc.defaults.parallel
         handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         cleanupObj = onCleanup(@cleanMeUp);
     case 1
+        try
+            parpool
+        end
         handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         D = parallel.pool.DataQueue;                                        % Creation of Parallel Pool 
         afterEach(D, @tmfc_parfor_waitbar);                                 % Command to update Waitbar
         tmfc_parfor_waitbar(handles, N);     
         cleanupObj = onCleanup(@cleanMeUp);
+
+        try % Bring TMFC main window to the front 
+            figure(findobj('Tag','TMFC_GUI'));
+        end
 end
 
 % Loop through subjects

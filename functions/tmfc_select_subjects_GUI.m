@@ -46,7 +46,7 @@ TMFC_SS_B1 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Select subject f
 TMFC_SS_B2 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Select SPM.mat file for Subject №1','Units', 'normalized', 'Position',[0.033 0.750 0.455 0.095],'FontUnits','normalized','FontSize',0.25);
 TMFC_SS_B3 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Add new subject','Units', 'normalized', 'Position',[0.033 0.14 0.300 0.095],'FontUnits','normalized','FontSize',0.25);
 TMFC_SS_B4 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Remove selected subject','Units', 'normalized', 'Position',[0.346 0.14 0.300 0.095],'FontUnits','normalized','FontSize',0.25);
-TMFC_SS_B5 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.390 0.04 0.200 0.080],'FontUnits','normalized','FontSize',0.25);
+TMFC_SS_B5 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.390 0.04 0.200 0.080],'FontUnits','normalized','FontSize',0.28);
 TMFC_SS_B6 = uicontrol(TMFC_SS,'Style','pushbutton', 'String', 'Clear all subjects','Units', 'normalized', 'Position',[0.660 0.14 0.300 0.095],'FontUnits','normalized','FontSize',0.25);
 TMFC_SS_S1 = uicontrol(TMFC_SS,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.820 0.450 0.095],'backgroundcolor','w','FontUnits','normalized','FontSize',0.25);
 TMFC_SS_S2 = uicontrol(TMFC_SS,'Style','text','String', 'Not Selected','ForegroundColor','red','Units', 'normalized', 'Position',[0.500 0.720 0.450 0.095],'backgroundcolor','w','FontUnits','normalized','FontSize',0.25);
@@ -61,6 +61,9 @@ set(TMFC_SS_B5, 'callback', @action_5)
 set(TMFC_SS_B6, 'callback', @action_clr)
 set(TMFC_SS_lst, 'callback', @action_select)
 set(TMFC_SS_lst, 'Value', []);
+
+% Center Spawn GUI
+movegui(TMFC_SS,'center');
 
 % Local Variables that work throughout the RunTime upto checking stage
 main_subjects = {};      % Variable to store subject path
@@ -399,18 +402,19 @@ function [file_exist,file_not_exist] = SPM_EXT_CHK(Y_1)
     if length(file_exist) ~= length(Y_1) 
         
         % Creation of Pop up Window & show the respective files that are missing
-        f_1 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w', 'MenuBar', 'none', 'ToolBar', 'none','Resize','off');
+        f_1 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.28], 'color', 'w', 'MenuBar', 'none', 'ToolBar', 'none');
 
         % Initializing Elements of the UI
-        lst_1 = uicontrol(f_1, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
-        G1_Stat = uicontrol(f_1,'Style','text','String', 'Warning, the following SPM.mat files are missing:','Units', 'normalized', 'Position',[0.280 0.820 0.450 0.095], 'backgroundcolor', 'w');
-        G1 = uicontrol(f_1,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.05 0.180 0.180]);
+        lst_1 = uicontrol(f_1, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.028 0.280 0.940 0.520],'FontUnits','points','FontSize',12);
+        G1_Stat = uicontrol(f_1,'Style','text','String', 'Warning, the following SPM.mat files are missing:','Units', 'normalized', 'Position',[0.220 0.820 0.550 0.095], 'backgroundcolor', 'w','FontUnits','points','FontSize',12);
+        G1 = uicontrol(f_1,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.05 0.180 0.120] ,'FontUnits','points','FontSize',10);%[0.4 0.05 0.180 0.180] 
 
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_1, 'String', file_not_exist);                 
         set(G1, 'Callback', @action_close_GUI_1);
+        movegui(f_1,'center');
         uiwait();
-        set(lst_1, 'String', '');  
+        
     end
     
     function action_close_GUI_1(~,~)
@@ -484,16 +488,17 @@ function [file_correct, file_incorrect] = SPM_COND(Y_2)
     if length(file_correct) ~=  length(Y_2)
         
         % Creation of GUI Figure
-        f_2 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
+        f_2 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.28], 'color', 'w','MenuBar', 'none','ToolBar', 'none');
 
         % Initializing Elements of the UI
-        lst_2 = uicontrol(f_2, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
-        G2_Stat = uicontrol(f_2,'Style','text','String', 'Warning, in the following SPM.mat files different conditions are specified:','Units', 'normalized', 'Position', [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
-        G2 = uicontrol(f_2,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.180]);
+        lst_2 = uicontrol(f_2, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position',[0.028 0.280 0.940 0.520],'FontUnits','points','FontSize',12);
+        G2_Stat = uicontrol(f_2,'Style','text','String', 'Warning, in the following SPM.mat files different conditions are specified:','Units', 'normalized', 'Position',[0.120 0.820 0.780 0.095], 'backgroundcolor', 'w','FontUnits','points','FontSize',12);
+        G2 = uicontrol(f_2,'Style','pushbutton', 'String', 'OK','Units', 'normalized',  'Position',[0.4 0.05 0.180 0.120] ,'FontUnits','points','FontSize',10);
 
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_2, 'String', file_incorrect);  
         set(G2, 'callback', @action_close_GUI_2)
+        movegui(f_2,'center');
         uiwait();
         
     end
@@ -545,16 +550,17 @@ function [file_dir,file_no_dir] = CHECK_DIR(Y_3)
     if length(file_dir) ~=  length(Y_3)
         
         % Creation of Figure window
-        f_3 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
+        f_3 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.28], 'color', 'w','MenuBar', 'none','ToolBar', 'none');
 
         % Initializing Elements of the UI
-        lst_3 = uicontrol(f_3, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
-        G3_Stat = uicontrol(f_3,'Style','text','String', 'Warning, the output folder (SPM.swd) specified in the following SPM.mat files do not exist: ','Units', 'normalized', 'Position', [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
-        G3 = uicontrol(f_3,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.180]);
+        lst_3 = uicontrol(f_3, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490],'FontUnits','points','FontSize',12);
+        G3_Stat = uicontrol(f_3,'Style','text','String', 'Warning, the output folder (SPM.swd) specified in the following SPM.mat files do not exist: ','Units', 'normalized', 'Position',[0.120 0.820 0.780 0.120], 'backgroundcolor', 'w','FontUnits','points','FontSize',12);
+        G3 = uicontrol(f_3,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.120] ,'FontUnits','points','FontSize',10);
 
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_3, 'String', file_no_dir);  
         set(G3, 'callback', @action_close_GUI_3)
+        movegui(f_3,'center');
         uiwait();
     end
     
@@ -610,16 +616,17 @@ function [file_func,file_no_func] = CHECK_FUNCTION(Y_4)
     if length(file_func) ~=  length(Y_4)
         
         % Creation of Figure for GUI window
-        f_4 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.18], 'color', 'w','MenuBar', 'none','ToolBar', 'none','Resize','off');
+        f_4 = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.28], 'color', 'w','MenuBar', 'none','ToolBar', 'none');
 
         % Initializing Elements of the UI
-        lst_4 = uicontrol(f_4, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490]);
-        G4_Stat = uicontrol(f_4,'Style','text','String', 'Warning, the functional files specified in the following SPM.mat files do not exist:','Units', 'normalized', 'Position', [0.110 0.820 0.800 0.095], 'backgroundcolor', 'w');
-        G4 = uicontrol(f_4,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position', [0.4 0.05 0.180 0.180]);
+        lst_4 = uicontrol(f_4, 'Style', 'listbox', 'String', '','Max',100,'Units', 'normalized', 'Position', [0.025 0.280 0.940 0.490],'FontUnits','points','FontSize',12);
+        G4_Stat = uicontrol(f_4,'Style','text','String', 'Warning, the functional files specified in the following SPM.mat files do not exist:','Units', 'normalized', 'Position', [0.140 0.820 0.720 0.120], 'backgroundcolor', 'w','FontUnits','points','FontSize',12);
+        G4 = uicontrol(f_4,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.4 0.05 0.180 0.120] ,'FontUnits','points','FontSize',10);
 
         % Assigning Functions Callbacks for each Element (button, listbox etc)
         set(lst_4, 'String', file_no_func);  
         set(G4, 'callback', @action_close_GUI_4)
+        movegui(f_4,'center');
         uiwait();
     end
     

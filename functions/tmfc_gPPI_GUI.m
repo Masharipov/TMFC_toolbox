@@ -70,6 +70,8 @@ end
         set(gPPI_REV, 'callback', @action_6)
         set(gPPI_REVA, 'callback', @action_7)
 
+        movegui(gPPI_GUI,'center');
+
         %% Function to reuturn user's selection 
         
         function gPPI_stable_Exit(~,~)
@@ -256,6 +258,7 @@ end
             gPPI_H_OK = uicontrol(gPPI_H_W,'Style','pushbutton','String', 'OK','Units', 'normalized', 'Position', [0.34 0.06 0.30 0.06]);%,'fontunits','normalized', 'fontSize', 0.35
 
             set(gPPI_H_OK, 'callback', @gPPI_H_close);
+            movegui(gPPI_H_W,'center');
 
             function gPPI_H_close(~,~)
                 close(gPPI_H_W);

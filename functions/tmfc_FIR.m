@@ -209,7 +209,9 @@ switch tmfc.defaults.parallel
     
     % ------------------------ Parallel Computing -------------------------
     case 1
-        
+        try
+            parpool
+        end
         % Creation of Waitbar Figure
         handles = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'tmfc_waitbar');       
         N = length(tmfc.subjects);             % Threshold of elements to run FIR regression
@@ -222,10 +224,9 @@ switch tmfc.defaults.parallel
         disp('Processing... please wait');
         
         try % Bring TMFC main window to the front 
-            main_GUI = guidata(findobj('Tag','TMFC_GUI'));    
-            set(main_GUI.TMFC_GUI, 'Position',  [0.115 0.0875 0.250 0.850])
-            figure(main_GUI.TMFC_GUI);
+            figure(findobj('Tag','TMFC_GUI'));
         end
+
        
         % Parallel Loop
         parfor i = start_sub:N

@@ -242,6 +242,7 @@ function [RF1_flag, ret_name] = ROI_F1(~,~)
     ROI_1_Help.Position = [0.59 0.16 0.310 0.180];
 
     set(ROI_1_S1,'backgroundcolor',get(ROI_1,'color'));
+    movegui(ROI_1,'center');
 
     % Assigning Functions Callbacks for each Element (button, listbox etc)
 
@@ -286,6 +287,7 @@ function [RF1_flag, ret_name] = ROI_F1(~,~)
 
         set(RH_TEXT,'backgroundcolor',get(ROI_1_H,'color'));
         set(RH_OK, 'callback', @RH_CL);
+        movegui(ROI_1_H,'center');
 
         function RH_CL(~,~)
             close(ROI_1_H);
@@ -319,6 +321,7 @@ function ROI_F3(dis_data)
     set(ROI_3_S1,'backgroundcolor',get(ROI_3,'color'));
     set(ROI_3_S2,'backgroundcolor',get(ROI_3,'color'));
     set(ROI_3_disp, 'Value', []);
+    movegui(ROI_3,'center');
     
     set(ROI_3_OK, 'callback', @ROI_3_function);
     
@@ -394,7 +397,7 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
     set(ROI_4_RET_SEL, 'callback', @action_6);
     set(ROI_4_RET_ALL, 'callback', @action_7);
     set(ROI_4_OK, 'callback', @action_8);
-        
+    movegui(ROI_4,'center');    
     
     function action_select_1(~,~)
         index = get(ROI_4_disp_1, 'Value');  % Retrieves the users selection LIVE

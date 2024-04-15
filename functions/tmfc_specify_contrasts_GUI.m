@@ -50,6 +50,8 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
         set(SC_OK, 'callback', @action6)
         set(SC_HELP, 'callback', @action7)
 
+        movegui(SC_G1,'center');
+
         selection_2 = {};
     %% Exit
         function stable_Exit (~,~)
@@ -279,6 +281,8 @@ end
     SC_G2_OK.Position = [0.20 0.12 0.250 0.180];
     SC_G2_CCL.Position = [0.60 0.12 0.250 0.180];
 
+    movegui(SC_G2,'center');
+
     set(SC_G2_CCL, 'callback', @stable_exit);
     set(SC_G2_OK, 'callback', @get_contrasts);
     
@@ -354,6 +358,7 @@ function [TTL,C1,C2,C3,C4] = tmfc_BSC_MINI_old()
     SC_G2_OK.Position = [0.20 0.12 0.250 0.180];
     SC_G2_CCL.Position = [0.60 0.12 0.250 0.180];
 
+    movegui(SC_G2,'center');
 
     set(SC_G2_CCL, 'callback', @stable_exit);
     set(SC_G2_OK, 'callback', @get_contrasts);
