@@ -156,6 +156,9 @@ function select_subjects(ButtonH, EventData, TMFC_GUI)
         fprintf('\nSubjects not selected\n');
     else 
        
+       % Clearning old instances of TMFC data             
+       tmfc = major_reset(tmfc);
+
        % Update paths to TMFC variable
        L_paths = size(sel_paths);
        for SS_i = 1:L_paths(1) 
@@ -181,8 +184,6 @@ function select_subjects(ButtonH, EventData, TMFC_GUI)
             set(handles.TMFC_GUI_S1,'String', strcat(num2str(L_paths(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
             tmfc.project_path = project_path;
             
-            % Clearning old instances of TMFC data 
-            tmfc = major_reset(tmfc);
             MW_Freeze(0);
        end       
     end
@@ -2331,11 +2332,11 @@ function settings(ButtonH, EventData, TMFC_GUI)
     TMFC_SET_OK = uicontrol(TMFC_SET,'Style', 'pushbutton', 'String', 'OK', 'Units', 'normalized', 'Position', [0.3 0.03 0.40 0.05],'FontUnits','normalized','FontSize',0.33);
     TMFC_SET_E1 = uicontrol(TMFC_SET,'Style','edit','String', tmfc.defaults.maxmem,'Units', 'normalized', 'HorizontalAlignment', 'center','Position',[0.72 0.615 0.22 0.05],'fontunits','normalized', 'fontSize', 0.38);
     
-    TMFC_SET_S1 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_1,'Units', 'normalized', 'Position',[0.05 0.87 0.90 0.07],'fontunits','normalized','fontSize', 0.265, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S1 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_1,'Units', 'normalized', 'Position',[0.05 0.87 0.90 0.07],'fontunits','normalized','fontSize', 0.245, 'HorizontalAlignment', 'left','backgroundcolor','w');
     TMFC_SET_S2 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_2,'Units', 'normalized', 'Position',[0.05 0.69 0.90 0.11],'fontunits','normalized','fontSize', 0.16, 'HorizontalAlignment', 'left','backgroundcolor','w');
     TMFC_SET_S3_1 = uicontrol(TMFC_SET,'Style','text','String', 'Max RAM for GLM esimtation (bits):','Units', 'normalized', 'Position',[0.048 0.61 0.65 0.04],'fontunits','normalized', 'fontSize', 0.46,'HorizontalAlignment', 'left','backgroundcolor','w');%
-    TMFC_SET_S3_2 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_3a,'Units', 'normalized', 'Position',[0.05 0.50 0.90 0.11],'fontunits','normalized','fontSize', 0.175, 'HorizontalAlignment', 'left','backgroundcolor','w');
-    TMFC_SET_S3_3 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_3b,'Units', 'normalized', 'Position',[0.11 0.38 0.27 0.11],'fontunits','normalized','fontSize', 0.165, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S3_2 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_3a,'Units', 'normalized', 'Position',[0.05 0.495 0.90 0.11],'fontunits','normalized','fontSize', 0.16, 'HorizontalAlignment', 'left','backgroundcolor','w');
+    TMFC_SET_S3_3 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_3b,'Units', 'normalized', 'Position',[0.39 0.38 0.27 0.11],'fontunits','normalized','fontSize', 0.15, 'HorizontalAlignment', 'left','backgroundcolor','w');
     TMFC_SET_S4 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_4,'Units', 'normalized', 'Position',[0.05 0.11 0.90 0.20],'fontunits','normalized','fontSize', 0.088, 'HorizontalAlignment', 'left','backgroundcolor','w');
     
     set(TMFC_SET_OK , 'callback', @OK_SYNC);   
@@ -2512,6 +2513,12 @@ end
 function [tmfc] = major_reset(tmfc)
 
     try 
+        tmfc = rmfield(tmfc,'subjects');
+    end
+    try 
+        tmfc = rmfield(tmfc,'project_path');
+    end
+    try 
         tmfc = rmfield(tmfc,'ROI_set');
     end
     try
@@ -2526,6 +2533,7 @@ function [tmfc] = major_reset(tmfc)
     try
         tmfc = rmfield(tmfc,'LSS_after_FIR');
     end
+
 
 set(handles.TMFC_GUI_S2,'String', 'Not selected','ForegroundColor',[1, 0, 0]);
 set(handles.TMFC_GUI_S3,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
