@@ -103,7 +103,13 @@ function Fitter(NUM)
             sub_mask{i,1} = [tmfc.subjects(i).path(1:end-7) 'mask.nii'];
         end
         group_mask = fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs','Group_mask.nii');
-        spm_imcalc(sub_mask,group_mask,'prod(X)',{1,0,1,2});
+
+        if length(tmfc.subjects) == 1
+            copyfile(sub_mask{1,1},group_mask);
+        else
+            spm_imcalc(sub_mask,group_mask,'prod(X)',{1,0,1,2});
+        end
+        
     
         % Calculate ROI size before masking
         w = waitbar(0,'Please wait...','Name','Calculating raw ROI sizes');
