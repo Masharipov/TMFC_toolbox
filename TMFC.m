@@ -1090,6 +1090,7 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                     end                
                 end
             end
+            disp(V_LSS);
 
             if V_LSS == 0
                 set(handles.TMFC_GUI_S6,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
@@ -1148,7 +1149,7 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
 
                     
                     % Restart case
-                    if any(tmfc.subjects(SZ_tmfc(2)).LSS.session(SZS_tmfc).condition(tmfc.LSS.conditions.number).trials == 1)
+                    if any(tmfc.subjects(SZ_tmfc(2)).LSS.session(SZS_tmfc).condition(tmfc.LSS.conditions.number).trials == 1) && any(tmfc.subjects(1).LSS.session(1).condition(tmfc.LSS.conditions.number).trials == 1)
 
                         % Ask user for Restart or Continue
                         STATUS = tmfc_restart_GUI(2);
@@ -1940,7 +1941,7 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                     if isfield(tmfc.LSS_after_FIR, 'conditions') && isfield(tmfc.subjects, 'LSS_after_FIR') 
 
                         % Restart case
-                        if any(tmfc.subjects(SZ_tmfc(2)).LSS_after_FIR.session(SZS_tmfc).condition(tmfc.LSS_after_FIR.conditions.number).trials == 1)
+                        if any(tmfc.subjects(SZ_tmfc(2)).LSS_after_FIR.session(SZS_tmfc).condition(tmfc.LSS_after_FIR.conditions.number).trials == 1) && any(tmfc.subjects(1).LSS_after_FIR.session(1).condition(tmfc.LSS_after_FIR.conditions.number).trials == 1)
 
                             % Ask user if Restart or cancel 
                             STATUS = tmfc_restart_GUI(3);
