@@ -220,7 +220,13 @@ for i = start_sub:N
             matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
         end
     
-        matlabbatch{1}.spm.stats.fmri_spec.cvi = SPM.SPM.xVi.form;
+        if strcmp(SPM.SPM.xVi.form,'i.i.d')
+            matlabbatch{1}.spm.stats.fmri_spec.cvi = 'None';
+        elseif strcmp(SPM.SPM.xVi.form,'AR(0.2)')
+            matlabbatch{1}.spm.stats.fmri_spec.cvi = 'AR(1)';
+        else
+            matlabbatch{1}.spm.stats.fmri_spec.cvi = 'FAST';
+        end
 
         batch{j} = matlabbatch;
         clear matlabbatch PPI   
