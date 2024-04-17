@@ -137,8 +137,15 @@ for i = start_sub:length(tmfc.subjects)
     catch
         matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
     end
+    
+    if SPM.SPM.xVi.form == 'i.i.d'
+        matlabbatch{1}.spm.stats.fmri_spec.cvi = 'None';
+    elseif SPM.SPM.xVi.form == 'AR(0.2)'
+        matlabbatch{1}.spm.stats.fmri_spec.cvi = 'AR(1)';
+    else
+        matlabbatch{1}.spm.stats.fmri_spec.cvi = 'FAST';
+    end
 
-    matlabbatch{1}.spm.stats.fmri_spec.cvi = SPM.SPM.xVi.form;
     matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat')};
     matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
     matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
