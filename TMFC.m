@@ -275,7 +275,7 @@ function ROI(ButtonH, EventData, TMFC_GUI)
    
    else
        % Warning if user has not selected subjects
-        warning('Please select subjects to continue with ROI set selection');
+        warning('Please select subjects & project paths to continue with ROI set selection');
    end
    % Unfreeze TMFC Main Window
    MW_Freeze(0);
@@ -1432,35 +1432,39 @@ function FIR(ButtonH, EventData, TMFC_GUI)
         cd(tmfc.project_path);           
         MW_Freeze(1);
 
-        % Track & Update FIR progress to TMFC variable & Window 
-        try
-            for subi = 1:length(tmfc.subjects)              
-                SPM = load(tmfc.subjects(subi).path);
-                if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(subi,'%04.f')],['Res_' num2str(sum(SPM.SPM.nscan),'%04.f') '.nii']), 'file')
-                   tmfc.subjects(subi).FIR = 1;
-                else           
-                   tmfc.subjects(subi).FIR = 0;       
-                end
+        % Logical Condition to perform FIR if already computed
+        if isfield(tmfc,'FIR') && ~isnan(tmfc.FIR.window) && ~isnan(tmfc.FIR.bins)
+            
+            % Track & Update FIR progress to TMFC variable & Window 
+            try
+                for subi = 1:length(tmfc.subjects)              
+                    SPM = load(tmfc.subjects(subi).path);
+                    if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(subi,'%04.f')],['Res_' num2str(sum(SPM.SPM.nscan),'%04.f') '.nii']), 'file')
+                       tmfc.subjects(subi).FIR = 1;
+                    else           
+                       tmfc.subjects(subi).FIR = 0;       
+                    end
 
-            end
-        end
-
-        % Update FIR progress to TMFC variable & Window 
-        try
-            SZ_tmfc = size(tmfc.subjects);
-            V_FIR = 0;
-            for i = 1:SZ_tmfc(2)
-                if tmfc.subjects(i).FIR == 0
-                    V_FIR = i ;
-                    break;
                 end
             end
-            if V_FIR == 0
-                set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-            elseif V_FIR == 1
-                set(handles.TMFC_GUI_S8,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-            else
-                set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+
+            % Update FIR progress to TMFC variable & Window 
+            try
+                SZ_tmfc = size(tmfc.subjects);
+                V_FIR = 0;
+                for i = 1:SZ_tmfc(2)
+                    if tmfc.subjects(i).FIR == 0
+                        V_FIR = i ;
+                        break;
+                    end
+                end
+                if V_FIR == 0
+                    set(handles.TMFC_GUI_S8,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+                elseif V_FIR == 1
+                    set(handles.TMFC_GUI_S8,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+                else
+                    set(handles.TMFC_GUI_S8,'String', strcat(num2str(V_FIR-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+                end
             end
         end
 
@@ -2534,7 +2538,7 @@ function [tmfc] = major_reset(tmfc)
         tmfc = rmfield(tmfc,'LSS_after_FIR');
     end
 
-
+set(handles.TMFC_GUI_S1,'String', 'Not selected','ForegroundColor',[1, 0, 0]);
 set(handles.TMFC_GUI_S2,'String', 'Not selected','ForegroundColor',[1, 0, 0]);
 set(handles.TMFC_GUI_S3,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
 set(handles.TMFC_GUI_S4,'String', 'Not done','ForegroundColor',[0.773, 0.353, 0.067]);
