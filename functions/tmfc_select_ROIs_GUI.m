@@ -394,6 +394,15 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
     set(ROI_4_S1a,'backgroundcolor',get(ROI_4,'color'));
     set(ROI_4_S2,'backgroundcolor',get(ROI_4,'color'));
     set(ROI_4_S3,'backgroundcolor',get(ROI_4,'color'));
+    set(ROI_4_disp_1, 'Value', []);
+    set(ROI_4_disp_1, 'callback', @action_select_1);
+    set(ROI_4_disp_2, 'Value', []);
+    set(ROI_4_disp_2, 'callback', @action_select_2);
+    set(ROI_4_REM_SEL, 'callback', @action_3);
+    set(ROI_4_REM_THRS, 'callback', @action_4);
+    set(ROI_4_RET_SEL, 'callback', @action_6);
+    set(ROI_4_RET_ALL, 'callback', @action_7);
+    set(ROI_4_OK, 'callback', @action_8);
     movegui(ROI_4,'center');    
     
     function action_select_1(~,~)

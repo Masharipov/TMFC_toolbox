@@ -241,45 +241,70 @@ end
 %%
 
 function [TTL,C1] = tmfc_BSC_MINI(tmfc,TMFC_analysis)
-switch(TMFC_analysis)
-    
-    case 1
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(1).weights);
-    case 2 
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(1).weights);
-    case 3 
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(1).weights);
-    case 4 
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(1).weights);
-        
-end
+
+    switch(TMFC_analysis)
+
+        case 1
+            Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(1).weights);
+            constructor = {};
+            for i=1:Czs
+                constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title));   
+            end
+
+        case 2 
+            Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(1).weights);
+            constructor = {};
+            for i=1:Czs
+                constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).title));   
+            end
+
+        case 3 
+            Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(1).weights);
+            constructor = {};
+            for i=1:Czs
+                constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title));   
+            end
+
+        case 4 
+            Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(1).weights);
+            constructor = {};
+            for i=1:Czs
+                constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title));   
+            end
+
+    end
     
     
     ddr = {};
     if Czs >1
-        ddr = strcat('C1 -', 32, 'C', num2str(Czs));
-    else
-        ddr = {'C1'};
+        if length(constructor) == 1
+            ddr = strcat('Weights: [C1]');
+        elseif length(constructor) == 2
+            ddr = strcat('Weights: [C1 C2]');
+        elseif length(constructor) == 3
+            ddr = strcat('Weights: [C1 C2 C3]');
+        elseif length(constructor) == 4
+            ddr = strcat('Weights: [C1 C2 C3 C4]');
+        else
+            ddr = strcat('Weights: [C1 C2 ...', 32, 'C', num2str(Czs),']');
+        end
     end
     
-    SC_G2 = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.64 0.46 0.22 0.18],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'CloseRequestFcn', @stable_exit, 'WindowStyle','modal');
+    SC_G2 = figure('Name', 'BSC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.64 0.46 0.25 0.22],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off', 'CloseRequestFcn', @stable_exit, 'WindowStyle','modal');
 
-    SC_G2_E0  = uicontrol(SC_G2,'Style','text','String', 'Define contrast title and contrast weights','Units', 'normalized', 'Position',[0.115 0.82 0.800 0.12],'fontunits','normalized', 'fontSize', 0.70,'backgroundcolor','w');
+    SC_G2_E0  = uicontrol(SC_G2,'Style','text','String', 'Define contrast title and contrast weights','Units', 'normalized', 'Position',[0.2 0.875 0.600 0.08],'fontunits','normalized', 'fontSize', 0.74,'backgroundcolor','w');
 
-    SC_G2_TT  = uicontrol(SC_G2,'Style','text','String', 'Title','Units', 'normalized', 'Position',[0.070 0.62 0.250 0.11],'fontunits','normalized', 'fontSize', 0.74,'backgroundcolor','w','fontweight', 'bold');
-    SC_G2_C1  = uicontrol(SC_G2,'Style','text','String', ddr,'Units', 'normalized', 'Position',[0.425 0.62 0.500 0.11],'fontunits','normalized', 'fontSize', 0.74,'backgroundcolor','w','fontweight', 'bold');
+    SC_G2_COI = uicontrol(SC_G2,'Style','text','String', 'Conditions of interest:','Units', 'normalized', 'Position',[0.04 0.75 0.28 0.07],'fontunits','normalized', 'fontSize', 0.79,'HorizontalAlignment', 'left','backgroundcolor','w');
+    SC_G2_LST = uicontrol(SC_G2, 'Style','listbox', 'String', constructor,'Max',100,'Units', 'normalized', 'Position',[0.04 0.45 0.920 0.280],'fontunits','normalized', 'fontSize', 0.18);
+    
+    SC_G2_TT  = uicontrol(SC_G2,'Style','text','String', 'Title','Units', 'normalized', 'Position',[0.2105 0.34 0.10 0.07],'fontunits','normalized', 'fontSize', 0.80,'backgroundcolor','w');
+    SC_G2_C1  = uicontrol(SC_G2,'Style','text','String', ddr,'Units', 'normalized', 'Position',[0.54 0.34 0.40 0.07],'fontunits','normalized', 'fontSize', 0.80,'backgroundcolor','w');
 
-    SC_G2_T_A = uicontrol(SC_G2,'Style','edit','String', '','Units', 'normalized','fontunits','normalized', 'fontSize', 0.50,'HorizontalAlignment', 'center');
-    SC_G2_C1_A = uicontrol(SC_G2,'Style','edit','String', '','Units', 'normalized','fontunits','normalized', 'fontSize', 0.50,'HorizontalAlignment', 'center');
+    SC_G2_T_A = uicontrol(SC_G2,'Style','edit','String', '','Units', 'normalized','Position',[0.04 0.23 0.440 0.10],'fontunits','normalized', 'fontSize', 0.50,'HorizontalAlignment', 'center');
+    SC_G2_C1_A = uicontrol(SC_G2,'Style','edit','String', '','Units', 'normalized','Position',[0.52 0.23 0.440 0.10],'fontunits','normalized', 'fontSize', 0.50,'HorizontalAlignment', 'center');
 
-    SC_G2_OK = uicontrol(SC_G2,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.40);
-    SC_G2_CCL = uicontrol(SC_G2,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.40);
-
-    SC_G2_T_A.Position = [0.04 0.42 0.300 0.160];
-    SC_G2_C1_A.Position = [0.375 0.42 0.580 0.160];
-
-    SC_G2_OK.Position = [0.20 0.12 0.250 0.180];
-    SC_G2_CCL.Position = [0.60 0.12 0.250 0.180];
+    SC_G2_OK = uicontrol(SC_G2,'Style','pushbutton', 'String', 'OK','Units', 'normalized','Position',[0.20 0.06 0.24 0.11],'fontunits','normalized', 'fontSize', 0.42);
+    SC_G2_CCL = uicontrol(SC_G2,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','Position',[0.56 0.06 0.24 0.11],'fontunits','normalized', 'fontSize', 0.42);
 
     movegui(SC_G2,'center');
 
@@ -434,16 +459,16 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).weights = carbs(i).weights; 
             end
+            fprintf('Contrasts successfully processed\n');
 
         case 2
             % gPPI FIR
-            disp(carbs);
             yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR);
             for i = 1:length(carbs)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).weights = carbs(i).weights; 
-               
             end
+            fprintf('Contrasts successfully processed\n');
 
         case 3
             % BSC
@@ -452,6 +477,7 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).weights = carbs(i).weights; 
             end
+            fprintf('Contrasts successfully processed\n');
 
 
         case 4
@@ -461,6 +487,7 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).weights = carbs(i).weights; 
             end
-
+            fprintf('Contrasts successfully processed\n');
     end
+    
 end

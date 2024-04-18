@@ -160,13 +160,13 @@ switch type
             % Calculate and save contrasts
             for j = 1:length(contrast_number)
                 for ROI_number = 1:R
-                    contrast = tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*images(ROI_number).seed;
+                    contrast = tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).weights*images(ROI_number).seed;
 
                     hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR', ...
                         'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') '_[' ...
-                        regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].nii']);
-                    hdr.descrip = ['Linear contrast of PPI beta maps: ' tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title];    
+                        regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).title,' ','_') '].nii']);
+                    hdr.descrip = ['Linear contrast of PPI beta maps: ' tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).title];    
                     image = NaN(SPM.SPM.xVol.DIM');
                     image(iXYZ) = contrast;
                     spm_write_vol(hdr,image);

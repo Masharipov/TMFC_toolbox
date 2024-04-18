@@ -925,7 +925,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                              if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR)      
                                  
                                  % Perform computation of gPPI FIR for all newly added contrasts
-                                 for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)
+                                 for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR)
                                      
                                      % ROI to ROI generation
                                      sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, 2, i, tmfc.ROI_set_number);                           
@@ -977,7 +977,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
         else
            warning('Please select subjects & compute PPIs to continue with gPPI computation');
         end
-        
+       
     catch
         warning('Please select subjects & compute PPIs to perform gPPI computation');
     end
