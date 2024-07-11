@@ -127,7 +127,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B9, 'callback', {@BGFC, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B11, 'callback', {@BSC_after_FIR, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});               
+    set(handles.TMFC_GUI_B12, 'callback', {@results, handles.TMFC_GUI});               
     set(handles.TMFC_GUI_B13a, 'callback', {@open_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13b, 'callback', {@save_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14a, 'callback', {@change_paths, handles.TMFC_GUI});
@@ -2480,7 +2480,13 @@ function close_GUI(ButtonH, EventData, TMFC_GUI)
         
     end
     
-end 
+end
+
+%% ===========================[ Results ]===================================
+function results(ButtonH, EventData, TMFC_GUI)
+    fprintf('\nResults Window is as follows: Test\n'); 
+    tmfc_results_simulation();
+end
 
 %% ===========================[ Reset ]===================================
 function reset(ButtonH, EventData, TMFC_GUI)
