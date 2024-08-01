@@ -127,6 +127,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B9, 'callback', {@BGFC, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B11, 'callback', {@BSC_after_FIR, handles.TMFC_GUI});
+    %set(handles.TMFC_GUI_B12, 'callback', {@reset, handles.TMFC_GUI});     
     set(handles.TMFC_GUI_B12, 'callback', {@results, handles.TMFC_GUI});               
     set(handles.TMFC_GUI_B13a, 'callback', {@open_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B13b, 'callback', {@save_project, handles.TMFC_GUI});
