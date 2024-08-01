@@ -2486,7 +2486,7 @@ end
 %% ===========================[ Results ]===================================
 function results(ButtonH, EventData, TMFC_GUI)
     fprintf('\nResults Window is as follows: Test\n'); 
-    tmfc_results_simulation();
+    tmfc_results();
 end
 
 %% ===========================[ Reset ]===================================

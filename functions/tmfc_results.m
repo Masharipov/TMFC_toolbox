@@ -1,4 +1,4 @@
-function tmfc_results_simulation()
+function tmfc_results()
 
 %% GUI Initialization
 RES_GUI = figure('Name', 'TMFC: Results', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.45 0.25 0.22 0.56],'MenuBar', 'none','ToolBar', 'none','color','w','WindowStyle','modal');%,'Resize','off');%,'WindowStyle','modal');%,'CloseRequestFcn', @LSS_stable_Exit);
