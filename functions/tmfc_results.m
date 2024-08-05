@@ -500,6 +500,7 @@ function action_subjects_S1(~,~)
                                % If No newly added files then show message
                                if new_ones(1) == 0
                                    warning('Newly Selected .mat files are already present in the list, no new files added');
+                                   set(RES_L1_CTR, 'ForegroundColor',[0.219, 0.341, 0.137]);
 
                                else
 
@@ -794,6 +795,8 @@ function action_subjects_S2(~,~)
                             else
                                 warning('Select .mat files are of incompatible dimensions');
                             end
+                        elseif F_in_3b == 2
+                            warning('The Previously selected file has different dimensions than the present selection, Please remove the previously selected file with different dimensions and select again ');
                         else
                             warning('Selected (.mat) file(s) have inconsistent ROI x ROI dimensions, please select (.mat) files with consistent dimensions');
                         end
@@ -1118,11 +1121,11 @@ function threshold_type(~,~)
     
     approach = (RES_THRES_POP.String{RES_THRES_POP.Value});
     
-    if strcmp(approach, 'Uncorrected (Parametric)') || strcmp(approach, 'FDR (Parametric)')
+    if strcmp(approach, 'Uncorrected (Parametric)') || strcmp(approach, 'FDR (Parametric)') || strcmp(approach, 'NBS FWE(Non-Parametric)') || strcmp(approach, 'NBS TFCE(Non-Parametric)') 
         set(RES_PERM_TXT, 'enable', 'off');
         set(RES_PERM_VAL, 'enable', 'off');
         set(RES_PERM_VAL, 'String', []);
-    elseif strcmp(approach, 'Uncorrected (Non-Parametric)') || strcmp(approach, 'FDR (Non-Parametric)') || strcmp(approach, 'NBS FWE(Non-Parametric)') || strcmp(approach, 'NBS TFCE(Non-Parametric)') 
+    elseif strcmp(approach, 'Uncorrected (Non-Parametric)') || strcmp(approach, 'FDR (Non-Parametric)') 
         set(RES_PERM_TXT, 'enable', 'on');
         set(RES_PERM_VAL, 'enable', 'on');
         set(RES_PERM_VAL, 'String', []);
@@ -1174,6 +1177,7 @@ function run(~,~)
                         if CA_0 == 1
                             TP_0 = TP_check();
                             if TP_0 == 1
+                                set([RES_L0_CTR,RES_L1_CTR], 'ForegroundColor',[0.219, 0.341, 0.137]); % Update GUI 
                                 disp('continue with computation');
                             end
                         end
@@ -1190,6 +1194,7 @@ function run(~,~)
                         if CA_0 == 1
                             TP_0 = TP_check();
                             if TP_0 == 1
+                                set([RES_L0_CTR,RES_L1_CTR], 'ForegroundColor',[0.219, 0.341, 0.137]); % Update GUI 
                                 disp('continue with computation');
                             end
                         end
@@ -1206,6 +1211,7 @@ function run(~,~)
                         if CA_0 == 1
                             TP_0 = TP_check();
                             if TP_0 == 1
+                                set([RES_L0_CTR,RES_L1_CTR], 'ForegroundColor',[0.219, 0.341, 0.137]); % Update GUI 
                                 disp('continue with computation');
                             end
                         end
@@ -1222,6 +1228,7 @@ function run(~,~)
                         if CA_0 == 1
                             TP_0 = TP_check();
                             if TP_0 == 1
+                                set([RES_L0_CTR,RES_L1_CTR], 'ForegroundColor',[0.219, 0.341, 0.137]); % Update GUI 
                                 disp('continue with computation');
                             end
                         end
@@ -1261,6 +1268,7 @@ function run(~,~)
             if CA_1 == 1
                 TP_1 = TP_check();
                 if TP_1 == 1
+                    set([RES_L0_CTR,RES_L1_CTR], 'ForegroundColor',[0.219, 0.341, 0.137]); % Update GUI 
                     disp('continue with computation');
                 end
             end
@@ -1290,6 +1298,7 @@ function run(~,~)
                 if CA_2 == 1
                     TP_2 = TP_check();
                     if TP_2 == 1
+                        set([RES_L0_CTR,RES_L1_CTR], 'ForegroundColor',[0.219, 0.341, 0.137]); % Update GUI 
                         disp('continue with computation');
                     end
                 end
@@ -1394,17 +1403,14 @@ function flag = TP_check(~,~)
          P_1 = str2num(RES_PERM_VAL.String);
          P_2 = str2double(RES_THRES_VAL_UNI.String);
          if ~isnan(P_2) && P_2 > 0 && P_2 <=1.0
-             if ~isempty(P_1)                
                  flag = 1;
-             else
-                warning('Please enter a numeric value for Number of Permutations');
-             end
          elseif P_2 <= 0 || P_2 > 1.0
              warning('Please enter a Primary Threshold value between (0.0, 1.0] for computation');
          else
              warning('Please enter a Primary Threshold value for computation');
          end       
-         
+     elseif strcmp(approach, 'Uncorrected (Parametric)') || strcmp(approach, 'FDR (Parametric)')
+         flag = 1;
      end
 
 end
@@ -1569,7 +1575,9 @@ function flag = ROI_check(C, ralpher, new_files)
                    s4 = S.size;
 
                    % For 2D or 3D cases of Dimensionality
-                   if length(s3) == 2
+                    if length(s3) ~= length(s4)
+                       flag = 2;
+                    elseif length(s3) == 2
                        if (s3(1) == s4(1) && s3(2) == s4(2)) == 0
                            fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                            fprintf('\n File 1: %s ',C{1,:});
@@ -1624,7 +1632,9 @@ function flag = ROI_check(C, ralpher, new_files)
                 s4 = S.size;
                 
                 % For 2D or 3D cases of Dimensionality
-                if length(s3) == 2
+                if length(s3) ~= length(s4) 
+                    warning('The Previously selected file has different dimensions than the present selection, Please remove the previously selected file with different dimensions and select again');
+                elseif length(s3) == 2
                    if (s3(1) == s4(1) && s3(2) == s4(2)) == 0
                        fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                        fprintf('\n File 1: %s ',C{1,:});
@@ -1640,6 +1650,8 @@ function flag = ROI_check(C, ralpher, new_files)
                 elseif length(s3) == 3
                        % Compare dimensions, if inconsistent, files that are
                        % inconsistent
+                       assignin('base', 's3', s3);
+                       assignin('base', 's4', s4);
                        if (s3(1) == s4(1) && s3(2) == s4(2) && s3(3) == s4(3)) == 0
                            fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                            fprintf('\n File 1: %s ',C{1,:});
