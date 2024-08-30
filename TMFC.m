@@ -876,7 +876,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                     if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI_FIR == 0 && ~isfield(tmfc, 'gPPI_FIR') 
                             
                             % Selection of Windows & Bins
-                            [tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.window,tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.bins] = tmfc_FIR_GUI(0);
+                            [tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.window,tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.bins] = tmfc_FIR_GUI(1);
                             
                             % If windows & Bins are selected continue processing
                             if ~isnan(tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.window) || ~isnan(tmfc.ROI_set(tmfc.ROI_set_number).gPPI_FIR.bins)
@@ -1427,6 +1427,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                 end
             end
         end
+        
 
         % Check if subjects have been selected
         if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
@@ -1436,8 +1437,10 @@ function FIR(ButtonH, EventData, TMFC_GUI)
 
                 % Ask user for Bins & windows
                 [tmfc.FIR.window,tmfc.FIR.bins] = tmfc_FIR_GUI(0);
-
-
+                if isnan(tmfc.FIR.window) || isnan(tmfc.FIR.bins)
+                    tmfc = rmfield(tmfc, 'FIR');
+                else
+                    
                 % If user enters Bins & windows then continue processing
                  if ~isnan(tmfc.FIR.window) || ~isnan(tmfc.FIR.bins)
 
@@ -1453,10 +1456,10 @@ function FIR(ButtonH, EventData, TMFC_GUI)
                     end
                     fprintf('\nFIR Computation Completed\n');
                  end
+                end
 
-
-            elseif isfield(tmfc, 'FIR') && tmfc.subjects(1).FIR == 0 
-                % Exeuction if CTLR + C is pressed 
+            elseif isfield(tmfc, 'FIR') && tmfc.subjects(1).FIR == 0
+                % Execution if CTLR + C is pressed 
 
                 % Ask user to enter bins & windows
                 [tmfc.FIR.window,tmfc.FIR.bins] = tmfc_FIR_GUI(0);

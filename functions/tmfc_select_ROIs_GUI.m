@@ -616,7 +616,7 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
 
     function action_8(~,~)
         if isempty(lst_2)
-            disp('No ROIs selected for removal, exporting existing set');
+            disp('Exporting existing set of ROis, No ROIs selected for removal');
             EXPORT = ROI_set;
             close(ROI_4);
         else

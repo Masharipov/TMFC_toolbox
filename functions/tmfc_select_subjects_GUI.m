@@ -350,8 +350,8 @@ end
 function [full_path, mat_adrs] = mat_file(x)
         
     % Selection of the SPM.mat file for the first subject 
-    [mat_f] = spm_select( 1,'any','Select SPM.mat file for the first subject',{}, x(1,:), 'SPM.*');    
-    [mat_adrs] = strrep(mat_f, strtrim(x(1,:)),''); 
+    [mat_f] = spm_select( 1,'any','Select SPM.mat file for the first subject',{}, strtrim(x(1,:)), 'SPM.*');    
+    [mat_adrs] = strrep(mat_f, strtrim(x(1,:)),'');     
     len_subs = size(x);
 
     full_path = {}; % Creation of variable to store all the new Full paths of the subjects 
