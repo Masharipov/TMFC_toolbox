@@ -71,13 +71,17 @@ SPM = load(tmfc.subjects(1).path);
 % Initialize waitbar for parallel or sequential computing
 switch tmfc.defaults.parallel
     case 0                                      % Sequential
-        w = waitbar(0,'Please wait...','Name','Calculating residuals and BGFC');
+        w = waitbar(0,'Please wait...','Name','Calculating residuals and BGFC','Tag', 'tmfc_waitbar');
         cleanupObj = onCleanup(@cleanMeUp);
     case 1                                      % Parallel
-        w = waitbar(0,'Please wait...','Name','Calculating residuals and BGFC');
-        D = parallel.pool.DataQueue;            % Creation of parallel pool 
-        afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
-        tmfc_parfor_waitbar(w,N);     
+        try % Pathway for >2016a Versions
+            D = parallel.pool.DataQueue;            % Creation of parallel pool 
+            w = waitbar(0,'Please wait...','Name','Calculating residuals and BGFC','Tag', 'tmfc_waitbar');
+            afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
+            tmfc_parfor_waitbar(w,N);     
+        catch % Pathway for Legacy Versions
+            legacy_warning();
+        end
         cleanupObj = onCleanup(@cleanMeUp);
 end
 
@@ -154,12 +158,13 @@ for i = start_sub:N
     % Update waitbar
     switch tmfc.defaults.parallel
         case 0                              % Sequential
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
             try
                 waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
             end
         case 1                              % Parallel
-            send(D,[]);
+            try 
+                send(D,[]);
+            end
     end
 end
 
@@ -200,8 +205,21 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
-            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
+            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
+end
+
+function legacy_warning()
+
+Warn_Window = figure('Name', 'Please wait', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off','MenuBar', 'none', 'ToolBar', 'none','Tag','TMFC_WB_NUM', 'WindowStyle','modal', 'color', 'w');         
+Warn_Window_txt_1= uicontrol(Warn_Window,'Style','text','String', {'Waitbar progress update is not available for parallel computations','in MATLAB R2016b and earlier.'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.26, 'Position',[0.1 0.55 0.8 0.400],'backgroundcolor',get(Warn_Window,'color'));
+Warn_Window_txt_2= uicontrol(Warn_Window,'Style','text','String', {'Please wait as computations are processed....'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.41, 'Position',[0.1 0.28 0.8 0.240],'backgroundcolor',get(Warn_Window,'color'));
+Warn_Close_btn = uicontrol(Warn_Window, 'Style', 'pushbutton', 'String', 'Close', 'Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position',[0.38 0.08 0.25 0.170], 'callback', @Close_warn_window);
+
+    function Close_warn_window(~,~)
+        delete(Warn_Window);
+    end
+        
 end

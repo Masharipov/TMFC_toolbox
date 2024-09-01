@@ -117,7 +117,7 @@ for i = 1:R
     ROIs(i).mask = spm_data_read(spm_data_hdr_read(tmfc.ROI_set(ROI_set_number).ROIs(i).path_masked),'xyz',XYZ);
     ROIs(i).mask(ROIs(i).mask == 0) = NaN;
     try
-        waitbar(i/R,w,['ROI № ' num2str(i,'%.f')]);
+        waitbar(i/R,w,['ROI No ' num2str(i,'%.f')]);
     end
 end
 

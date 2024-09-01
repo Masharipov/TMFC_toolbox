@@ -145,7 +145,7 @@ for i = start_sub:length(tmfc.subjects)
     batch{i} = matlabbatch;
     clear matlabbatch SPM; 
 end
-
+N = length(tmfc.subjects);       
 % Parallel or sequential computing
 switch tmfc.defaults.parallel
     % ----------------------- Sequential Computing ------------------------
@@ -154,8 +154,7 @@ switch tmfc.defaults.parallel
         exit_status = 0;
         
         % Creation of Waitbar Figure
-        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar', CloseRequestFcn = '');
-        N = length(tmfc.subjects);                                          
+        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar');                                   
         cleanupObj = onCleanup(@cleanMeUp);
         
         % Serial Execution of FIR Regression
@@ -193,12 +192,15 @@ switch tmfc.defaults.parallel
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
                 set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    
             end
+            % NEEDS UPDATE 
             
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss'; % Time calculation for the wait bar
+            %t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss'; % Time calculation for the wait bar
+            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             
             try
                 % Updating the Wait bar
-                waitbar(double(i)/double(N), handles, [num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(i / N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                %waitbar(double(i)/double(N), handles, [num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
             end
         end
         
@@ -208,25 +210,22 @@ switch tmfc.defaults.parallel
     
     % ------------------------ Parallel Computing -------------------------
     case 1
-        try
-            parpool
+        try % Pathway for >2016a Versions
+            D = parallel.pool.DataQueue;            % Creation of parallel pool 
+            handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag','tmfc_waitbar');
+            afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
+            tmfc_parfor_waitbar(handles,N);     
+        catch % Pathway for Legacy Versions
+            legacy_warning();
         end
-        % Creation of Waitbar Figure
-        handles = waitbar(0,'Please wait...','Name','FIR task regression', 'Tag', 'tmfc_waitbar');       
-        N = length(tmfc.subjects);             % Threshold of elements to run FIR regression
-        D = parallel.pool.DataQueue;           % Creation of Parallel Pool 
-        afterEach(D, @tmfc_parfor_waitbar);    % Command to update Waitbar
-        tmfc_parfor_waitbar(handles, N);    % Custom function to update waitbar
-       
-        cleanupObj = onCleanup(@cleanMeUp);    % Initialize Ctrl + C action
+            cleanupObj = onCleanup(@cleanMeUp);      % Initialize Ctrl + C action
+            disp('Processing... please wait');
 
-        disp('Processing... please wait');
-        
         try % Bring TMFC main window to the front 
             figure(findobj('Tag','TMFC_GUI'));
         end
 
-       
+
         % Parallel Loop
         parfor i = start_sub:N
             try
@@ -243,8 +242,9 @@ switch tmfc.defaults.parallel
             catch
                 sub_check(i) = 0;
             end
-            send(D,[]); 
-            
+            try
+                send(D,[]); 
+            end
             try 
                 % Updating the TMFC GUI with the progress (within the loop)                
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                             
@@ -257,11 +257,12 @@ switch tmfc.defaults.parallel
             main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
             set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(N), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
         end 
-        
+
         % Closing the Waitbar after execution
         try                                                                
             delete(handles);
-        end              
+        end
+        
 end
 
 % Function that changes the state of execution when CANCEL is pressed
@@ -306,8 +307,21 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
-            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+            hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
+            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
+end
+
+function legacy_warning()
+
+Warn_Window = figure('Name', 'Please wait', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off','MenuBar', 'none', 'ToolBar', 'none','Tag','TMFC_WB_NUM', 'WindowStyle','modal', 'color', 'w');         
+Warn_Window_txt_1= uicontrol(Warn_Window,'Style','text','String', {'Waitbar progress update is not available for parallel computations','in MATLAB R2016b and earlier.'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.26, 'Position',[0.1 0.55 0.8 0.400],'backgroundcolor',get(Warn_Window,'color'));
+Warn_Window_txt_2= uicontrol(Warn_Window,'Style','text','String', {'Please wait as computations are processed....'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.41, 'Position',[0.1 0.28 0.8 0.240],'backgroundcolor',get(Warn_Window,'color'));
+Warn_Close_btn = uicontrol(Warn_Window, 'Style', 'pushbutton', 'String', 'Close', 'Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position',[0.38 0.08 0.25 0.170], 'callback', @Close_warn_window);
+
+    function Close_warn_window(~,~)
+        delete(Warn_Window);
+    end
+        
 end

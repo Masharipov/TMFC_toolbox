@@ -282,11 +282,16 @@ function [RF1_flag, ret_name] = ROI_F1(~,~)
 
     function help_win_R(~,~)
 
-        ROI_1_H = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.50 0.40 0.16 0.16],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none');
-        RH_TEXT = uicontrol(ROI_1_H,'Style','text','String', 'HELP Window under development','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.40, 'Position',[0.16 0.60 0.700 0.230],'backgroundcolor',get(ROI_1_H,'color'));
-        RH_OK= uicontrol(ROI_1_H,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45,'Position',[0.35 0.14 0.310 0.180],'callback', @RH_CL);
+        help_data = {'First, define a name for the set of ROIs. TMFC results for this ROI set will be stored in:','','"TMFC_project_name\ROI_sets\ROI_set_name"','',...
+    'Second, select one or more ROI masks (*.nii files). TMFC toolbox will create a group mean binary mask based on individual subjects 1st-level masks (see SPM.VM) and apply it to all selected ROIs Empty ROIs will be excluded from further analysis. Masked ROIs will be limited to only voxels which have data for all subjects. The dimensions, orientation, and voxel sizes of the masked ROI images will be adjusted according to the group mean binary mask. These files will be stored in "Masked_ROIs"',...
+    '','Third, exclude heavily cropped ROIs from further analysis, if necessary.','','Note: You can define several ROI sets and switch between them. Push the "ROI_set" button and then push "Add new ROI set". Each time you need to switch between ROI sets push the "ROI_set" button.'};
+
+
+        ROI_1_H = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.67 0.31 0.16 0.36],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none','Windowstyle', 'Modal');
+        RH_TEXT = uicontrol(ROI_1_H,'Style','text','String', help_data,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.0365,'HorizontalAlignment', 'left', 'Position',[0.05 0.14 0.89 0.82],'backgroundcolor',get(ROI_1_H,'color'));
+        RH_OK= uicontrol(ROI_1_H,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45,'Position',[0.34 0.06 0.30 0.06],'callback', @RH_CL);
         
-        movegui(ROI_1_H,'center');
+        %movegui(ROI_1_H,'center');
 
         function RH_CL(~,~)
             close(ROI_1_H);

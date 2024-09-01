@@ -134,7 +134,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B13b, 'callback', {@save_project, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14a, 'callback', {@change_paths, handles.TMFC_GUI});
     set(handles.TMFC_GUI_B14b, 'callback', {@settings, handles.TMFC_GUI});    
-    %warning('off','backtrace')
+    warning('off','backtrace')
 else
     % Warning prompt if user tries to open TMFC when already running
     figure(findobj('Tag', 'TMFC_GUI')); 
@@ -1386,7 +1386,7 @@ end
 function FIR(ButtonH, EventData, TMFC_GUI)
     
     % Checking for subjects selection
-    try
+    %try
 
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);           
@@ -1598,9 +1598,9 @@ function FIR(ButtonH, EventData, TMFC_GUI)
             warning('Please select subjects to perform FIR Regression');
         end
 
-    catch
-       warning('Please select subjects & project path to perform FIR regression');
-    end 
+    %catch
+    %   warning('Please select subjects & project path to perform FIR regression');
+    %end 
     
      % Unfreeze TMFC Main Window
     MW_Freeze(0);
