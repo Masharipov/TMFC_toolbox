@@ -156,7 +156,7 @@ function select_subjects(ButtonH, EventData, TMFC_GUI)
     % If paths are not selected - Unfreeze 
     if isempty(sel_paths)
         MW_Freeze(0);
-        fprintf('\nSubjects not selected\n');
+        fprintf('\nTMFC Subjects: Subjects not selected\n');
     else 
        
        % Clearning old instances of TMFC data             
@@ -169,21 +169,21 @@ function select_subjects(ButtonH, EventData, TMFC_GUI)
        end
        
        % Project Path selection
-       fprintf('Please select a folder for the new TMFC project\n');    
+       fprintf('TMFC Subjects: Please select a folder for the new TMFC project\n');    
        tmfc_select_project_path(L_paths(1)); % Warning Dialogue box
        % Select project path
        project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
        
        % Verify if project path is selected
        if strcmp(project_path, '')
-            warning('Project path not selected, Subjects not saved');
+            warning('TMFC Subjects: Project path not selected, Subjects not saved');
             try
                 MW_Freeze(0);
             end
             return;
        else
            % assign to TMFC variable
-            fprintf('%d subjects have been successfully selected \n', L_paths(1));
+            fprintf('TMFC Subjects: %d subjects have been successfully selected \n', L_paths(1));
             set(handles.TMFC_GUI_S1,'String', strcat(num2str(L_paths(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
             tmfc.project_path = project_path;
             
