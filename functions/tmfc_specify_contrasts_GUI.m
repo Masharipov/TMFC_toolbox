@@ -26,11 +26,11 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
         SC_Title  = uicontrol(SC_G1,'Style','text','String', 'Define contrasts','Units', 'normalized', 'Position',[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.64,'backgroundcolor','w');
 
         SC_B1_T  = uicontrol(SC_G1,'Style','text','String', 'Existing contrasts:','Units', 'normalized', 'Position',[0.045 0.86 0.300 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-        SC_B1_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', '№## :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.816 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
+        SC_B1_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', 'No## :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.816 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
         SC_B1_lst = uicontrol(SC_G1 , 'Style', 'listbox', 'String', LST_1,'Max', 100,'Units', 'normalized', 'Position',[0.045 0.62 0.920 0.200],'fontunits','normalized', 'fontSize', 0.15,'Enable','inactive');
 
         SC_B2_T  = uicontrol(SC_G1,'Style','text','String', 'Add new contrasts:','Units', 'normalized', 'Position',[0.045 0.535 0.450 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-        SC_B2_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', '№## :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.492 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
+        SC_B2_FT = uicontrol(SC_G1 , 'Style', 'text', 'String', 'No## :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.492 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
         SC_B2_lst = uicontrol(SC_G1 , 'Style', 'listbox', 'String', LST_2,'Max',100,'Units', 'normalized', 'Position',[0.045 0.26 0.920 0.230],'fontunits','normalized', 'fontSize', 0.14);
 
         SC_ADD = uicontrol(SC_G1,'Style','pushbutton','String', 'Add new','Units', 'normalized','Position',[0.045 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36);
@@ -76,7 +76,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
                     carbs(ctr).weights = str2num(c);
 
 
-                    biege = horzcat('№ ',num2str(carbs(ctr).no),' :: ',carbs(ctr).title,' :: ', 'c = [',num2str(carbs(ctr).weights),']');
+                    biege = horzcat('No ',num2str(carbs(ctr).no),' :: ',carbs(ctr).title,' :: ', 'c = [',num2str(carbs(ctr).weights),']');
                     LST_2 = vertcat(LST_2, biege);
                     set(SC_B2_lst, 'string', LST_2);
                     ctr = ctr + 1;
@@ -87,7 +87,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
                     carbs(ctr).title = D;
                     carbs(ctr).weights = str2num(c);
 
-                    biege = horzcat('№ ',num2str(carbs(ctr).no),' :: ',carbs(ctr).title,' :: ', 'c = [',num2str(carbs(ctr).weights),']');
+                    biege = horzcat('No ',num2str(carbs(ctr).no),' :: ',carbs(ctr).title,' :: ', 'c = [',num2str(carbs(ctr).weights),']');
                     LST_2 = vertcat(LST_2, biege);
                     set(SC_B2_lst, 'string', LST_2);
                     ctr = ctr + 1;
@@ -120,7 +120,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
                     selection_2 = {};
                     for i = 1:length(carbs)
                        carbs(i).no = ctr_L1(1)+i;
-                       biege = horzcat('№ ',num2str(carbs(i).no),' :: ',carbs(i).title,' :: ', 'c = [',carbs(i).weights,']');
+                       biege = horzcat('No ',num2str(carbs(i).no),' :: ',carbs(i).title,' :: ', 'c = [',carbs(i).weights,']');
                        LST_2 = vertcat(LST_2, biege);
                     end
 
@@ -185,7 +185,7 @@ switch (A_case)
         eject = size(constructor);
         constructor_2 = {};
         for i = 1:eject(1)
-            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights),']');
+            biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights),']');
             constructor_2 = vertcat(constructor_2, biege);
         end
     
@@ -200,7 +200,7 @@ switch (A_case)
         eject = size(constructor);
         constructor_2 = {};
         for i = 1:eject(1)
-            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).weights),']');
+            biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).weights),']');
             constructor_2 = vertcat(constructor_2, biege);
         end
         
@@ -215,7 +215,7 @@ switch (A_case)
         eject = size(constructor);
         constructor_2 = {};
         for i = 1:eject(1)
-            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights),']');
+            biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights),']');
             constructor_2 = vertcat(constructor_2, biege);
         end
         
@@ -231,7 +231,7 @@ switch (A_case)
         eject = size(constructor);
         constructor_2 = {};
         for i = 1:eject(1)
-            biege = horzcat('№ ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights),']');
+            biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights),']');
             constructor_2 = vertcat(constructor_2, biege);
         end
 end
