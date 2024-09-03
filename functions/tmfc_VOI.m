@@ -149,8 +149,7 @@ for i = start_sub:N
             matlabbatch{1}.spm.util.voi.spmmat = {tmfc.subjects(i).path};
             matlabbatch{1}.spm.util.voi.adjust = length(SPM.SPM.xCon);
             matlabbatch{1}.spm.util.voi.session = sess_num(j);
-            matlabbatch{1}.spm.util.voi.name = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ... 
-                ['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(k).name);
+            matlabbatch{1}.spm.util.voi.name = tmfc.ROI_set(ROI_set_number).ROIs(k).name;
             matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {tmfc.ROI_set(ROI_set_number).ROIs(k).path_masked};
             matlabbatch{1}.spm.util.voi.roi{1}.mask.threshold = 0.1;
             matlabbatch{1}.spm.util.voi.expression = 'i1';    
@@ -165,6 +164,11 @@ for i = start_sub:N
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
                     spm_jobman('run',batch{k});
+                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']), ...
+                             fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ... 
+                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']));
+                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
+                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
                 end
                 
             case 1                              % Parallel
@@ -173,6 +177,11 @@ for i = start_sub:N
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
                     spm_jobman('run',batch{k});
+                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']), ...
+                             fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ... 
+                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']));
+                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
+                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
                 end
         end
 

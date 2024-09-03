@@ -16,6 +16,8 @@ onsets{1,2} = onsets{1,2} - data.STP_delay;
 sots_path = data.sots_path;
 sots_path = sots_path(1:end-4);
 sots_path = [sots_path '_[' num2str(data.STP_delay,'%.2f') 's_STP].mat'];
+[~,sots] = fileparts(sots_path);
+sots_path = fullfile(data.stat_path,exp_folder,[sots '.mat']);
 save(sots_path,'activations','onsets','durations','names','rest_matrix','task_matrices');
 
 % Generate .nii functional images
