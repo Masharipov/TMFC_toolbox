@@ -187,20 +187,16 @@ switch tmfc.defaults.parallel
 
                 break;
             end
-
+            
             try  % Updating the TMFC GUI window with the progress                      
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
                 set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    
             end
-            % NEEDS UPDATE 
             
-            %t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss'; % Time calculation for the wait bar
+            % Update waitbar
             hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
-            
             try
-                % Updating the Wait bar
-                waitbar(i / N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
-                %waitbar(double(i)/double(N), handles, [num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(i/N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
         end
         
@@ -216,10 +212,12 @@ switch tmfc.defaults.parallel
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
             tmfc_parfor_waitbar(handles,N);     
         catch % Pathway for Legacy Versions
+            D = [];
             legacy_warning();
         end
-            cleanupObj = onCleanup(@cleanMeUp);      % Initialize Ctrl + C action
-            disp('Processing... please wait');
+        
+        cleanupObj = onCleanup(@cleanMeUp);      % Initialize Ctrl + C action
+        disp('Processing... please wait');
 
         try % Bring TMFC main window to the front 
             figure(findobj('Tag','TMFC_GUI'));
