@@ -152,12 +152,13 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
         function action6(~,~)
             
             if isempty(LST_2)
-                disp('No newely added contrasts, proceeding with ROI-to-ROI generation and seed-to_voxel-contrast generation');
+                warning('Please specify new contrastt(s)');
             else
                 tmfc = Finisher(tmfc, carbs, TMFC_analysis);
                 fprintf('Number of newly added contrast for processing: %d\n',length(LST_2));
+                delete(SC_G1);
             end
-            delete(SC_G1);
+            
 
         end
 
