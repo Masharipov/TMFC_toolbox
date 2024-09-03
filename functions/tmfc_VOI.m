@@ -195,7 +195,7 @@ for i = start_sub:N
         case 0                              % Sequential
             hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i / N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
             try                                                             % Updating the TMFC GUI window with the progress
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle

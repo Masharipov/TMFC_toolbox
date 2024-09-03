@@ -20,6 +20,10 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used)
 %   tmfc.defaults.resmem   - true or false (store temporaty files in RAM)
+%   tmfc.defaults.analysis - 1 (Seed-to-voxel and ROI-to-ROI analyses)
+%                          - 2 (ROI-to-ROI analysis only)
+%                          - 3 (Seed-to-voxel analysis only)
+%
 %   tmfc.ROI_set(ROI_set_number).gPPI_FIR.window - FIR window length (in seconds)
 %   tmfc.ROI_set(ROI_set_number).gPPI_FIR.bins   - Number of FIR time bins
 %

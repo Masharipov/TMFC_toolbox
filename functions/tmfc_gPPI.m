@@ -14,6 +14,9 @@ function [sub_check,contrasts] = tmfc_gPPI(tmfc,ROI_set_number,start_sub)
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used)
 %   tmfc.defaults.resmem   - true or false (store temporaty files in RAM)
+%   tmfc.defaults.analysis - 1 (Seed-to-voxel and ROI-to-ROI analyses)
+%                          - 2 (ROI-to-ROI analysis only)
+%                          - 3 (Seed-to-voxel analysis only)
 %
 %   tmfc.ROI_set                  - List of selected ROIs
 %   tmfc.ROI_set.set_name         - Name of the ROI set
@@ -122,7 +125,7 @@ switch tmfc.defaults.parallel
 end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI'))
+    if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI'))
         mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical'));
         mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical'));
     end
@@ -130,14 +133,14 @@ end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
     for i = 1:R
-        if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
+        if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
             mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(i).name));
         end
     end
 end
 
 for i = 1:R
-    if ~isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
+    if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name))
         mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(ROI_set_number).ROIs(i).name));
     end
 end
@@ -152,7 +155,7 @@ for i = start_sub:N
     SPM = load(tmfc.subjects(i).path);
     % Loop through ROIs
     for j = 1:R
-        if isfolder(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name))
+        if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name))
             rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI',['Subject_' num2str(i,'%04.f')],tmfc.ROI_set(ROI_set_number).ROIs(j).name),'s');
         end
         % Loop through conditions of interest
@@ -321,7 +324,7 @@ for i = start_sub:N
                 end
         end
 
-        % ROI-to_ROI
+        % ROI-to-ROI
         Y = [];
         for j = 1:N_sess
             Y = [Y; VOI.sess(j).Y];

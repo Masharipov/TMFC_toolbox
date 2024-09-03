@@ -128,9 +128,9 @@ switch type
                 end
             end
             % Update waitbar
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
             sub_check(i) = 1;
             clear images
@@ -169,9 +169,9 @@ switch type
                 end
             end
             % Update waitbar
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
             sub_check(i) = 1;
             clear images
@@ -210,9 +210,9 @@ switch type
                 end
             end
             % Update waitbar
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
             sub_check(i) = 1;
             clear images
@@ -251,9 +251,9 @@ switch type
                 end
             end
             % Update waitbar
-            t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
             sub_check(i) = 1;
             clear images
