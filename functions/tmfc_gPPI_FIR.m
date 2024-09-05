@@ -112,21 +112,29 @@ for i = 1:N_sess
     PPI_sess = [PPI_sess, i*ones(1,sum(sess == sess_num(i)))];
 end
 
-% Initialize waitbar for parallel or sequential computing
+% Initialize waitbar for sequential or parallel computations
 switch tmfc.defaults.parallel
     case 0                                      % Sequential
         w = waitbar(0,'Please wait...','Name','gPPI-FIR GLM estimation','Tag', 'tmfc_waitbar');
         cleanupObj = onCleanup(@cleanMeUp);
     case 1                                      % Parallel
-        try % Pathway for >2016a Versions
+        try % Waitbar for MATLAB R2017a and higher
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
             w = waitbar(0,'Please wait...','Name','gPPI-FIR GLM estimation','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
             tmfc_parfor_waitbar(w,N);     
-        catch % Pathway for Legacy Versions
-            legacy_warning();
+        catch % No waitbar for MATLAB R2016b and earlie
+            opts = struct('WindowStyle','non-modal','Interpreter','tex');
+            w = warndlg({'\fontsize{12}Sorry, waitbar progress update is not available for parallel computations in MATLAB R2016b and earlier.',[],...
+                'Please wait until all computations are completed.',[],...
+                'If you want to interrupt computations:',...
+                '   1) Do not close this window;',...
+                '   2) Select MATLAB main window;',...
+                '   3) Press Ctrl+C.'},'Please wait...',opts);
         end
-        cleanupObj = onCleanup(@cleanMeUp);         % Initialize Ctrl + C action
+        
+        cleanupObj = onCleanup(@cleanMeUp);
+        
         try % Bring TMFC main window to the front 
             figure(findobj('Tag','TMFC_GUI'));
         end
@@ -276,6 +284,7 @@ for i = start_sub:N
     end
 
     clear batch
+    pause(0.0001)
 
     %=======================[ Estimate gPPI GLM ]==========================
     
@@ -487,14 +496,14 @@ for i = start_sub:N
     rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',['Subject_' num2str(i,'%04.f')]),'s');
 
     sub_check(i) = 1;
+    pause(0.0001)
     
     % Update waitbar
     switch tmfc.defaults.parallel
         case 0                              % Sequential
-            %t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
-             hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i / N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(i/N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
         case 1                              % Parallel
             try
@@ -508,24 +517,18 @@ end
 % Default contrasts info
 SPM = load(tmfc.subjects(1).path);
 for j = 1:length(cond_list)
-    sess = cond_list(j).sess;
-    cond = cond_list(j).number;
     contrasts(j).title = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
                 regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
     contrasts(j).weights = zeros(1,length(cond_list));
     contrasts(j).weights(1,j) = 1;
 end
 
-
-
-
 % Close waitbar
 try
     delete(w);
 end
 
-function cleanMeUp()
-    
+function cleanMeUp()    
     try
         GUI = guidata(findobj('Tag','TMFC_GUI')); 
         set([GUI.TMFC_GUI_B1, GUI.TMFC_GUI_B2, GUI.TMFC_GUI_B3, GUI.TMFC_GUI_B4,...
@@ -545,7 +548,7 @@ end
 
 % Save batches in parallel mode
 function tmfc_parsave_batch(fname,matlabbatch)
-  save(fname, 'matlabbatch')
+	save(fname, 'matlabbatch')
 end
 
 % Waitbar for parallel mode
@@ -562,22 +565,8 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            %t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
             hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
             waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
-end
-
-function legacy_warning()
-
-Warn_Window = figure('Name', 'Please wait', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off','MenuBar', 'none', 'ToolBar', 'none','Tag','TMFC_WB_NUM', 'WindowStyle','modal', 'color', 'w');         
-Warn_Window_txt_1= uicontrol(Warn_Window,'Style','text','String', {'Waitbar progress update is not available for parallel computations','in MATLAB R2016b and earlier.'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.26, 'Position',[0.1 0.55 0.8 0.400],'backgroundcolor',get(Warn_Window,'color'));
-Warn_Window_txt_2= uicontrol(Warn_Window,'Style','text','String', {'Please wait as computations are processed....'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.41, 'Position',[0.1 0.28 0.8 0.240],'backgroundcolor',get(Warn_Window,'color'));
-Warn_Close_btn = uicontrol(Warn_Window, 'Style', 'pushbutton', 'String', 'Close', 'Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position',[0.38 0.08 0.25 0.170], 'callback', @Close_warn_window);
-
-    function Close_warn_window(~,~)
-        delete(Warn_Window);
-    end
-        
 end

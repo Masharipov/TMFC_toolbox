@@ -104,7 +104,19 @@ switch type
             for j = 1:length(cond_list)
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+                
+                % If seed-to-voxel analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
+                    disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel gPPI analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 3;
+                    tmfc_gPPI(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 for ROI_number = 1:R
                     images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
                         'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
@@ -145,7 +157,19 @@ switch type
             for j = 1:length(cond_list)
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+                
+                % If seed-to-voxel analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
+                    disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel gPPI-FIR analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 3;
+                    tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 for ROI_number = 1:R
                     images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
                         'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
@@ -186,7 +210,19 @@ switch type
             for j = 1:length(cond_list)
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+                
+                % If seed-to-voxel analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
+                    disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel BSC-LSS analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 3;
+                    tmfc_BSC(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 for ROI_number = 1:R
                     images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
                         'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
@@ -228,6 +264,18 @@ switch type
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
                     regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']']; 
+                
+                % If seed-to-voxel analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
+                        'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
+                    disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel BSC-LSS (after FIR) analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 3;
+                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 for ROI_number = 1:R
                     images(ROI_number).seed(j,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
                         'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...

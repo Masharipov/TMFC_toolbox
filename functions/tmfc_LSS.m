@@ -94,21 +94,29 @@ N_sess = length(sess_num);
 
 EXIT_STATUS_LSS = 0;
 
-% Initialize waitbar for sequential or parallel computing
+% Initialize waitbar for sequential or parallel computations
 switch tmfc.defaults.parallel
     case 0
         handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         cleanupObj = onCleanup(@cleanMeUp);
     case 1       
-        try % Pathway for >2016a Versions
+        try % Waitbar for MATLAB R2017a and higher
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
             handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
             tmfc_parfor_waitbar(handles,N);     
-        catch % Pathway for Legacy Versions
-            legacy_warning();
+        catch % No waitbar for MATLAB R2016b and earlier
+            opts = struct('WindowStyle','non-modal','Interpreter','tex');
+            w = warndlg({'\fontsize{12}Sorry, waitbar progress update is not available for parallel computations in MATLAB R2016b and earlier.',[],...
+                'Please wait until all computations are completed.',[],...
+                'If you want to interrupt computations:',...
+                '   1) Do not close this window;',...
+                '   2) Select MATLAB main window;',...
+                '   3) Press Ctrl+C.'},'Please wait...',opts);
         end
+        
         cleanupObj = onCleanup(@cleanMeUp);
+        
         try % Bring TMFC main window to the front 
             figure(findobj('Tag','TMFC_GUI'));
         end
@@ -247,8 +255,6 @@ for i = start_sub:N
             batch{k} = matlabbatch;
             clear matlabbatch current* other*
         end
-
-        % Variable to exit LSS regression during execution
          
         % Sequential or parallel computing
         switch tmfc.defaults.parallel                                 
@@ -333,6 +339,7 @@ for i = start_sub:N
         end
 
         sub_check(i).session(sess_num(j)).condition = condition;
+        pause(0.0001)
 
         clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number condition 
 
@@ -341,11 +348,9 @@ for i = start_sub:N
     % Update waitbar for sequential or parallel computing
     switch(tmfc.defaults.parallel)
         case 0
-            %t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
             hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                %waitbar(double(i)/double(N),handles,[num2str(double(i)/double(N)*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
-                waitbar(i / N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(i/N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
 
             try                                                             % Updating the TMFC GUI window with the progress
@@ -366,17 +371,17 @@ for i = start_sub:N
 
 end
 
+% Deleting the waitbar after completion of LSS regression
 try
     delete(handles);
 end
 
-
-function quitter(~,~)                                                  % Function that changes the state of execution when CANCEL is pressed
+% Function that changes the state of execution when CANCEL is pressed
+function quitter(~,~)                                                  
     EXIT_STATUS_LSS = 1;
 end
 
-function cleanMeUp()
-    
+function cleanMeUp()    
     try
         GUI = guidata(findobj('Tag','TMFC_GUI')); 
         set([GUI.TMFC_GUI_B1, GUI.TMFC_GUI_B2, GUI.TMFC_GUI_B3, GUI.TMFC_GUI_B4,...
@@ -395,12 +400,12 @@ end
 
 % Save batches in parallel mode
 function tmfc_parsave_batch(fname,matlabbatch)
-  save(fname, 'matlabbatch')
+	save(fname, 'matlabbatch')
 end
 
 % Save SPM.mat files in parallel mode
 function tmfc_parsave_SPM(fname,SPM)
-  save(fname, 'SPM')
+	save(fname, 'SPM')
 end
 
 % Waitbar for parallel mode
@@ -417,22 +422,8 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations)
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            %t = seconds((N-count)*time/count); t.Format = 'hh:mm:ss';
             hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
             waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
-end
-
-function legacy_warning()
-
-Warn_Window = figure('Name', 'Please wait', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.22 0.18],'Resize','off','MenuBar', 'none', 'ToolBar', 'none','Tag','TMFC_WB_NUM', 'WindowStyle','modal', 'color', 'w');         
-Warn_Window_txt_1= uicontrol(Warn_Window,'Style','text','String', {'Waitbar progress update is not available for parallel computations','in MATLAB R2016b and earlier.'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.26, 'Position',[0.1 0.55 0.8 0.400],'backgroundcolor',get(Warn_Window,'color'));
-Warn_Window_txt_2= uicontrol(Warn_Window,'Style','text','String', {'Please wait as computations are processed....'},'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.41, 'Position',[0.1 0.28 0.8 0.240],'backgroundcolor',get(Warn_Window,'color'));
-Warn_Close_btn = uicontrol(Warn_Window, 'Style', 'pushbutton', 'String', 'Close', 'Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position',[0.38 0.08 0.25 0.170], 'callback', @Close_warn_window);
-
-    function Close_warn_window(~,~)
-        delete(Warn_Window);
-    end
-        
 end

@@ -10,9 +10,8 @@ function [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number)
 %
 % FORMAT [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc)
 %
-%   tmfc.subjects.path            - Paths to individual SPM.mat files
-%   tmfc.project_path             - Path where all results will be saved
-%   tmfc.defaults.parallel        - 0 or 1 (sequential/parallel computing)
+%   tmfc.subjects.path     - Paths to individual SPM.mat files
+%   tmfc.project_path      - Path where all results will be saved
 %   tmfc.defaults.analysis - 1 (Seed-to-voxel and ROI-to-ROI analyses)
 %                          - 2 (ROI-to-ROI analysis only)
 %                          - 3 (Seed-to-voxel analysis only)
@@ -199,9 +198,9 @@ for i = 1:N
         ['Subject_' num2str(i,'%04.f') '_beta_series.mat']),'beta_series');
 
     % Update waitbar
-    t = seconds(toc*(N-i)); t.Format = 'hh:mm:ss';
+    hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
     try
-        waitbar(i/N,w,[num2str(i/N*100,'%.f') '%, ' char(t) ' [hr:min:sec] remaining']);
+        waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
     end
 
     sub_check(i) = 1;
@@ -212,8 +211,6 @@ end
 % Default contrasts info
 SPM = load(tmfc.subjects(1).path);
 for j = 1:length(cond_list)
-    sess = cond_list(j).sess;
-    cond = cond_list(j).number;
     contrasts(j).title = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
                 regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
     contrasts(j).weights = zeros(1,length(cond_list));

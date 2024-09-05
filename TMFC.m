@@ -296,7 +296,7 @@ end % Closing ROI selection
 
 function VOI(ButtonH, EventData, TMFC_GUI)
 % Checking for subjects selection
-     %try 
+     try 
          
         % Change to project directory & Freeze TMFC window
         cd(tmfc.project_path);       
@@ -439,6 +439,13 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                                     if fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR')
                                         rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR'),'s');
                                     end
+                                    % Clear contrasts
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'gPPI');
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'gPPI_FIR');
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.title = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.weights = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.title = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.weights = [];
                                     disp('Deleting old files');
                                 end
                                 
@@ -503,6 +510,12 @@ function VOI(ButtonH, EventData, TMFC_GUI)
                                     if fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR')
                                         rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR'),'s');
                                     end
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'gPPI');
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'gPPI_FIR');
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.title = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.weights = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.title = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.weights = [];
                                     fprintf('\nDeleting old files\n');
                                 end
                                 
@@ -536,9 +549,9 @@ function VOI(ButtonH, EventData, TMFC_GUI)
            warning('Please select subjects to continue with VOI computation');
         end
                 
-     %catch
-     %    warning('Please select subjects & project path to perform VOI computation');
-     %end
+     catch
+         warning('Please select subjects & project path to perform VOI computation');
+     end
      
      % Unfreeze TMFC Main Window
      MW_Freeze(0);
@@ -771,7 +784,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
                                  
                                  % Perform computation of gPPI for all newly added contrasts
                                  for i = verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)                                     
-                                     Seed_ROI_condition(tmfc, i, 1);
+                                     seed2vox_or_ROI2ROI(tmfc, i, 1);
                                  end
                              end
                              
@@ -914,7 +927,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                                  % Perform computation of gPPI FIR for all newly added contrasts
                                  for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR)
                                      
-                                    Seed_ROI_condition(tmfc, i, 2);
+                                    seed2vox_or_ROI2ROI(tmfc, i, 2);
                                       
                                  end
                                  
@@ -1143,6 +1156,9 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                                     if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'))
                                         rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'),'s');
                                     end
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'BSC');
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.title = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.weights = [];
                                     fprintf('\nDeleting old files\n');
                                 end
                                 
@@ -1193,6 +1209,9 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
                                     if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'))
                                         rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS'),'s');
                                     end
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'BSC');
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.title = [];
+                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.weights = [];
                                     disp('Deleting old files');
                                 end
                                 
@@ -1328,7 +1347,7 @@ function BSC(buttonH, EventData, TMFC_GUI)
                                      % Perform computation of BSC for all newly added contrasts
                                      for i = verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
 
-                                        Seed_ROI_condition(tmfc, i, 3);
+                                        seed2vox_or_ROI2ROI(tmfc, i, 3);
                                           
                                      end
                                      
@@ -1925,6 +1944,9 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                                         if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
                                             rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
                                         end
+                                        tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'BSC_after_FIR');
+                                        tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.title = [];
+                                        tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.weights = [];
                                         fprintf('\nDeleting old files\n');
                                     end
                                     
@@ -1975,6 +1997,9 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
                                         if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'))
                                             rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
                                         end
+                                        tmfc.ROI_set(tmfc.ROI_set_number).contrasts = rmfield(tmfc.ROI_set(tmfc.ROI_set_number).contrasts,'BSC_after_FIR');
+                                        tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.title = [];
+                                        tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.weights = [];
                                         disp('Deleting old files');
                                     end
                                     
@@ -2114,7 +2139,7 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                                      % Perform computation of BSC FIR for all newly added contrasts
                                      for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)
                                          
-                                        Seed_ROI_condition(tmfc, i, 4);                                          
+                                        seed2vox_or_ROI2ROI(tmfc, i, 4);                                          
                                      end
                                     
                                  end
@@ -2185,7 +2210,7 @@ function open_project(ButtonH, EventData, TMFC_GUI)
 
             % Evaluate file & Update TMFC, TMFC window with progress
             tmfc = evaluate_file(tmfc);
-            fprintf('Successfully loaded file "%s.m"\n', filename_LO);
+            fprintf('Successfully loaded file "%s"\n', filename_LO);
             
         else
             warning('Selected file is not in TMFC format, please select again');
@@ -2197,7 +2222,7 @@ function open_project(ButtonH, EventData, TMFC_GUI)
 end  % Closing Load project function
 
 %% ==========================[ Save project ]==============================
-% Function to perform Saving of TMFC variable from workspace to individual .m file in user desired location
+% Function to perform Saving of TMFC variable from workspace to individual .mat file in user desired location
 % Dependencies:
 %       - saver() (Internal)
 
@@ -2217,7 +2242,6 @@ function save_stat = save_project(ButtonH, EventData, TMFC_GUI)
     else
         % If all data is available
         % Construct full path: PATH + FileName
-        % e.g (D:\user\matlab\ + Test.m)
         
         fullpath = fullfile(pathname_SO, filename_SO);
         
@@ -3063,50 +3087,48 @@ function [tmfc] = reset_BGFC(tmfc)
     end
 end
 
-function Seed_ROI_condition(tmfc, i, case_app)
+function seed2vox_or_ROI2ROI(tmfc, contrast_number, analysis_type)
 
     switch(tmfc.defaults.analysis)
         
-        case 1  % Seed to Voxel & ROI to ROI
-             % ROI to ROI generation 
-             sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, case_app, i, tmfc.ROI_set_number);                           
-             if sub_check_roi(length(tmfc.subjects)) == 1
-                 fprintf('ROI-ROI contrasts succefully generated for contrast No: %d\n', i);
+        case 1  % Seed-to-voxel and ROI-to-ROI analyses
+             
+            % ROI-to-ROI 
+             sub_check_ROI2ROI = tmfc_ROI_to_ROI_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);                           
+             if sub_check_ROI2ROI(length(tmfc.subjects)) == 1
+                 fprintf('ROI-to-ROI contrasts succefully calculated for contrast No: %d\n', contrast_number);
              else
-                 disp('ROI-ROI contrasts failed');
+                 disp('ROI-to-ROI contrasts failed');
              end
 
-             % Seed to Voxel generation
-             sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, case_app,i, tmfc.ROI_set_number);
-              if sub_check_svox(length(tmfc.subjects)) == 1
-                 fprintf('Seed-Voxel contrasts succefully generated for contrast No: %d\n', i);
+             % Seed-to-voxel
+             sub_check_seed2vox = tmfc_seed_to_voxel_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);
+              if sub_check_seed2vox(length(tmfc.subjects)) == 1
+                 fprintf('Seed-to-voxel contrasts succefully generated for contrast No: %d\n', contrast_number);
              else
-                 disp('Seed-Voxel contrasts failed');
+                 disp('Seed-to-voxel contrasts failed');
              end
             
-        case 2  % ROI to ROI only
-             % ROI to ROI generation 
-             sub_check_roi = tmfc_ROI_to_ROI_contrast(tmfc, case_app, i, tmfc.ROI_set_number);                           
-             if sub_check_roi(length(tmfc.subjects)) == 1
-                 fprintf('ROI-ROI contrasts succefully generated for contrast No: %d\n', i);
+        case 2  % ROI-to-ROI only
+   
+             sub_check_ROI2ROI = tmfc_ROI_to_ROI_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);                           
+             if sub_check_ROI2ROI(length(tmfc.subjects)) == 1
+                 fprintf('ROI-to-ROI contrasts succefully generated for contrast No: %d\n', contrast_number);
              else
-                 disp('ROI-ROI contrasts failed');
+                 disp('ROI-to-ROI contrasts failed');
              end
             
              
-        case 3  % Seed to Voxel only
-             % Seed to Voxel generation
-             sub_check_svox = tmfc_seed_to_voxel_contrast(tmfc, case_app,i, tmfc.ROI_set_number);
-              if sub_check_svox(length(tmfc.subjects)) == 1
-                 fprintf('Seed-Voxel contrasts succefully generated for contrast No: %d\n', i);
+        case 3  % Seed-to-voxel only
+
+             sub_check_seed2vox = tmfc_seed_to_voxel_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);
+             if sub_check_seed2vox(length(tmfc.subjects)) == 1
+                 fprintf('Seed-to-voxel contrasts succefully generated for contrast No: %d\n', contrast_number);
              else
-                 disp('Seed-Voxel contrasts failed');
-              end
-              
+                 disp('Seed-to-voxel contrasts failed');
+             end
     end
-
 end
-
 
 % =================================[ END ]=================================
 
@@ -3144,16 +3166,16 @@ function [tmfc] = ROI_initializer(tmfc)
    end
    
    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.title = [];
-   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.weights= [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI.weights = [];
    
    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.title = [];
-   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.weights= [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR.weights = [];
    
    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.title = [];
-   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.weights= [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC.weights = [];
    
    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.title = [];
-   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.weights= [];
+   tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR.weights = [];
    
 
 end

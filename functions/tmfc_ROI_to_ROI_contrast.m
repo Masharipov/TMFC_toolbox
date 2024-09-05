@@ -97,8 +97,18 @@ switch type
             for j = 1:length(cond_list)               
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
-    
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+                
+                % If ROI-to-ROI analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
+                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                    disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI gPPI analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 2;
+                    tmfc_gPPI(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
                     ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
@@ -138,7 +148,17 @@ switch type
             for j = 1:length(cond_list)               
                 cond_name = [];
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
+                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+                
+                % If ROI-to-ROI analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
+                                  ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                    disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI gPPI-FIR analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 2;
+                    tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
     
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
                     ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
@@ -181,6 +201,16 @@ switch type
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
                     regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
     
+                % If ROI-to-ROI analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
+                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                    disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 2;
+                    tmfc_BSC(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
                     ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
     
@@ -215,6 +245,16 @@ switch type
                 cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
                     regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
 
+                % If ROI-to-ROI analysis has not been performed for the default contrasts
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','ROI_to_ROI', ...
+                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                    disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS (after FIR) analysis, please wait...');
+                    analysis = tmfc.defaults.analysis;
+                    tmfc.defaults.analysis = 2;
+                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc.defaults.analysis = analysis;
+                end
+                
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','ROI_to_ROI', ...
                     ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
 

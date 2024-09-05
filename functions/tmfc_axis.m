@@ -32,7 +32,7 @@ function min_max_ax = tmfc_axis(matrix,type)
 % Contact email: masharipov@ihb.spb.ru
 
 matrix(1:1+size(matrix,1):end) = NaN;
-max_ax = round(max(max(abs(matrix))),4);
+max_ax = roundf(max(max(abs(matrix))));
 
 if type == 1
     min_max_ax = [-max_ax max_ax];
@@ -40,4 +40,8 @@ elseif type == 0
     min_max_ax = [-max_ax 0 max_ax];
 end
     
+end
+
+function y = roundf(x)
+y = round(x*10000)/10000;
 end

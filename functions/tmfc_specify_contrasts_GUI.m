@@ -94,7 +94,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
                     
                 end
 
-                fprintf('Contrast added :%s\n',D);
+                fprintf('Contrast added: %s\n',D);
             else
                 disp('No contrasts added');
             end
@@ -152,7 +152,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
         function action6(~,~)
             
             if isempty(LST_2)
-                warning('Please specify new contrastt(s)');
+                warning('Please specify new contrast(s)');
             else
                 tmfc = Finisher(tmfc, carbs, TMFC_analysis);
                 fprintf('Number of newly added contrast for processing: %d\n',length(LST_2));
