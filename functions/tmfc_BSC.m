@@ -1,4 +1,4 @@
-function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number)
+function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -56,6 +56,16 @@ function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number)
 %
 %   tmfc                   - As above
 %   ROI_set_number         - Number of the ROI set in the tmfc structure
+%                            (by default, ROI_set_number = 1)
+%
+% FORMAT [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC)
+% Run the function for the selected ROI set.
+%
+%   tmfc                   - As above
+%   ROI_set_number         - Number of the ROI set in the tmfc structure
+%   clear_BSC              - Clear previosly created BSC folders
+%                            (0 - do not clear, 1 - clear)
+%                            (by default, clear_BSC = 1)
 %
 % =========================================================================
 %
@@ -78,14 +88,21 @@ function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number)
     
 if nargin == 1
    ROI_set_number = 1;
+   clear_BSC = 1;
+elseif nargin == 2
+   clear_BSC = 1;
 end
 
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
 
-if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'))
-    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'),'s');
+% Clear previosly created BSC folders
+if clear_BSC == 1
+    if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'))
+        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS'),'s');
+    end
 end
 
+% Create BSC folders
 if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Beta_series'))
     mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','Beta_series'));
 end

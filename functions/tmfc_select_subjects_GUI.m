@@ -38,7 +38,7 @@ if nargin == 0
 end
 
 % Freeze Main TMFC window
-GUI_freeze(1);
+freeze_GUI(1);
                       
 % Creation of Figure for the Window
 TMFC_SS = figure('Name', 'Subject Manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.36 0.25 0.35 0.575],'MenuBar', 'none','ToolBar', 'none','color','w','CloseRequestFcn',@close);
@@ -260,7 +260,7 @@ function file_func = action_5(~,~)
     else
         close(TMFC_SS);                               % Close Select Subjects GUI    
         
-        GUI_freeze(1);
+        freeze_GUI(1);
         % Check SPM.mat files
         if SPM_check == 1
                 
@@ -301,7 +301,7 @@ function file_func = action_5(~,~)
         end
         if SPM_check == 0
             paths = file_address; 
-            GUI_freeze(0);
+            freeze_GUI(0);
         end
     end                                                                 
 end      
@@ -320,7 +320,7 @@ function close(~,~)
     delete(TMFC_SS);
     if exist('paths', 'var') == 0
         paths = [];
-        GUI_freeze(0);
+        freeze_GUI(0);
     end   
 end
 
@@ -640,8 +640,8 @@ function [file_func,file_no_func] = CHECK_FUNCTION(Y_4)
 end
 
 
-%% Freezing & Unfreezing main TMFC window
-function GUI_freeze(state)
+%% Freeze/unfreeze main TMFC GUI
+function freeze_GUI(state)
 
     switch(state)
         case 0 

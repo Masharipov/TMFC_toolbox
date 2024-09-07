@@ -67,7 +67,7 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     tmfc.defaults.resmem = true;
     tmfc.defaults.analysis = 1;
     
-    % Main TMFC Window
+    % Main TMFC GUI
     handles.TMFC_GUI = figure('Name','TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.115 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'TMFC_GUI');
     
     % Box Panels
@@ -136,154 +136,151 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     set(handles.TMFC_GUI_B14b, 'callback', {@settings, handles.TMFC_GUI});    
     warning('off','backtrace')
 else
-    % Warning prompt if user tries to open TMFC when already running
+    % Warning if user tries to open TMFC when it is already running
     figure(findobj('Tag', 'TMFC_GUI')); 
     warning('TMFC toolbox is already running');    
 end
+
 %% ========================[ Select Subjects ]=============================
-% Select subjects and check SPM.mat files for processing
+% Select subjects and check SPM.mat files
 % Dependencies: 
-%       - tmfc_select_subjects_GUI.m (External)
-%       - tmfc_select_project_path() (Internal)
+%       - tmfc_select_subjects_GUI (External)
+%       - tmfc_select_project_path (Internal)
+
 function select_subjects(ButtonH, EventData, TMFC_GUI)
     
-    % Freeze TMFC Main Window
-    MW_Freeze(1);
-    
-    % Selection of paths using 4 stage file existence checks
-    sel_paths = tmfc_select_subjects_GUI(1);
-    
-    % If paths are not selected - Unfreeze 
-    if isempty(sel_paths)
-        MW_Freeze(0);
-        fprintf('\nTMFC Subjects: Subjects not selected\n');
-    else 
-       
-       % Clearning old instances of TMFC data             
-       tmfc = major_reset(tmfc);
+% Freeze main TMFC GUI
+freeze_GUI(1);
 
-       % Update paths to TMFC variable
-       L_paths = size(sel_paths);
-       for SS_i = 1:L_paths(1) 
-           tmfc.subjects(SS_i).path = char(sel_paths(SS_i));       
-       end
-       
-       % Project Path selection
-       fprintf('TMFC Subjects: Please select a folder for the new TMFC project\n');    
-       tmfc_select_project_path(L_paths(1)); % Warning Dialogue box
-       % Select project path
-       project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
-       
-       % Verify if project path is selected
-       if strcmp(project_path, '')
-            warning('TMFC Subjects: Project path not selected, Subjects not saved');
-            try
-                MW_Freeze(0);
-            end
-            return;
-       else
-           % assign to TMFC variable
-            fprintf('TMFC Subjects: %d subjects have been successfully selected \n', L_paths(1));
-            set(handles.TMFC_GUI_S1,'String', strcat(num2str(L_paths(1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
-            tmfc.project_path = project_path;
-            
-            MW_Freeze(0);
-       end       
-    end
+% Select subjects and check SPM.mat files
+subject_paths = tmfc_select_subjects_GUI(1);
 
-    % Change path to project folder
-    try
-        cd(tmfc.project_path);  
-    end
+% If subjects are not selected - unfreeze 
+if isempty(subject_paths)
+    freeze_GUI(0);
+    disp('TMFC: Subjects not selected.');
+else 
+   % Clear TMFC structure and resfresh main TMFC GUI            
+   tmfc = major_reset(tmfc);
+
+   % Add subject paths to TMFC structure
+   for sub_i = 1:size(subject_paths,1) 
+       tmfc.subjects(sub_i).path = char(subject_paths(sub_i));       
+   end
+
+   % Select TMFC project folder
+   disp('TMFC: Please select a folder for the new TMFC project');    
+   tmfc_select_project_path(size(subject_paths,1)); % Dialog window
+   project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
+
+   % Verify if project folder is selected
+   if strcmp(project_path, '')
+        warning('TMFC: Project folder not selected. Subjects not saved');
+        try
+            freeze_GUI(0);
+        end
+        return;
+   else
+       % Add project path to TMFC variable
+        fprintf('TMFC: %d subject(s) selected \n', size(subject_paths,1));
+        set(handles.TMFC_GUI_S1,'String', strcat(num2str(size(subject_paths,1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
+        tmfc.project_path = project_path;
+
+        freeze_GUI(0);
+        
+        cd(tmfc.project_path); 
+   end       
+end
+    
 end
 
 %% ============================[ ROI set ]=================================
-% Selection of ROI sets for subjects processing 
+% Select ROIs and apply group-mean binary mask to them
 % Dependencies: 
-%       - tmfc_select_ROIs_GUI.m (External)
-%       - ROI_initializer()      (Internal)
-%       - ROI_set()              (Internal)
-%       - update_gPPI()          (Internal)
+%       - tmfc_select_ROIs_GUI (External)
+%       - ROI_initializer      (Internal)
+%       - ROI_set              (Internal)
+%       - update_gPPI          (Internal)
 
 function ROI(ButtonH, EventData, TMFC_GUI)
 
-    % Checking if project path has been selected
-   if isfield(tmfc, 'project_path')
-    
-       % Change to project Directory
-       cd(tmfc.project_path);    
-    
-       % Freeze main TMFC Window
-       MW_Freeze(1);
-    
-       % Check if ROI sets already exist 
-       if ~isfield(tmfc, 'ROI_set')
-           
-           % Selection of ROIs 
-           ROI_hold = tmfc_select_ROIs_GUI(tmfc);  
-           
-           % If ROIs have been selected continue and assign data to TMFC var
-           if isstruct(ROI_hold)
-               tmfc.ROI_set_number = 1;
-               tmfc.ROI_set(1) = ROI_hold;
-               set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
-               
-               % Initialize processing fields (e.g LSS etc)
-               tmfc = ROI_initializer(tmfc);
-           end
-        
-        else
-            % Additional ROI selection after initialization
-            
-            % Creationg & storage of existing ROI sets
-            lst_4 = {};
-            for l = 1:length(tmfc.ROI_set)
-                matter = {l,horzcat(tmfc.ROI_set(l).set_name, ' (',num2str(length(tmfc.ROI_set(l).ROIs)),' ROIs)')};
-                lst_4 = vertcat(lst_4, matter);
-            end  
-    
-            % User selects current ROI set or Add new ROI set
-            [R_ans, pos] = ROI_set(lst_4);
-            SZ_4 = size(lst_4);
-    
-            if R_ans == 1
-                
-               % Add new ROI set
-               new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
-               
-               % Assign new data only if selected by user
-               if isstruct(new_ROI_set)
-                   tmfc.ROI_set(SZ_4(1)+1).set_name = new_ROI_set.set_name;
-                   tmfc.ROI_set(SZ_4(1)+1).ROIs = new_ROI_set.ROIs;
-                   tmfc.ROI_set_number = SZ_4(1)+1;
-                   fprintf('\nROIs have been succesfully selected\n');
-                   set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(SZ_4(1)+1).set_name, ' (',num2str(length(tmfc.ROI_set(SZ_4(1)+1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
-                   tmfc = ROI_initializer(tmfc);
-                   set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);    
-                   set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-               end
-    
-               
-            elseif R_ans == 0 && pos ~=0
-                % Selection of ROI set (No addition of new ROI Set)
-                fprintf('\nSelected ROI for processing is: %s \n', char(lst_4(pos,2)));
-                tmfc.ROI_set_number = pos;
-                set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(pos).set_name, ' (',num2str(length(tmfc.ROI_set(pos).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
-                tmfc = update_gPPI(tmfc);
-            else
-                % If user cancels operation
-                fprintf('\nNew ROI set has not been selected\n');
-            end
+% Checking if project path has been selected
+if isfield(tmfc, 'project_path')
+
+   % Change to project Directory
+   cd(tmfc.project_path);    
+
+   % Freeze main TMFC GUI
+   freeze_GUI(1);
+
+   % Check if ROI sets already exist 
+   if ~isfield(tmfc, 'ROI_set')
+
+       % Selection of ROIs 
+       ROI_hold = tmfc_select_ROIs_GUI(tmfc);  
+
+       % If ROIs have been selected continue and assign data to TMFC var
+       if isstruct(ROI_hold)
+           tmfc.ROI_set_number = 1;
+           tmfc.ROI_set(1) = ROI_hold;
+           set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+
+           % Initialize processing fields (e.g LSS etc)
+           tmfc = ROI_initializer(tmfc);
        end
-   
-   else
-       % Warning if user has not selected subjects
-        warning('Please select subjects & project paths to continue with ROI set selection');
+
+    else
+        % Additional ROI selection after initialization
+
+        % Creationg & storage of existing ROI sets
+        lst_4 = {};
+        for l = 1:length(tmfc.ROI_set)
+            matter = {l,horzcat(tmfc.ROI_set(l).set_name, ' (',num2str(length(tmfc.ROI_set(l).ROIs)),' ROIs)')};
+            lst_4 = vertcat(lst_4, matter);
+        end  
+
+        % User selects current ROI set or Add new ROI set
+        [R_ans, pos] = ROI_set(lst_4);
+        SZ_4 = size(lst_4);
+
+        if R_ans == 1
+
+           % Add new ROI set
+           new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
+
+           % Assign new data only if selected by user
+           if isstruct(new_ROI_set)
+               tmfc.ROI_set(SZ_4(1)+1).set_name = new_ROI_set.set_name;
+               tmfc.ROI_set(SZ_4(1)+1).ROIs = new_ROI_set.ROIs;
+               tmfc.ROI_set_number = SZ_4(1)+1;
+               fprintf('\nROIs have been succesfully selected\n');
+               set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(SZ_4(1)+1).set_name, ' (',num2str(length(tmfc.ROI_set(SZ_4(1)+1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+               tmfc = ROI_initializer(tmfc);
+               set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);    
+               set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+           end
+
+
+        elseif R_ans == 0 && pos ~=0
+            % Selection of ROI set (No addition of new ROI Set)
+            fprintf('\nSelected ROI for processing is: %s \n', char(lst_4(pos,2)));
+            tmfc.ROI_set_number = pos;
+            set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(pos).set_name, ' (',num2str(length(tmfc.ROI_set(pos).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+            tmfc = update_gPPI(tmfc);
+        else
+            % If user cancels operation
+            fprintf('\nNew ROI set has not been selected\n');
+        end
    end
-   % Unfreeze TMFC Main Window
-   MW_Freeze(0);
+
+else
+   % Warning if user has not selected subjects
+    warning('Please select subjects & project path to continue with ROI set selection');
+end
+% Unfreeze main TMFC GUI
+freeze_GUI(0);
    
-end % Closing ROI selection
+end
 
 %% ================================[ VOIs ]================================
 % Performing VOI processing for ROI sets
@@ -300,7 +297,7 @@ function VOI(ButtonH, EventData, TMFC_GUI)
          
         % Change to project directory & Freeze TMFC window
         cd(tmfc.project_path);       
-        MW_Freeze(1);
+        freeze_GUI(1);
                
         % Track & Update VOI progress to TMFC variable & window 
         try
@@ -553,8 +550,8 @@ function VOI(ButtonH, EventData, TMFC_GUI)
          warning('Please select subjects & project path to perform VOI computation');
      end
      
-     % Unfreeze TMFC Main Window
-     MW_Freeze(0);
+     % Unfreeze main TMFC GUI
+     freeze_GUI(0);
      
 end
 
@@ -572,7 +569,7 @@ function PPI(ButtonH, EventData, TMFC_GUI)
         
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);       
-        MW_Freeze(1);
+        freeze_GUI(1);
         
         % Track & Update PPI progress to TMFC variable & Window 
         try
@@ -689,8 +686,8 @@ function PPI(ButtonH, EventData, TMFC_GUI)
         warning('Please select subjects & compute VOIs to perform PPI computation');
     end   
     
-    % UnFreeze TMFC Main Window
-    MW_Freeze(0);
+    % UnFreeze main TMFC GUI
+    freeze_GUI(0);
     
 end % Closing PPI function
 
@@ -710,7 +707,7 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
     try 
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);    
-        MW_Freeze(1);
+        freeze_GUI(1);
                 
         % Track & Update gPPI progress to TMFC variable & Window 
         try
@@ -823,8 +820,8 @@ function gPPI(ButtonH, EventData, TMFC_GUI)
         warning('Please select subjects & compute PPIs to perform gPPI computation');
     end
     
-    % Unfreeze TMFC Main Window
-    MW_Freeze(0);
+    % Unfreeze main TMFC GUI
+    freeze_GUI(0);
             
 end % Closing gPPI function
 
@@ -844,7 +841,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
     try 
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);    
-        MW_Freeze(1);
+        freeze_GUI(1);
         
         % Track & Update gPPI FIR progress to TMFC variable & Window
         try
@@ -967,8 +964,8 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
     catch
         warning('Please select subjects & compute PPIs to perform gPPI computation');
     end
-    % Unfreeze TMFC Main Window
-    MW_Freeze(0);
+    % Unfreeze main TMFC GUI
+    freeze_GUI(0);
     
 end % Closing gPPI FIR function
 
@@ -985,7 +982,7 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
     try
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);           
-        MW_Freeze(1);
+        freeze_GUI(1);
         
         L_break = 0;
         V_LSS = 0;
@@ -1244,12 +1241,12 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
        warning('Please select subjects & project path to perform LSS GLM regression');
     end
         
-    % Unfreeze TMFC Main Window
-    MW_Freeze(0);
+    % Unfreeze main TMFC GUI
+    freeze_GUI(0);
         
 end
 
-%% ================================ [ BSC ] ===============================
+%% ============================== [ BSC ] =================================
 % Performing BSC LSS processing 
 % Dependencies: 
 %       - tmfc_BSC.m                         (External)
@@ -1259,138 +1256,110 @@ end
 
 function BSC(buttonH, EventData, TMFC_GUI)
 
-    % Checking for subjects selection
-    try
-        % Change to project directory & Freeze TMFC Window
-        cd(tmfc.project_path);
-        MW_Freeze(1);
-        
-        % Track & Update BSC progress to TMFC variable & Window
-        try
-            V_BSC = 0;
-            for subi = 1:length(tmfc.subjects)
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS','Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 1;
-                else
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 0;
-                end
-            end
-            
-        end
-        
-        % Update BSC progress to TMFC variable 
-        try
-            SZ_tmfc = size(tmfc.subjects);
-            V_BSC = 0;
-            for i = 1:SZ_tmfc(2)
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC == 0
-                    V_BSC = i ;
-                    break;
-                end
-            end           
-        end
-        
-        % Track & Store the number of Conditions, Sessions & Trials for LSS
-        try
-           SZC_tmfc = size(tmfc.LSS.conditions);
-           post = tmfc.subjects(length(tmfc.subjects)).LSS.session(max([tmfc.LSS.conditions.sess])).condition(SZC_tmfc(2)).trials; 
-        end
-        
-        
-        % Check if Seubjects have been selected
-        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-            
-            % Check if LSS has been computed
-            if isfield(tmfc.subjects, 'LSS')
-                
-                % Check if all LSS variables have been processed
-                if ~any(post == 0)
-                    
-                    % Check if ROI set has been selected
-                    if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
-                        
-                        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 0                           
-                                % First time execution of BSC
-                                
-                                fprintf('\nInitiating BSC LSS computation\n');   
-                                
-                                 % Processing BSC LSS & generation of default contrasts
-                                [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
-                                
-                                % Assigning progress of contrasts, BSC to TMFC
-                                for i = 1:length(tmfc.subjects)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
-                                end
-                                for i = 1:length(contrasts)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title = contrasts(i).title;
-                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights = contrasts(i).weights;
-                                end
-                                fprintf('BSC LSS computation completed\n');
-                                
-                        else
-                            
-                            % Restart Case
-                            if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 1
-                                fprintf('\nBSC has been completely calcualted using the LSS settings of %d Sessions and %d Conditions. \n', max([tmfc.LSS.conditions.sess]), SZC_tmfc(2));
-                                fprintf('To calcualte BSC with different settings, please recompute LSS BSC with desrided combination of sessions and conditions \n');         
-                                fprintf('\nContinue to select contrasts\n');
-                                
-                                % Variable to store length of previously selected contrasts
-                                verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
-                                 
-                                 % Selection of Contrasts
-                                 tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 3);
-                                 
-                                 % if new contrasts added then proceed with processing
-                                 if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)       
-                                     
-                                     % Perform computation of BSC for all newly added contrasts
-                                     for i = verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
+% Initial checks
+if ~isfield(tmfc,'subjects')
+    error('Select subjects.');
+elseif strcmp(tmfc.subjects(1).path, '')
+    error('Select subjects.');
+elseif ~isfield(tmfc,'project_path')
+    error('Select TMFC project folder.');
+elseif ~isfield(tmfc,'ROI_set_number')
+    error('Select ROI set number.');
+elseif ~isfield(tmfc,'ROI_set')
+    error('Select ROIs.');
+elseif ~isfield(tmfc.subjects,'LSS')
+    error('Compute LSS GLMs for all selected subjects.');
+end
 
-                                        seed2vox_or_ROI2ROI(tmfc, i, 3);
-                                          
-                                     end
-                                     
-                                 end                                 
-                                 
-                            else
-                                % Restart computations
-                                
-                                % Processing BSC computation
-                                fprintf('\nInitiating BSC LSS computation\n'); 
-                                sub_check = tmfc_BSC(tmfc,tmfc.ROI_set_number);
-                                for i = 1:length(tmfc.subjects)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
-                                end
-                                fprintf('\nBSC computation completed\n');
-                                
-                            end
-                            
-                        end
-                        
-                    else
-                        warning('Please select ROIs to continue with BSC computation');
-                    end
-                    
-                else
-                    warning('Please complete LSS GLM computation to proceed with BSC computation');
-                end
-                
-            else
-                warning('Please compute LSS GLM for the selected subjects to proceed with computation of Beta Series Correlation');
-            end
-            
-        else
-            warning('Please select subjects and compute LSS GLM to proceed with BSC computaiton');
+% Check LSS progress (last subject, last session)
+LSS_progress = tmfc.subjects(length(tmfc.subjects)).LSS.session(max([tmfc.LSS.conditions.sess])).condition(size(tmfc.LSS.conditions,2)).trials; 
+if any(LSS_progress == 0)
+    error('Compute LSS GLMs for all selected subjects.');
+end
+
+% Freeze main TMFC GUI
+cd(tmfc.project_path);
+freeze_GUI(1);
+
+% Update BSC progress in TMFC structure
+for subi = 1:length(tmfc.subjects)
+    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS', ...
+            'Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 1;
+    else
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 0;
+    end
+end
+
+% BSC was not calculated
+if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 0                           
+        
+    disp('Initiating BSC LSS computation...');   
+    
+    try
+        % Processing BSC LSS & generation of default contrasts
+        [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
+
+        % Update BSC progress and BSC contrasts in TMFC structure
+        for i = 1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
         end
-        
-        
+        for i = 1:length(contrasts)
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title = contrasts(i).title;
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights = contrasts(i).weights;
+        end
+
+        disp('BSC LSS computation completed.');
     catch
-        warning('Please select subjects & compute LSS GLM to perform BSC computation');    
+        freeze_GUI(0);
+        error('Error: Calculate BSC for all subjects.');
     end
     
-    % Unfreeze TMFC Main Window
-    MW_Freeze(0);
+% BSC was calculated for all subjects
+elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 0)
+    
+    fprintf('\nBSC was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.LSS.conditions.sess]), size(tmfc.LSS.conditions,2));
+    disp('To calcualte BSC for different conditions, please recompute LSS GLMs with desrided conditions.');         
+
+    % Number of previously calculated contrasts
+    N_contrasts = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
+    
+    try
+        % Specify new contrasts
+        tmfc = tmfc_specify_contrasts_GUI(tmfc,tmfc.ROI_set_number,3);
+
+        % Calculate new contrasts
+        if N_contrasts ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)       
+            for i = N_contrasts+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
+                seed2vox_or_ROI2ROI(tmfc,i,3);
+            end
+        end
+    catch
+        freeze_GUI(0);       
+        error('Error: Calculate new contrasts.');
+    end
+    
+% BSC was calculated for some subjects (recompute)
+else
+    
+    disp('Initiating BSC LSS computation...');
+    
+    try
+        sub_check = tmfc_BSC(tmfc,tmfc.ROI_set_number);
+        for i = 1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
+        end
+
+        disp('BSC LSS computation completed.');
+    catch
+        freeze_GUI(0);
+        error('Error: Recompute BSC for all subjects.');
+    end
+
+end
+
+% Unfreeze main TMFC GUI
+freeze_GUI(0);
     
 end
 
@@ -1409,7 +1378,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
 
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);           
-        MW_Freeze(1);
+        freeze_GUI(1);
 
         % Logical Condition to perform FIR if already computed
         if isfield(tmfc,'FIR') && ~isnan(tmfc.FIR.window) && ~isnan(tmfc.FIR.bins)
@@ -1621,8 +1590,8 @@ function FIR(ButtonH, EventData, TMFC_GUI)
     %   warning('Please select subjects & project path to perform FIR regression');
     %end 
     
-     % Unfreeze TMFC Main Window
-    MW_Freeze(0);
+     % Unfreeze main TMFC GUI
+    freeze_GUI(0);
     
 end
 
@@ -1640,7 +1609,7 @@ function BGFC(buttonH, EventData, TMFC_GUI)
        
        % Change to project directory & Freeze TMFC Window
        cd(tmfc.project_path); 
-       MW_Freeze(1);
+       freeze_GUI(1);
        
        % Track & Update BGFC progress to TMFC variable & Window 
        try
@@ -1703,7 +1672,7 @@ function BGFC(buttonH, EventData, TMFC_GUI)
                         
                         % If BGFC is completely computed, then show message
                         if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BGFC == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BGFC == 1
-                            fprintf('BGFC has been completely calcualted using the FIR settings of %d Windows and %d bins. \n', tmfc.FIR.window,tmfc.FIR.bins);
+                            fprintf('BGFC has been completely calculated using the FIR settings of %d Windows and %d bins. \n', tmfc.FIR.window,tmfc.FIR.bins);
                             fprintf('To calcualte BGFC with different settings, please recompute FIR with desrided combination of windows and bins \n');         
                             recompute_BGFC(tmfc);
                             
@@ -1751,8 +1720,8 @@ function BGFC(buttonH, EventData, TMFC_GUI)
         warning('Please select subjects & compute FIRs to perform BGFC computaiton');
     end
     
-   % Unfreeze TMFC Main Window
-   MW_Freeze(0);
+   % Unfreeze main TMFC GUI
+   freeze_GUI(0);
     
 end
 
@@ -1770,7 +1739,7 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
     try
         % Change to project directory & Freeze TMFC Window
         cd(tmfc.project_path);           
-        MW_Freeze(1);
+        freeze_GUI(1);
 
         % Variables to store progress of LSS FIR progression
         L_break = 0;
@@ -2037,8 +2006,8 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
        warning('Please select subjects & project path to perform LSS after FIR regression');
     end
     
-    % Unfreeze TMFC Main Window
-    MW_Freeze(0);
+    % Unfreeze main TMFC GUI
+    freeze_GUI(0);
         
 end
 
@@ -2056,7 +2025,7 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
     try
        % Change to project directory & Freeze TMFC Window
        cd(tmfc.project_path);
-       MW_Freeze(1);
+       freeze_GUI(1);
        
        % Track & Update BSC FIR progress to TMFC variable & Window
        try
@@ -2089,7 +2058,7 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
            post = tmfc.subjects(length(tmfc.subjects)).LSS_after_FIR.session(max([tmfc.LSS_after_FIR.conditions.sess])).condition(SZC_tmfc(2)).trials; 
        end
        
-       % Check if Seubjects have been selected
+       % Check if subjects have been selected
        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
            
            % Check if LSS FIR has been computed
@@ -2123,7 +2092,7 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                             
                             % Restart case
                             if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 1
-                                fprintf('\nBSC after FIR has been completely calcualted using the LSS FIR settings of %d Sessions and %d Conditions. \n', max([tmfc.LSS_after_FIR.conditions.sess]), SZC_tmfc(2));
+                                fprintf('\nBSC after FIR has been completely calculated using the LSS FIR settings of %d Sessions and %d Conditions. \n', max([tmfc.LSS_after_FIR.conditions.sess]), SZC_tmfc(2));
                                 fprintf('To calcualte BSC after FIR with different settings, please recompute LSS FIR with desrided combination of sessions and conditions \n');         
                                 fprintf('\nContinue to select contrasts\n');
                                 
@@ -2177,8 +2146,8 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
         warning('Please select subjects & compute LSS FIR to perform BSC after FIR computation');    
     end
     
-   % Unfreeze TMFC Main Window
-   MW_Freeze(0);
+   % Unfreeze main TMFC GUI
+   freeze_GUI(0);
     
 end
 
@@ -2311,7 +2280,7 @@ function settings(ButtonH, EventData, TMFC_GUI)
     TMFC_SET_P2 = uicontrol(TMFC_SET,'Style','popupmenu', 'String', SET_STORAGE ,'Units', 'normalized', 'Position',[0.048 0.775 0.90 0.07],'fontunits','normalized', 'fontSize', 0.265);
     TMFC_SET_P4 = uicontrol(TMFC_SET,'Style','popupmenu', 'String', SET_SEED ,'Units', 'normalized', 'Position',[0.048 0.282 0.90 0.07],'fontunits','normalized', 'fontSize', 0.265);
     
-    TMFC_SET_OK = uicontrol(TMFC_SET,'Style', 'pushbutton', 'String', 'OK', 'Units', 'normalized', 'Position', [0.3 0.03 0.40 0.05],'FontUnits','normalized','FontSize',0.33,'callback', @OK_SYNC);
+    TMFC_SET_ok = uicontrol(TMFC_SET,'Style', 'pushbutton', 'String', 'OK', 'Units', 'normalized', 'Position', [0.3 0.03 0.40 0.05],'FontUnits','normalized','FontSize',0.33,'callback', @OK_SYNC);
     TMFC_SET_E1 = uicontrol(TMFC_SET,'Style','edit','String', tmfc.defaults.maxmem,'Units', 'normalized', 'HorizontalAlignment', 'center','Position',[0.72 0.615 0.22 0.05],'fontunits','normalized', 'fontSize', 0.38);
     
     TMFC_SET_S1 = uicontrol(TMFC_SET,'Style','text','String', SET_TEXT_1,'Units', 'normalized', 'Position',[0.05 0.87 0.90 0.07],'fontunits','normalized','fontSize', 0.245, 'HorizontalAlignment', 'left','backgroundcolor','w');
@@ -2396,9 +2365,9 @@ function settings(ButtonH, EventData, TMFC_GUI)
           TMFC_SET_COPY.defaults.maxmem == tmfc.defaults.maxmem &&...
           TMFC_SET_COPY.defaults.resmem == tmfc.defaults.resmem &&...
           TMFC_SET_COPY.defaults.analysis == tmfc.defaults.analysis 
-           disp('Settings have not been changed');
+           disp('Settings have not been changed.');
        else
-           disp('Settings have been updated');
+           disp('Settings have been updated.');
        end
        close(TMFC_SET);
     end   
@@ -2449,28 +2418,28 @@ end
 
 %% ===========================[ Statistics ]===================================
 function statistics(ButtonH, EventData, TMFC_GUI)
-    MW_Freeze(1);
+    freeze_GUI(1);
     tmfc_statistics_GUI();
-    MW_Freeze(0);
+    freeze_GUI(0);
 end
 
 %% ===========================[ Results ]===================================
 function results(ButtonH, EventData, TMFC_GUI)
-    %MW_Freeze(1);
+    %freeze_GUI(1);
     tmfc_results_GUI();
-    %MW_Freeze(0);
+    %freeze_GUI(0);
 end
 
 %% =====================[ Supporting Functions ]===========================
 
-% GUI Data Sync for TMFC Main Window
+% GUI Data Sync for main TMFC GUI
 try 
     guidata(handles.TMFC_GUI, handles);
 end
 
 
-% Freeze/Unfreeze TMFC Window 
-function MW_Freeze(STATE)
+% Freeze/unfreeze main TMFC GUI 
+function freeze_GUI(STATE)
 
     switch(STATE)
         case 0 
@@ -2490,27 +2459,27 @@ end
 % Reset TMFC Window & Variable after new Subjects are selected
 function [tmfc] = major_reset(tmfc)
 
-    try 
-        tmfc = rmfield(tmfc,'subjects');
-    end
-    try 
-        tmfc = rmfield(tmfc,'project_path');
-    end
-    try 
-        tmfc = rmfield(tmfc,'ROI_set');
-    end
-    try
-        tmfc = rmfield(tmfc,'ROI_set_number');
-    end
-    try
-        tmfc = rmfield(tmfc,'LSS');
-    end
-    try 
-        tmfc = rmfield(tmfc,'FIR');
-    end
-    try
-        tmfc = rmfield(tmfc,'LSS_after_FIR');
-    end
+try 
+    tmfc = rmfield(tmfc,'subjects');
+end
+try 
+    tmfc = rmfield(tmfc,'project_path');
+end
+try 
+    tmfc = rmfield(tmfc,'ROI_set');
+end
+try
+    tmfc = rmfield(tmfc,'ROI_set_number');
+end
+try
+    tmfc = rmfield(tmfc,'LSS');
+end
+try 
+    tmfc = rmfield(tmfc,'FIR');
+end
+try
+    tmfc = rmfield(tmfc,'LSS_after_FIR');
+end
 
 set(handles.TMFC_GUI_S1,'String', 'Not selected','ForegroundColor',[1, 0, 0]);
 set(handles.TMFC_GUI_S2,'String', 'Not selected','ForegroundColor',[1, 0, 0]);
@@ -2526,176 +2495,176 @@ end
 % Function to update & intialize progress of VOI, PPI, gPPI, gPPI_FIR
 function [tmfc] = update_gPPI(tmfc)
 
-    % Track & Update VOI progress with genearted files
-    try
-        V_VOI = 0;
-        cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
-        sess = []; sess_num = []; N_sess = [];
-        for i = 1:length(cond_list)
-            sess(i) = cond_list(i).sess;
-        end
-        sess_num = unique(sess);
-        N_sess = length(sess_num);
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-
-        for subi = 1:length(tmfc.subjects)    
-            for k = 1:R
-                for j = 1:N_sess
-                    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs',['Subject_' num2str(subi,'%04.f')], ...
-                            ['VOI_' tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']), 'file')
-                        check(j) = 1;
-                    else
-                        check(j) = 0;
-                    end
-                end
-                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).VOI = double(~any(check==0));
-                clear check 
-            end
-        end
-        clear cond_list sess sess_num N_sess R
+% Track & Update VOI progress with genearted files
+try
+    V_VOI = 0;
+    cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
+    sess = []; sess_num = []; N_sess = [];
+    for i = 1:length(cond_list)
+        sess(i) = cond_list(i).sess;
     end
+    sess_num = unique(sess);
+    N_sess = length(sess_num);
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
 
-    % Update VOI progress to TMFC variable & Window 
-    try
-        SZ_tmfc = size(tmfc.subjects);
-        V_VOI = 0;
-        for i = 1:SZ_tmfc(2)
-            if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
-                V_VOI = i ;
-                break;
-            end
-        end
-
-        if V_VOI == 0
-            set(handles.TMFC_GUI_S3,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        elseif V_VOI == 1
-            set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-        else
-            set(handles.TMFC_GUI_S3,'String', strcat(num2str(V_VOI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        end
-
-    end
-
-    % Track & Update PPI progress with genearted files
-    try
-        V_PPI = 0;
-        cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions; %tmfc.gPPI.conditions;
-        sess = []; sess_num = []; N_sess = [];
-        for i = 1:length(cond_list)
-            sess(i) = cond_list(i).sess;
-        end
-        sess_num = unique(sess);
-        N_sess = length(sess_num);
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-    
-        for subi = 1:length(tmfc.subjects)
-            SPM = load(tmfc.subjects(subi).path);
-            for k = 1:R
-                for j = 1:N_sess
-                    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(subi,'%04.f')], ...
-                                ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name,' ','_') ...
-                                ']_[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') '].mat']), 'file')
-                        check(j) = 1;
-                    else
-                        check(j) = 0;
-                    end
-                end
-                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).PPI = double(~any(check==0));
-                clear check 
-            end
-            clear SPM
-        end
-        clear cond_list sess sess_num N_sess R
-    end 
-    
-    % Update PPI progress to TMFC variable & Window 
-    try
-        SZ_tmfc = size(tmfc.subjects);
-        V_PPI = 0;
-        for i = 1:SZ_tmfc(2)
-            % checking status of VOI completion
-            if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI == 0
-                V_PPI = i ;
-                break;
-            end
-        end
-        if V_PPI == 0
-            set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        elseif V_PPI == 1
-            set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-        else
-            set(handles.TMFC_GUI_S4,'String', strcat(num2str(V_PPI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-        end
-    end
-
-    % Track & Update gPPI progress with genearted files
-    try
-        V_gPPI = 0;
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-        for subi = 1:length(tmfc.subjects)
-            for k = 1:R
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
-                        ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
-                else            
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
-                end
-            end
-        end
-        clear R
-    end
-    
-    % Update gPPI progress to TMFC variable & Window 
-    try
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-        for subi = 1:length(tmfc.subjects)
-            for k = 1:R
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
-                        ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
-                    %tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).subjects(subi).gPPI = 1;
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
+    for subi = 1:length(tmfc.subjects)    
+        for k = 1:R
+            for j = 1:N_sess
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs',['Subject_' num2str(subi,'%04.f')], ...
+                        ['VOI_' tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']), 'file')
+                    check(j) = 1;
                 else
-                    %tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).subjects(subi).gPPI = 0;
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
+                    check(j) = 0;
                 end
             end
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).VOI = double(~any(check==0));
+            clear check 
         end
-        clear R
-     end
-
-    % Track & Update gPPI_FIR progress with genearted files
-    try
-        V_gPPI_FIR = 0;
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-        for subi = 1:length(tmfc.subjects)
-            for k = 1:R
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
-                ['Subject_' num2str(subi,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 1;
-                else            
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 0;
-                end
-            end
-        end
-        clear R
     end
-    
-    % Update gPPI_FIR progress to TMFC variable & Window 
-    try
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-        for subi = 1:length(tmfc.subjects)
-            for k = 1:R
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
-                        ['Subject_' num2str(subi,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 1;
+    clear cond_list sess sess_num N_sess R
+end
+
+% Update VOI progress to TMFC variable & Window 
+try
+    SZ_tmfc = size(tmfc.subjects);
+    V_VOI = 0;
+    for i = 1:SZ_tmfc(2)
+        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
+            V_VOI = i ;
+            break;
+        end
+    end
+
+    if V_VOI == 0
+        set(handles.TMFC_GUI_S3,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+    elseif V_VOI == 1
+        set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+    else
+        set(handles.TMFC_GUI_S3,'String', strcat(num2str(V_VOI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+    end
+
+end
+
+% Track & Update PPI progress with genearted files
+try
+    V_PPI = 0;
+    cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions; %tmfc.gPPI.conditions;
+    sess = []; sess_num = []; N_sess = [];
+    for i = 1:length(cond_list)
+        sess(i) = cond_list(i).sess;
+    end
+    sess_num = unique(sess);
+    N_sess = length(sess_num);
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+
+    for subi = 1:length(tmfc.subjects)
+        SPM = load(tmfc.subjects(subi).path);
+        for k = 1:R
+            for j = 1:N_sess
+                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(subi,'%04.f')], ...
+                            ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name,' ','_') ...
+                            ']_[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
+                            regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') '].mat']), 'file')
+                    check(j) = 1;
                 else
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 0;
+                    check(j) = 0;
                 end
             end
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).PPI = double(~any(check==0));
+            clear check 
         end
-        clear R       
-     end
+        clear SPM
+    end
+    clear cond_list sess sess_num N_sess R
+end 
+
+% Update PPI progress to TMFC variable & Window 
+try
+    SZ_tmfc = size(tmfc.subjects);
+    V_PPI = 0;
+    for i = 1:SZ_tmfc(2)
+        % checking status of VOI completion
+        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).PPI == 0
+            V_PPI = i ;
+            break;
+        end
+    end
+    if V_PPI == 0
+        set(handles.TMFC_GUI_S4,'String', strcat(num2str(SZ_tmfc(2)), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+    elseif V_PPI == 1
+        set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+    else
+        set(handles.TMFC_GUI_S4,'String', strcat(num2str(V_PPI-1), '/', num2str(SZ_tmfc(2)), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+    end
+end
+
+% Track & Update gPPI progress with genearted files
+try
+    V_gPPI = 0;
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+    for subi = 1:length(tmfc.subjects)
+        for k = 1:R
+            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                    ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
+            else            
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
+            end
+        end
+    end
+    clear R
+end
+
+% Update gPPI progress to TMFC variable & Window 
+try
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+    for subi = 1:length(tmfc.subjects)
+        for k = 1:R
+            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                    ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
+                %tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).subjects(subi).gPPI = 1;
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
+            else
+                %tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).subjects(subi).gPPI = 0;
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
+            end
+        end
+    end
+    clear R
+end
+
+% Track & Update gPPI_FIR progress with genearted files
+try
+    V_gPPI_FIR = 0;
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+    for subi = 1:length(tmfc.subjects)
+        for k = 1:R
+            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+            ['Subject_' num2str(subi,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 1;
+            else            
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 0;
+            end
+        end
+    end
+    clear R
+end
+
+% Update gPPI_FIR progress to TMFC variable & Window 
+try
+    R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+    for subi = 1:length(tmfc.subjects)
+        for k = 1:R
+            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
+                    ['Subject_' num2str(subi,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 1;
+            else
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI_FIR = 0;
+            end
+        end
+    end
+    clear R       
+end
    
 end
 
@@ -2758,7 +2727,7 @@ end
 function tmfc = evaluate_file(tmfc) 
     
     try
-        MW_Freeze(1);
+        freeze_GUI(1);
     try
         cd(tmfc.project_path); 
     end
@@ -3073,13 +3042,12 @@ function tmfc = evaluate_file(tmfc)
              SET_SEED = {'Seed-to-voxel only','Seed-to-voxel and ROI-to-ROI','ROI-to-ROI only'};
      end
      
-     MW_Freeze(0);
+     freeze_GUI(0);
     catch
         warning('Error with reading save file');
     end
     
 end
-
 
 function [tmfc] = reset_BGFC(tmfc)
     if isfield(tmfc.ROI_set(tmfc.ROI_set_number).subjects(1),'BGFC') 
@@ -3087,69 +3055,69 @@ function [tmfc] = reset_BGFC(tmfc)
     end
 end
 
-function seed2vox_or_ROI2ROI(tmfc, contrast_number, analysis_type)
+% Calculate seed-to-voxel and/or ROI-to-ROI contrast
+function seed2vox_or_ROI2ROI(tmfc,contrast_number,analysis_type)
 
-    switch(tmfc.defaults.analysis)
-        
-        case 1  % Seed-to-voxel and ROI-to-ROI analyses
-             
-            % ROI-to-ROI 
-             sub_check_ROI2ROI = tmfc_ROI_to_ROI_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);                           
-             if sub_check_ROI2ROI(length(tmfc.subjects)) == 1
-                 fprintf('ROI-to-ROI contrasts succefully calculated for contrast No: %d\n', contrast_number);
-             else
-                 disp('ROI-to-ROI contrasts failed');
-             end
+switch(tmfc.defaults.analysis)
 
-             % Seed-to-voxel
-             sub_check_seed2vox = tmfc_seed_to_voxel_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);
-              if sub_check_seed2vox(length(tmfc.subjects)) == 1
-                 fprintf('Seed-to-voxel contrasts succefully generated for contrast No: %d\n', contrast_number);
-             else
-                 disp('Seed-to-voxel contrasts failed');
-             end
-            
-        case 2  % ROI-to-ROI only
-   
-             sub_check_ROI2ROI = tmfc_ROI_to_ROI_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);                           
-             if sub_check_ROI2ROI(length(tmfc.subjects)) == 1
-                 fprintf('ROI-to-ROI contrasts succefully generated for contrast No: %d\n', contrast_number);
-             else
-                 disp('ROI-to-ROI contrasts failed');
-             end
-            
-             
-        case 3  % Seed-to-voxel only
+	case 1  % Seed-to-voxel and ROI-to-ROI analyses
 
-             sub_check_seed2vox = tmfc_seed_to_voxel_contrast(tmfc, analysis_type, contrast_number, tmfc.ROI_set_number);
-             if sub_check_seed2vox(length(tmfc.subjects)) == 1
-                 fprintf('Seed-to-voxel contrasts succefully generated for contrast No: %d\n', contrast_number);
-             else
-                 disp('Seed-to-voxel contrasts failed');
-             end
-    end
+        % ROI-to-ROI 
+        sub_check_ROI2ROI = tmfc_ROI_to_ROI_contrast(tmfc,analysis_type,contrast_number,tmfc.ROI_set_number);                           
+        if sub_check_ROI2ROI(length(tmfc.subjects)) == 1
+        	fprintf('ROI-to-ROI contrast calculated: No %d.\n',contrast_number);
+        else
+        	warning('ROI-to-ROI contrast failed.');
+        end
+
+        % Seed-to-voxel
+        sub_check_seed2vox = tmfc_seed_to_voxel_contrast(tmfc,analysis_type,contrast_number,tmfc.ROI_set_number);
+        if sub_check_seed2vox(length(tmfc.subjects)) == 1
+        	fprintf('Seed-to-voxel contrast calculated: No %d.\n',contrast_number);
+        else
+        	warning('Seed-to-voxel contrast failed.');
+        end
+
+    case 2  % ROI-to-ROI only
+
+        sub_check_ROI2ROI = tmfc_ROI_to_ROI_contrast(tmfc,analysis_type,contrast_number,tmfc.ROI_set_number);                           
+        if sub_check_ROI2ROI(length(tmfc.subjects)) == 1
+        	fprintf('ROI-to-ROI contrast calculated: No %d.\n',contrast_number);
+        else
+        	warning('ROI-to-ROI contrast failed.');
+        end
+
+    case 3  % Seed-to-voxel only
+
+        sub_check_seed2vox = tmfc_seed_to_voxel_contrast(tmfc,analysis_type,contrast_number,tmfc.ROI_set_number);
+        if sub_check_seed2vox(length(tmfc.subjects)) == 1
+        	fprintf('Seed-to-voxel contrast calculated: No %d.\n',contrast_number);
+        else
+        	disp('Seed-to-voxel contrast failed.');
+        end
+end
 end
 
-% =================================[ END ]=================================
+% ================================[ END ]==================================
 
 end  
-%% =================[ Independent Supporting Functions ]===================
+%% ========================[ Internal functions ]==========================
 
-%% Project Path Selection Diagloue 
+%% Select TMFC project folder dialog window 
 function tmfc_select_project_path(S)
 
-    % Function to show Warning Dialouge for selection of subjects project path 
-    TMFC_SS_PP = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.14],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'TMFC_project_path');
-    PP_details = {'Next, select the project path where all results and temporary files will be stored'};
-    TMFC_SS_PP_S1 = uicontrol(TMFC_SS_PP,'Style','text','String',strcat(num2str(S), ' subjects selected'),'Units', 'normalized', 'Position',[0.30 0.72 0.40 0.17],'backgroundcolor','w','fontunits','normalized','fontSize', 0.64,'ForegroundColor',[0.219, 0.341, 0.137]);
-    TMFC_SS_PP_S2 = uicontrol(TMFC_SS_PP,'Style','text','String',PP_details,'Units', 'normalized', 'Position',[0.055 0.38 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.38);
-    OK = uicontrol(TMFC_SS_PP,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.12 0.3 0.2],'fontunits','normalized','fontSize', 0.42,'callback', @OKAY);
-    movegui(TMFC_SS_PP,'center');
-    
-    function OKAY(~,~)
-        delete(TMFC_SS_PP);
-    end
-    uiwait();
+TMFC_project_path = figure('Name', 'Select project paths', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.14],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'TMFC_project_path');
+PP_details = {'Next, select the project path where all results and temporary files will be stored'};
+TMFC_project_path_S1 = uicontrol(TMFC_project_path,'Style','text','String',strcat(num2str(S), ' subjects selected'),'Units', 'normalized', 'Position',[0.30 0.72 0.40 0.17],'backgroundcolor','w','fontunits','normalized','fontSize', 0.64,'ForegroundColor',[0.219, 0.341, 0.137]);
+TMFC_project_path_S2 = uicontrol(TMFC_project_path,'Style','text','String',PP_details,'Units', 'normalized', 'Position',[0.055 0.38 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.38);
+ok_button = uicontrol(TMFC_project_path,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.12 0.3 0.2],'fontunits','normalized','fontSize', 0.42,'callback', @ok_action);
+movegui(TMFC_project_path,'center');
+
+function ok_action(~,~)
+    delete(TMFC_project_path);
+end
+
+uiwait();
 end
 
 %% ROI Set related functions
@@ -3189,7 +3157,7 @@ function [new_flag, position] = ROI_set(LIST_SETS,~)
     ROI_set_GUI_disp = uicontrol(ROI_set_GUI , 'Style', 'listbox', 'String', LIST_SETS(:,2),'Units', 'normalized', 'Position',[0.048 0.25 0.91 0.49],'fontunits','normalized', 'fontSize', 0.09,'Value', 1, 'callback', @action_select_M1);
     ROI_set_GUI_S1 = uicontrol(ROI_set_GUI,'Style','text','String', 'Select ROI set','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.54,'Position',[0.31 0.85 0.400 0.09],'backgroundcolor',get(ROI_set_GUI,'color'));
     ROI_set_GUI_S2 = uicontrol(ROI_set_GUI,'Style','text','String', 'Sets:','Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.60,'Position',[0.04 0.74 0.100 0.08],'backgroundcolor',get(ROI_set_GUI,'color'));
-    ROI_set_GUI_OK = uicontrol(ROI_set_GUI,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4,'Position',[0.16 0.10 0.28 0.10], 'callback', @ROI_set_OK);
+    ROI_set_GUI_ok = uicontrol(ROI_set_GUI,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4,'Position',[0.16 0.10 0.28 0.10], 'callback', @ROI_set_OK);
     ROI_set_GUI_Select = uicontrol(ROI_set_GUI,'Style','pushbutton', 'String', 'Add new ROI set','Units', 'normalized','fontunits','normalized', 'fontSize', 0.4,'Position',[0.56 0.10 0.28 0.10], 'callback', @ROI_set_SELECT);
 
     selection_3 = 1;    
@@ -3250,7 +3218,7 @@ function [STATUS] = tmfc_restart_GUI(option)
     
     TMFC_RES = figure('Name', res_str_0, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_WIN','CloseRequestFcn', @CANCEL); %X Y W H
     TMFC_RES_S1 = uicontrol(TMFC_RES,'Style','text','String',res_str_1 ,'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260],'backgroundcolor',get(TMFC_RES,'color'));
-    TMFC_RES_OK = uicontrol(TMFC_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20],'callback', @RESTART);
+    TMFC_RES_ok = uicontrol(TMFC_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20],'callback', @RESTART);
     TMFC_RES_CL = uicontrol(TMFC_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20],'callback', @CANCEL);
     movegui(TMFC_RES,'center');
 
@@ -3357,12 +3325,12 @@ end
 
 %% Dialouge box for PPI recomputation explanation
 function PPI_recompute()
-    TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'PPI');
+    TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'PPI');
     PPI_details = {'PPI computation completed. To change conditions of interest, recompute VOIs'};
     TMFC_PPI_S1 = uicontrol(TMFC_PPI_Diag,'Style','text','String',PPI_details,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.38);
-    OK = uicontrol(TMFC_PPI_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.38 0.18 0.23 0.2],'fontunits','normalized','fontSize', 0.48,'callback', @OKAY);
+    ok_button = uicontrol(TMFC_PPI_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.38 0.18 0.23 0.2],'fontunits','normalized','fontSize', 0.48,'callback', @ok_action);
     movegui(TMFC_PPI_Diag,'center');
-    function OKAY(~,~)
+    function ok_action(~,~)
         delete(TMFC_PPI_Diag);
     end
     uiwait();
@@ -3395,7 +3363,7 @@ function [win, bin] = tmfc_FIR_GUI(cases)
     TMFC_BW_S2 = uicontrol(TMFC_BW,'Style','text','String', ST2,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.40,'Position',[0.08 0.37 0.65 0.200],'backgroundcolor',get(TMFC_BW,'color'));
     TMFC_BW_E1 = uicontrol(TMFC_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.67 0.185 0.170], 'fontSize', 0.44);%,'InputType', 'digits');
     TMFC_BW_E2 = uicontrol(TMFC_BW,'Style','edit','Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'Position', [0.76 0.42 0.185 0.170], 'fontSize', 0.44);
-    TMFC_BW_OK = uicontrol(TMFC_BW,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.21 0.13 0.230 0.170],'callback', @TMFC_BW_EXTRACT);
+    TMFC_BW_ok = uicontrol(TMFC_BW,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.21 0.13 0.230 0.170],'callback', @TMFC_BW_EXTRACT);
     TMFC_BW_HELP = uicontrol(TMFC_BW,'Style','pushbutton', 'String', 'Help','Units', 'normalized','fontunits','normalized','fontSize', 0.4, 'Position', [0.52 0.13 0.230 0.170],'callback', @TMFC_BW_HELP_POP);
     movegui(TMFC_BW,'center');
    
@@ -3428,7 +3396,7 @@ function [win, bin] = tmfc_FIR_GUI(cases)
 
             TMFC_BW_LS2_DTS_1 = uicontrol(TMFC_BW_HELPWW,'Style','text','String', TMFC_BW_DETAILS,'Units', 'normalized', 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.035, 'Position',[0.06 0.16 0.885 0.800],'backgroundcolor',get(TMFC_BW_HELPWW,'color'));
             TMFC_BW_LS2_DTS_2 = uicontrol(TMFC_BW_HELPWW,'Style','text','String', TMFC_BW_DETAILS_2,'Units', 'normalized', 'HorizontalAlignment', 'Center','fontunits','normalized', 'fontSize', 0.30, 'Position',[0.06 0.10 0.885 0.10],'backgroundcolor',get(TMFC_BW_HELPWW,'color'));
-            TMFC_BW_LS2_OK = uicontrol(TMFC_BW_HELPWW,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.35, 'Position',[0.39 0.04 0.240 0.070],'callback', @TMFC_BW_CLOSE_LS2_OK);
+            TMFC_BW_LS2_ok = uicontrol(TMFC_BW_HELPWW,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.35, 'Position',[0.39 0.04 0.240 0.070],'callback', @TMFC_BW_CLOSE_LS2_OK);
 
             function TMFC_BW_CLOSE_LS2_OK(~,~)
                 close(TMFC_BW_HELPWW);
@@ -3462,13 +3430,13 @@ end
 %% Dialouge box for BGFC recomputation explanation
 function recompute_BGFC(tmfc)
 
-    TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @OKAY, 'Tag', 'BGFC');    
+    TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'BGFC');    
     B1 = {strcat('BGFC computation completed using ',32,num2str(tmfc.FIR.window),' Windows & ',32,num2str(tmfc.FIR.bins),' Bins.'),'To change the number of windows & bins, recompute FIRs'};
     TMFC_BGFC_S1 = uicontrol(TMFC_BGFC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'fontunits','normalized','fontSize', 0.38,'backgroundcolor','w');
-    OK = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.24],'fontunits','normalized','fontSize', 0.40,'callback', @OKAY);
+    ok_button = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.24],'fontunits','normalized','fontSize', 0.40,'callback', @ok_action);
     movegui(TMFC_BGFC_Diag,'center');
     
-    function OKAY(~,~)
+    function ok_action(~,~)
         delete(TMFC_BGFC_Diag);
     end
     uiwait();

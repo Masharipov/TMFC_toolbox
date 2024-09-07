@@ -108,7 +108,7 @@ switch type
                 
                 % If seed-to-voxel analysis has not been performed for the default contrasts
                 if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
-                        'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(1).name, ...
                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel gPPI analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
@@ -161,7 +161,7 @@ switch type
                 
                 % If seed-to-voxel analysis has not been performed for the default contrasts
                 if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
-                        'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(1).name, ...
                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel gPPI-FIR analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
@@ -214,12 +214,12 @@ switch type
                 
                 % If seed-to-voxel analysis has not been performed for the default contrasts
                 if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
-                        'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        'BSC_LSS','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(1).name, ...
                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel BSC-LSS analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 3;
-                    tmfc_BSC(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_BSC(tmfc,tmfc.ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -267,12 +267,12 @@ switch type
                 
                 % If seed-to-voxel analysis has not been performed for the default contrasts
                 if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name, ...
-                        'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
+                        'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(1).name, ...
                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.nii']),'file')
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel BSC-LSS (after FIR) analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 3;
-                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 

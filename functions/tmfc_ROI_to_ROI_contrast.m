@@ -207,7 +207,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_BSC(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_BSC(tmfc,tmfc.ROI_set_number);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -251,7 +251,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS (after FIR) analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
                     tmfc.defaults.analysis = analysis;
                 end
                 

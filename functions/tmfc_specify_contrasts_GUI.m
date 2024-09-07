@@ -10,13 +10,13 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
     if ctr_L1(1) == 0 
         switch(TMFC_analysis)
                 case 1
-                    warning('Default Contrasts do not exist for gPPI processing');
+                    warning('Default contrasts do not exist for gPPI processing');
                 case 2 
-                    warning('Default Contrasts do not exist for gPPI FIR processing');
+                    warning('Default contrasts do not exist for gPPI FIR processing');
                 case 3
-                    warning('Default Contrasts do not exist for BSC processing');
+                    warning('Default contrasts do not exist for BSC processing');
                 case 4
-                    warning('Default Contrasts do not exist for BSC FIR processing');
+                    warning('Default contrasts do not exist for BSC FIR processing');
         end
     else
         worker();
@@ -94,9 +94,9 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
                     
                 end
 
-                fprintf('Contrast added: %s\n',D);
+                fprintf('Contrast added: %s.\n',D);
             else
-                disp('No contrasts added');
+                disp('No contrasts added.');
             end
         end
 
@@ -104,13 +104,13 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc, ROI_set_number, TMFC_analysis
         function action4(~,~)
             if isfield(carbs, 'no')
                 if isempty(selection_2)
-                    warning('No contrasts selected to remove');
+                    warning('No contrasts selected to remove.');
                 else
                     hold = length(selection_2);
                     if hold>1
-                        disp('Selected contrasts have been removed');
+                        disp('Selected contrasts have been removed.');
                     else
-                        disp('Selected contrast has been removed');
+                        disp('Selected contrast has been removed.');
                     end
 
                     carbs(selection_2) = [];
@@ -318,19 +318,19 @@ function [TTL,C1] = tmfc_BSC_MINI(tmfc,TMFC_analysis)
         C1_L = get(SC_G2_C1_A, 'String');
         
         if strcmp(TT_L,'') || strcmp(TT_L(1),' ') 
-            warning('Name not entered or is invalid, please re-enter');            
+            warning('Name not entered or is invalid, please re-enter.');            
         elseif ~isempty(str2num(TT_L(1)))
-            warning('Name cannot being with a numeric, please re-enter');
+            warning('Name cannot being with a numeric, please re-enter.');
             
         elseif strcmp(C1_L, '') || strcmp(C1_L, ' ')
-            warning('Contrast C1 not entered or is invalid, please re-enter');
+            warning('Contrast C1 not entered or is invalid, please re-enter.');
         elseif isempty(str2num(C1_L))
-             warning('Contrast C1 is not numeric, please re-enter');
+             warning('Contrast C1 is not numeric, please re-enter.');
                        
         elseif length(str2num(C1_L)) > Czs
-            warning('Entered contrast length is greater than the number of conditions of interest", please re-enter');
+            warning('Entered contrast length is greater than the number of conditions of interest", please re-enter.');
         elseif length(str2num(C1_L)) < Czs
-            warning('Entered contrast length is greater than the number of conditions of interest", please re-enter');
+            warning('Entered contrast length is greater than the number of conditions of interest", please re-enter.');
        
         
         else
@@ -398,29 +398,29 @@ function [TTL,C1,C2,C3,C4] = tmfc_BSC_MINI_old()
         C4_L = get(SC_G2_C4_A, 'String');
         
         if strcmp(TT_L,'') || strcmp(TT_L(1),' ') 
-            warning('Name not entered or is invalid, please re-enter');            
+            warning('Name not entered or is invalid, please re-enter.');            
         elseif ~isempty(str2num(TT_L(1)))
-            warning('Name cannot being with a numeric, please re-enter');
+            warning('Name cannot being with a numeric, please re-enter.');
             
         elseif strcmp(C1_L, '') || strcmp(C1_L, ' ')
-            warning('Contrast C1 not entered or is invalid, please re-enter');
+            warning('Contrast C1 not entered or is invalid, please re-enter.');
          elseif isempty(str2num(C1_L))
-             warning('Contrast C1 is not numeric, please re-enter');
+             warning('Contrast C1 is not numeric, please re-enter.');
             
         elseif strcmp(C2_L, '') || strcmp(C2_L, ' ')
-            warning('Contrast C2 not entered or is invalid, please re-enter');
+            warning('Contrast C2 not entered or is invalid, please re-enter.');
          elseif isempty(str2num(C2_L))
-             warning('Contrast C2 is not numeric, please re-enter');
+             warning('Contrast C2 is not numeric, please re-enter.');
             
         elseif strcmp(C3_L, '') || strcmp(C3_L, ' ')
-            warning('Contrast C3 not entered or is invalid, please re-enter');
+            warning('Contrast C3 not entered or is invalid, please re-enter.');
          elseif isempty(str2num(C3_L))
-             warning('Contrast C3 is not numeric, please re-enter');
+             warning('Contrast C3 is not numeric, please re-enter.');
             
         elseif strcmp(C4_L, '') || strcmp(C4_L, ' ')
-            warning('Contrast C4 not entered or is invalid, please re-enter');
+            warning('Contrast C4 not entered or is invalid, please re-enter.');
          elseif isempty(str2num(C4_L))
-             warning('Contrast C4 is not numeric, please re-enter');
+             warning('Contrast C4 is not numeric, please re-enter.');
             
         else
             
@@ -460,7 +460,6 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).weights = carbs(i).weights; 
             end
-            fprintf('Contrasts successfully processed\n');
 
         case 2
             % gPPI FIR
@@ -469,7 +468,6 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).weights = carbs(i).weights; 
             end
-            fprintf('Contrasts successfully processed\n');
 
         case 3
             % BSC
@@ -478,8 +476,6 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).weights = carbs(i).weights; 
             end
-            fprintf('Contrasts successfully processed\n');
-
 
         case 4
             % BSC FIR
@@ -488,7 +484,6 @@ function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).title = carbs(i).title;
                tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).weights = carbs(i).weights; 
             end
-            fprintf('Contrasts successfully processed\n');
     end
     
 end

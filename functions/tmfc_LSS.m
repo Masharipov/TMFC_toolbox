@@ -376,6 +376,10 @@ try
     delete(handles);
 end
 
+try
+    delete(w);
+end
+
 % Function that changes the state of execution when CANCEL is pressed
 function quitter(~,~)                                                  
     EXIT_STATUS_LSS = 1;

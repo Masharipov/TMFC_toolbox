@@ -53,11 +53,11 @@ if ~isempty(tmfc.subjects(1).path)
             ROI_set = [];
         end
     else
-        warning('ROIs not selected');
+        warning('ROIs not selected.');
         ROI_set = -1;
     end
 else
-    warning('Please select subjects to continue selection of ROIs');
+    warning('Please select subjects to continue selection of ROIs.');
     ROI_set = -1;
 end
 
@@ -73,36 +73,35 @@ function Fitter(NUM)
     
     if isfield(tmfc,'project_path')
     
-    try
-        % Select ROIs
-        [paths] = spm_select(inf,'any','Select ROI masks',{},pwd);
-        for i = 1:size(paths,1)
-            [~, ROI_set(CTR).ROIs(i).name, ~] = fileparts(deblank(paths(i,:)));
-            ROI_set(CTR).ROIs(i).path = deblank(paths(i,:));
-            ROI_set(CTR).ROIs(i).path_masked = fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs',[ROI_set(CTR).ROIs(i).name '_masked.nii']);
+        try
+            % Select ROIs
+            [paths] = spm_select(inf,'any','Select ROI masks',{},pwd);
+            for i = 1:size(paths,1)
+                [~, ROI_set(CTR).ROIs(i).name, ~] = fileparts(deblank(paths(i,:)));
+                ROI_set(CTR).ROIs(i).path = deblank(paths(i,:));
+                ROI_set(CTR).ROIs(i).path_masked = fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs',[ROI_set(CTR).ROIs(i).name '_masked.nii']);
+            end
+
+            % Clear & create 'Masked_ROIs' folder
+            if isdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name))
+                rmdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name),'s');
+            end
+
+            if ~isdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs'))
+                mkdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs'));
+            end
+
+            if ~isempty(paths)
+                Flag_1 = 1;
+            end
+
+        catch
+            warning('ROIs not selected.');
         end
-    
-        % Clear & create 'Masked_ROIs' folder
-        if isdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name))
-            rmdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name),'s');
-        end
-    
-        if ~isdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs'))
-            mkdir(fullfile(tmfc.project_path,'ROI_sets',ROI_set(CTR).set_name,'Masked_ROIs'));
-        end
-    
-        if ~isempty(paths)
-            Flag_1 = 1;
-        end
-    
-    catch
-        warning('ROIs not selected');
-    end
-    
-    
+     
     else
-        warning('Project Path not selected, Please select Project Path and try again');
-        disp('ROIs not selected');
+        warning('TMFC project folder not selected.');
+        disp('ROIs not selected.');
     end
     
     
@@ -217,7 +216,7 @@ function Fitter(NUM)
     
             if isempty(ROI_set(CTR).ROIs)
                Flag_3 = 0;
-               warning('No eligible ROIs left for selection, Please try again');
+               warning('No eligible ROIs left for selection, please try again.');
             else
                 Flag_3 = 1;
             end
