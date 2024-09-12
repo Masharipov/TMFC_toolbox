@@ -61,15 +61,13 @@ function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC)
 % FORMAT [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC)
 % Run the function for the selected ROI set.
 %
-%   tmfc                   - As above
-%   ROI_set_number         - Number of the ROI set in the tmfc structure
 %   clear_BSC              - Clear previosly created BSC folders
 %                            (0 - do not clear, 1 - clear)
 %                            (by default, clear_BSC = 1)
 %
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

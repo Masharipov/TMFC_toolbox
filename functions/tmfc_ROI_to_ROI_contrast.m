@@ -60,7 +60,7 @@ function [sub_check] = tmfc_ROI_to_ROI_contrast(tmfc,type,contrast_number,ROI_se
 %   
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -207,7 +207,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_BSC(tmfc,tmfc.ROI_set_number);
+                    tmfc_BSC(tmfc,tmfc.ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -251,7 +251,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS (after FIR) analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 

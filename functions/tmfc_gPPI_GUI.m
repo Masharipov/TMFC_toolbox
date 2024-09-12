@@ -1,5 +1,33 @@
 function [conditions] = tmfc_gPPI_GUI(SPM)
 
+% ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
+%
+% Opens a GUI window for gPPI analysis. Allows to choose conditions of
+% interest for gPPI analysis.
+% 
+% FORMAT [conditions] = tmfc_gPPI_GUI(SPM)
+%   SPM          - Path to individual subject SPM.mat file
+%
+% FORMAT [conditions] = tmfc_gPPI_GUI(SPM,start_case,start_sub)
+% To run this function from main TMFC GUI
+% =========================================================================
+%
+% Copyright (C) 2024 Ruslan Masharipov
+% 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program. If not, see <https://www.gnu.org/licenses/>.
+%
+% Contact email: masharipov@ihb.spb.ru
 
 try
     all_cond = generate_gPPI_conditions(SPM);

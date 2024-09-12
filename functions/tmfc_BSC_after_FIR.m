@@ -57,9 +57,16 @@ function [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number)
 %   tmfc                   - As above
 %   ROI_set_number         - Number of the ROI set in the tmfc structure
 %
+% FORMAT [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number,clear_BSC)
+% Run the function for the selected ROI set.
+%
+%   clear_BSC              - Clear previosly created BSC (after FIR) folders
+%                            (0 - do not clear, 1 - clear)
+%                            (by default, clear_BSC = 1)
+%
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -78,14 +85,21 @@ function [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number)
     
 if nargin == 1
    ROI_set_number = 1;
+   clear_BSC = 1;
+elseif nargin == 2
+   clear_BSC = 1;
 end
 
 R = length(tmfc.ROI_set(ROI_set_number).ROIs);
 
-if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR'))
-    rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
+% Clear previosly created BSC (after FIR) folders
+if clear_BSC == 1
+    if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR'))
+        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR'),'s');
+    end
 end
 
+% Create BSC (after FIR) folders
 if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Beta_series'))
     mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Beta_series'));
 end

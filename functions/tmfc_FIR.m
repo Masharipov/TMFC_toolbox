@@ -44,7 +44,7 @@ function [sub_check] = tmfc_FIR(tmfc,start_sub)
 %
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ if nargin == 1
     start_sub = 1;
 end
 
-% Updating Main GUI 
+% Update main TMFC GUI 
 try              
     main_GUI = guidata(findobj('Tag','TMFC_GUI'));                           
     set(main_GUI.TMFC_GUI_S8,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067]);       
@@ -145,7 +145,9 @@ for i = start_sub:length(tmfc.subjects)
     batch{i} = matlabbatch;
     clear matlabbatch SPM; 
 end
-N = length(tmfc.subjects);       
+
+N = length(tmfc.subjects);
+
 % Parallel or sequential computing
 switch tmfc.defaults.parallel
     % ----------------------- Sequential Computing ------------------------
@@ -154,7 +156,7 @@ switch tmfc.defaults.parallel
         exit_status = 0;
         
         % Creation of Waitbar Figure
-        handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar');                                   
+        w = waitbar(0,'Please wait...','Name','FIR task regression','Tag', 'tmfc_waitbar');                                   
         cleanupObj = onCleanup(@cleanMeUp);
         
         % Serial Execution of FIR Regression
@@ -177,8 +179,8 @@ switch tmfc.defaults.parallel
                     sub_check(i) = 0;
                 end
             else
-                waitbar(N,handles,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
-                delete(handles);
+                waitbar(N,w,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
+                delete(w);
                 
                 try  % Updating the TMFC GUI window with the progress
                     main_GUI = guidata(findobj('Tag','TMFC_GUI'));          
@@ -196,21 +198,21 @@ switch tmfc.defaults.parallel
             % Update waitbar
             hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
         end
         
         try                                                                
-            delete(handles);
+            delete(w);
         end
     
     % ------------------------ Parallel Computing -------------------------
     case 1
         try % Waitbar for MATLAB R2017a and higher
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
-            handles = waitbar(0,'Please wait...','Name','FIR task regression','Tag','tmfc_waitbar');
+            w = waitbar(0,'Please wait...','Name','FIR task regression','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
-            tmfc_parfor_waitbar(handles,N);     
+            tmfc_parfor_waitbar(w,N);     
         catch % No waitbar for MATLAB R2016b and earlier
             D = [];
             opts = struct('WindowStyle','non-modal','Interpreter','tex');
@@ -264,7 +266,7 @@ switch tmfc.defaults.parallel
 
         % Closing the Waitbar after execution
         try                                                                
-            delete(handles);
+            delete(w);
         end
         
 end

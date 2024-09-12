@@ -68,14 +68,14 @@ function [sub_check] = tmfc_LSS_after_FIR(tmfc,start_sub)
 %   tmfc.LSS_after_FIR.conditions(4).number = 2; - "Cond B", 2nd session
 %
 % FORMAT [sub_check] = tmfc_LSS_after_FIR(tmfc, start_sub)
-% Run the function starting from а specific subject in the path list.
+% Run the function starting from a specific subject in the path list.
 %
 %   tmfc                   - As above
 %   start_sub              - Subject number on the path list to start with
 %
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -120,14 +120,14 @@ EXIT_STATUS_LSS = 0;
 % Initialize waitbar for sequential or parallel computations
 switch tmfc.defaults.parallel
     case 0
-        handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
+        w = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
         cleanupObj = onCleanup(@cleanMeUp);
     case 1
         try % Waitbar for MATLAB R2017a and higher
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
-            handles = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
+            w = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
-            tmfc_parfor_waitbar(handles,N);     
+            tmfc_parfor_waitbar(w,N);     
         catch % No waitbar for MATLAB R2016b and earlier
             opts = struct('WindowStyle','non-modal','Interpreter','tex');
             w = warndlg({'\fontsize{12}Sorry, waitbar progress update is not available for parallel computations in MATLAB R2016b and earlier.',[],...
@@ -150,7 +150,7 @@ for i = start_sub:N
     tic
 
     if EXIT_STATUS_LSS == 1 
-        delete(handles);
+        delete(w);
         break;
     end
     
@@ -307,8 +307,8 @@ for i = start_sub:N
                             condition(trial.cond(k)).trials(trial.number(k)) = 0;
                         end
                     else
-                        waitbar(N,handles, sprintf('Cancelling Operation'));
-                        delete(handles);
+                        waitbar(N,w, sprintf('Cancelling Operation'));
+                        delete(w);
                         try                                                             % Updating the TMFC GUI window with the progress
                             main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
                             set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
@@ -375,7 +375,7 @@ for i = start_sub:N
         case 0
             hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-            	waitbar(i/N, handles, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+            	waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
 
             try                                                             % Updating the TMFC GUI window with the progress
@@ -398,7 +398,7 @@ end
 
 % Deleting the waitbar after completion of LSS regression
 try
-    delete(handles);
+    delete(w);
 end
 
 % Function that changes the state of execution when CANCEL is pressed

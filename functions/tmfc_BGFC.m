@@ -40,7 +40,7 @@ function [sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub)
 %
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -129,15 +129,20 @@ for i = start_sub:N
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
                     spm_jobman('run',batch{k});
-                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']), ...
+                    movefile(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']), ...
                              fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','FIR_VOIs', ... 
-                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']));
-                    if exist(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']),'file')
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']));
+                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']));
+                    if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '_eigen.nii']),'file')
+                        delete(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '_eigen.nii']));
                     else
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
+                        delete(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
                     end
-                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
+                    delete(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
                 end
                 
             case 1                              % Parallel
@@ -146,15 +151,20 @@ for i = start_sub:N
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
                     spm_jobman('run',batch{k});
-                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']), ...
+                    movefile(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']), ...
                              fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','FIR_VOIs', ... 
-                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']));
-                    if exist(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']),'file')
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']));
+                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '.mat']));
+                    if exist(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '_eigen.nii']),'file')
+                        delete(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(j) '_eigen.nii']));
                     else
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
+                        delete(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
                     end
-                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
+                    delete(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')], ...
+                                      ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
                 end
         end
 

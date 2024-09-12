@@ -40,7 +40,7 @@ function TMFC
 %
 % =========================================================================
 %
-% Copyright (C) 2023 Ruslan Masharipov
+% Copyright (C) 2024 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -169,20 +169,20 @@ else
    end
 
    % Select TMFC project folder
-   disp('TMFC: Please select a folder for the new TMFC project');    
+   disp('TMFC: Please select a folder for the new TMFC project.');    
    tmfc_select_project_path(size(subject_paths,1)); % Dialog window
    project_path = spm_select(1,'dir','Select a folder for the new TMFC project',{},pwd);
 
    % Verify if project folder is selected
    if strcmp(project_path, '')
-        warning('TMFC: Project folder not selected. Subjects not saved');
+        warning('TMFC: Project folder not selected. Subjects not saved.');
         try
             freeze_GUI(0);
         end
         return;
    else
        % Add project path to TMFC variable
-        fprintf('TMFC: %d subject(s) selected \n', size(subject_paths,1));
+        fprintf('TMFC: %d subject(s) selected.\n', size(subject_paths,1));
         set(handles.TMFC_GUI_S1,'String', strcat(num2str(size(subject_paths,1)),' selected'),'ForegroundColor',[0.219, 0.341, 0.137]);
         tmfc.project_path = project_path;
 
@@ -204,79 +204,74 @@ end
 
 function ROI(ButtonH, EventData, TMFC_GUI)
 
-% Checking if project path has been selected
-if isfield(tmfc, 'project_path')
+% Check if TMFC project folder is selected
+if ~isfield(tmfc,'project_path')
+    error('Please select subjects and TMFC project folder to continue with ROI set selection.');
+end
+    
+% Change to project directory & Freeze TMFC window
+cd(tmfc.project_path);    
+freeze_GUI(1);
 
-   % Change to project Directory
-   cd(tmfc.project_path);    
+% Check if ROI sets already exist 
+if ~isfield(tmfc, 'ROI_set')
 
-   % Freeze main TMFC GUI
-   freeze_GUI(1);
+    % Selection of ROIs 
+    ROI_hold = tmfc_select_ROIs_GUI(tmfc);  
 
-   % Check if ROI sets already exist 
-   if ~isfield(tmfc, 'ROI_set')
+    % If ROIs have been selected continue and assign data to TMFC var
+	if isstruct(ROI_hold)
+        tmfc.ROI_set_number = 1;
+        tmfc.ROI_set(1) = ROI_hold;
+        set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
 
-       % Selection of ROIs 
-       ROI_hold = tmfc_select_ROIs_GUI(tmfc);  
-
-       % If ROIs have been selected continue and assign data to TMFC var
-       if isstruct(ROI_hold)
-           tmfc.ROI_set_number = 1;
-           tmfc.ROI_set(1) = ROI_hold;
-           set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(1).set_name, ' (',num2str(length(tmfc.ROI_set(1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
-
-           % Initialize processing fields (e.g LSS etc)
-           tmfc = ROI_initializer(tmfc);
-       end
-
-    else
-        % Additional ROI selection after initialization
-
-        % Creationg & storage of existing ROI sets
-        lst_4 = {};
-        for l = 1:length(tmfc.ROI_set)
-            matter = {l,horzcat(tmfc.ROI_set(l).set_name, ' (',num2str(length(tmfc.ROI_set(l).ROIs)),' ROIs)')};
-            lst_4 = vertcat(lst_4, matter);
-        end  
-
-        % User selects current ROI set or Add new ROI set
-        [R_ans, pos] = ROI_set(lst_4);
-        SZ_4 = size(lst_4);
-
-        if R_ans == 1
-
-           % Add new ROI set
-           new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
-
-           % Assign new data only if selected by user
-           if isstruct(new_ROI_set)
-               tmfc.ROI_set(SZ_4(1)+1).set_name = new_ROI_set.set_name;
-               tmfc.ROI_set(SZ_4(1)+1).ROIs = new_ROI_set.ROIs;
-               tmfc.ROI_set_number = SZ_4(1)+1;
-               fprintf('\nROIs have been succesfully selected\n');
-               set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(SZ_4(1)+1).set_name, ' (',num2str(length(tmfc.ROI_set(SZ_4(1)+1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
-               tmfc = ROI_initializer(tmfc);
-               set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);    
-               set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-           end
-
-
-        elseif R_ans == 0 && pos ~=0
-            % Selection of ROI set (No addition of new ROI Set)
-            fprintf('\nSelected ROI for processing is: %s \n', char(lst_4(pos,2)));
-            tmfc.ROI_set_number = pos;
-            set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(pos).set_name, ' (',num2str(length(tmfc.ROI_set(pos).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
-            tmfc = update_gPPI(tmfc);
-        else
-            % If user cancels operation
-            fprintf('\nNew ROI set has not been selected\n');
-        end
-   end
+        % Initialize processing fields (e.g LSS etc)
+        tmfc = ROI_initializer(tmfc);
+    end
 
 else
-   % Warning if user has not selected subjects
-    warning('Please select subjects & project path to continue with ROI set selection');
+
+    % Creationg & storage of existing ROI sets
+    lst_4 = {};
+    for l = 1:length(tmfc.ROI_set)
+        matter = {l,horzcat(tmfc.ROI_set(l).set_name, ' (',num2str(length(tmfc.ROI_set(l).ROIs)),' ROIs)')};
+        lst_4 = vertcat(lst_4, matter);
+    end  
+
+    % User selects current ROI set or Add new ROI set
+    [R_ans, pos] = ROI_set(lst_4);
+    SZ_4 = size(lst_4);
+
+    if R_ans == 1
+
+       % Add new ROI set
+       new_ROI_set = tmfc_select_ROIs_GUI(tmfc);
+
+       % Assign new data only if selected by user
+       if isstruct(new_ROI_set)
+           tmfc.ROI_set(SZ_4(1)+1).set_name = new_ROI_set.set_name;
+           tmfc.ROI_set(SZ_4(1)+1).ROIs = new_ROI_set.ROIs;
+           tmfc.ROI_set_number = SZ_4(1)+1;
+           fprintf('\nROIs have been succesfully selected\n');
+           set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(SZ_4(1)+1).set_name, ' (',num2str(length(tmfc.ROI_set(SZ_4(1)+1).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+           tmfc = ROI_initializer(tmfc);
+           set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);    
+           set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+       end
+
+
+    elseif R_ans == 0 && pos ~=0
+        % Selection of ROI set (No addition of new ROI Set)
+        fprintf('\nSelected ROI for processing is: %s \n', char(lst_4(pos,2)));
+        tmfc.ROI_set_number = pos;
+        set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(pos).set_name, ' (',num2str(length(tmfc.ROI_set(pos).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
+        tmfc = update_gPPI(tmfc);
+    else
+        % If user cancels operation
+        fprintf('\nNew ROI set has not been selected\n');
+    end
 end
+
 % Unfreeze main TMFC GUI
 freeze_GUI(0);
    
@@ -647,7 +642,7 @@ function PPI(ButtonH, EventData, TMFC_GUI)
                      else
                          % If PPIs are already computed then show instructions
                          if isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1
-                             PPI_recompute(); % Dialouge box for Recomputation
+                             PPI_recompute(); % Dialog box for Recomputation
                              fprintf('Recompute VOIs to change conditions\n');
                         else
                             % Continue processing PPIs 
@@ -1247,7 +1242,7 @@ function LSS_GLM(ButtonH, EventData, TMFC_GUI)
 end
 
 %% ============================== [ BSC ] =================================
-% Performing BSC LSS processing 
+% Calculate beta-series correlations (BSC)
 % Dependencies: 
 %       - tmfc_BSC.m                         (External)
 %       - tmfc_specify_contrasts_GUI.m       (External)
@@ -1281,7 +1276,7 @@ end
 cd(tmfc.project_path);
 freeze_GUI(1);
 
-% Update BSC progress in TMFC structure
+% Update BSC progress
 for subi = 1:length(tmfc.subjects)
     if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS', ...
             'Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
@@ -1292,7 +1287,7 @@ for subi = 1:length(tmfc.subjects)
 end
 
 % BSC was not calculated
-if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC == 0                           
+if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 1)                           
         
     disp('Initiating BSC LSS computation...');   
     
@@ -1308,7 +1303,6 @@ if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.R
             tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title = contrasts(i).title;
             tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights = contrasts(i).weights;
         end
-
         disp('BSC LSS computation completed.');
     catch
         freeze_GUI(0);
@@ -1319,7 +1313,7 @@ if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC == 0 && tmfc.ROI_set(tmfc.R
 elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 0)
     
     fprintf('\nBSC was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.LSS.conditions.sess]), size(tmfc.LSS.conditions,2));
-    disp('To calcualte BSC for different conditions, please recompute LSS GLMs with desrided conditions.');         
+    disp('To calculate BSC for different conditions, please recompute LSS GLMs with desired conditions.');         
 
     % Number of previously calculated contrasts
     N_contrasts = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
@@ -1596,7 +1590,7 @@ function FIR(ButtonH, EventData, TMFC_GUI)
 end
 
 %% =============================== [ BGFC ] ===============================
-% Performing BGFC processing 
+% Calculate background functional connectivity (BGFC) 
 % Dependencies: 
 %       - tmfc_BGFC.m            (External)
 %       - tmfc_continue_GUI()    (Internal)
@@ -1604,124 +1598,102 @@ end
 
 function BGFC(buttonH, EventData, TMFC_GUI)
 
-    % Checking for subjects selection
-    try 
+% Initial checks
+if ~isfield(tmfc,'subjects')
+    error('Select subjects.');
+elseif strcmp(tmfc.subjects(1).path, '')
+    error('Select subjects.');
+elseif ~exist(tmfc.subjects(1).path,'file')
+    error('SPM.mat file for the first subject does not exist.')
+elseif ~isfield(tmfc,'project_path')
+    error('Select TMFC project folder.');
+elseif ~isfield(tmfc,'ROI_set_number')
+    error('Select ROI set number.');
+elseif ~isfield(tmfc,'ROI_set')
+    error('Select ROIs.');
+elseif ~isfield(tmfc.subjects,'FIR')
+    error('Calculate FIR task regression.');
+elseif any([tmfc.subjects(:).FIR]) == 0 
+    error('Calculate FIR task regression for all subjects.');
+end
        
-       % Change to project directory & Freeze TMFC Window
-       cd(tmfc.project_path); 
-       freeze_GUI(1);
-       
-       % Track & Update BGFC progress to TMFC variable & Window 
-       try
-           V_BGFC = 0;
-           SPM = load(tmfc.subjects(1).path); 
-            for subi = 1:length(tmfc.subjects)
-               for j = 1:length(SPM.SPM.Sess)       
-                   if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC','ROI_to_ROI', ... 
-                               ['Subject_' num2str(subi,'%04.f') '_Session_' num2str(j) '.mat']), 'file')
-                       check(j) = 1;
-                   else
-                       check(j) = 0;
-                   end
-               end
-                tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BGFC = double(~any(check==0));
-                clear check
-            end
-            clear SPM
-       end
-       
-       % Update BGFC progress to TMFC variable & Window 
-       try
-            SZ_tmfc = size(tmfc.subjects);
-            V_BGFC = 0;
-            for i = 1:SZ_tmfc(2)
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC == 0
-                    V_BGFC = i ;
-                    break;
-                end
-            end
-        end
-
-       % Check if subjects have been selected
-       if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-           
-           % Check if FIR has been processed for BGFC
-           if isfield(tmfc.subjects, 'FIR') 
-
-               % If FIR has been processed
-               if ~tmfc.subjects(length(tmfc.subjects)).FIR == 0 
-                   
-                 % If ROI set has been selected
-                 if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
-                     
-                    % Computation of BGFC condition
-                    if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BGFC == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BGFC == 0
-                    
-                        % First time execution
-                        
-                        fprintf('\nInitiating BGFC computation\n');
-                        % Processing of BGFC Computation
-                        sub_check = tmfc_BGFC(tmfc,tmfc.ROI_set_number, 1);
-                        for i=1:length(tmfc.subjects)
-                            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = sub_check(i);
-                        end
-                        fprintf('BGFC computation completed\n');
-                    
-                    else
-                        % Other cases of Restart/continue
-                        
-                        % If BGFC is completely computed, then show message
-                        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BGFC == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BGFC == 1
-                            fprintf('BGFC has been completely calculated using the FIR settings of %d Windows and %d bins. \n', tmfc.FIR.window,tmfc.FIR.bins);
-                            fprintf('To calcualte BGFC with different settings, please recompute FIR with desrided combination of windows and bins \n');         
-                            recompute_BGFC(tmfc);
-                            
-                        else
-                            
-                            % Continue BGFC computation
-                            
-                            % Ask user for continue or cancel
-                            STATUS = tmfc_continue_GUI(V_BGFC, 8);
-                            if STATUS == 0
-                                
-                                fprintf('\nContinuing BGFC computation \n');
-                                sub_check = tmfc_BGFC(tmfc,tmfc.ROI_set_number, V_BGFC);
-                                for i=V_BGFC:length(tmfc.subjects)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = sub_check(i);
-                                end
-                                fprintf('BGFC computation completed\n');
-                                
-                            else
-                                
-                                warning('BGFC computation not initiated');
-                            end
-                                
-                        end
-                        
-                    end
-                    
-                 else
-                    warning('Please select ROIs to continue with BGFC computation');                    
-                 end
-
-               else
-                   warning('Please complete FIR computation to proceed with BGFC computation');
-               end
-               
-           else
-               warning('Please compute FIR for the selected subjects to proceed with computation of Background connectivity function');
-           end
-           
+% Update BGFC progress
+SPM = load(tmfc.subjects(1).path); 
+for subi = 1:length(tmfc.subjects)
+    for j = 1:length(SPM.SPM.Sess)       
+       if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BGFC','ROI_to_ROI', ... 
+                   ['Subject_' num2str(subi,'%04.f') '_Session_' num2str(j) '.mat']), 'file')
+           check(j) = 1;
        else
-           warning('Please select subjects and compute FIR to proceed with BGFC computaiton');
+           check(j) = 0;
        end
-               
+    end
+    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BGFC = double(~any(check==0));
+    clear check
+end
+clear SPM
+
+track_BGFC = 0;
+for i = 1:length(tmfc.subjects)
+    if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC == 0
+        track_BGFC = i ;
+        break;
+    end
+end
+
+% Freeze main TMFC GUI
+cd(tmfc.project_path);
+freeze_GUI(1);
+
+
+                     
+% BGFC was not calculated
+if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BGFC] == 1)
+
+    disp('Initiating BGFC computation...');
+    
+    try
+    % Processing of BGFC Computation
+    sub_check = tmfc_BGFC(tmfc,tmfc.ROI_set_number,1);
+    for i=1:length(tmfc.subjects)
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = sub_check(i);
+    end
+    disp('BGFC computation completed.');
     catch
-        warning('Please select subjects & compute FIRs to perform BGFC computaiton');
+        freeze_GUI(0);
+        error('Error: Calculate BGFC for all subjects.');
     end
     
-   % Unfreeze main TMFC GUI
-   freeze_GUI(0);
+% BGFC was calculated for all subjects    
+elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BGFC] == 0)
+    
+    fprintf('BGFC was calculated for all subjects, FIR settings: %d [s] window and %d time bins.\n', tmfc.FIR.window,tmfc.FIR.bins);
+    disp('To calculate BGFC with different FIR settings, recompute FIR task regression with desired window length and number of time bins.');         
+    recompute_BGFC(tmfc);
+
+% BGFC was calculated for some subjects
+else
+    try
+        % Ask user to continue BGFC computation
+        STATUS = tmfc_continue_GUI(track_BGFC,8);
+        if STATUS == 0
+            disp('Continuing BGFC computation...');
+            sub_check = tmfc_BGFC(tmfc,tmfc.ROI_set_number,track_BGFC);
+            for i = track_BGFC:length(tmfc.subjects)
+                tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC = sub_check(i);
+            end
+            disp('BGFC computation completed.');
+        else
+            warning('BGFC computation not initiated.');
+        end
+    catch
+        freeze_GUI(0);
+        error('Error: Continue BGFC computation.');
+    end
+end          
+    
+% Unfreeze main TMFC GUI
+freeze_GUI(0);
     
 end
 
@@ -2093,7 +2065,7 @@ function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
                             % Restart case
                             if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 1
                                 fprintf('\nBSC after FIR has been completely calculated using the LSS FIR settings of %d Sessions and %d Conditions. \n', max([tmfc.LSS_after_FIR.conditions.sess]), SZC_tmfc(2));
-                                fprintf('To calcualte BSC after FIR with different settings, please recompute LSS FIR with desrided combination of sessions and conditions \n');         
+                                fprintf('To calculate BSC after FIR with different settings, please recompute LSS FIR with desired combination of sessions and conditions \n');         
                                 fprintf('\nContinue to select contrasts\n');
                                 
                                 % Variable to store length of previously selected contrasts
@@ -2380,7 +2352,7 @@ end
 
 function close_GUI(ButtonH, EventData, TMFC_GUI) 
        
-    % Exit Dialouge GUI
+    % Exit Dialog GUI
     EXIT_PROMPT = figure('Name', 'TMFC: Exit', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.20 0.15],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'EXIT_FIN', 'WindowStyle','modal'); %X Y W H
 
     % Content - Can be changed to a single sentence using \html or sprtinf
@@ -2393,7 +2365,7 @@ function close_GUI(ButtonH, EventData, TMFC_GUI)
         
     % Function to Exit toolbox WITHOUT saving TMFC variable
     function EX_WO_SAVE(~,~)
-        % Closes dialouge box -> closes Main GUI
+        % Closes Dialog box -> closes Main GUI
         close(EXIT_PROMPT);
         delete(handles.TMFC_GUI);
         disp('Goodbye!');
@@ -2802,11 +2774,11 @@ function tmfc = evaluate_file(tmfc)
        end
        try
             SZ_tmfc = size(tmfc.subjects);
-            V_BGFC = 0;
+            track_BGFC = 0;
             for i = 1:SZ_tmfc(2)
                 % checking status of BGFC completion
                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BGFC == 0
-                    V_BGFC = i ;
+                    track_BGFC = i ;
                     break;
                 end
             end
@@ -3237,10 +3209,10 @@ function [STATUS] = tmfc_restart_GUI(option)
 end
 
 % GUI Function to ask user confirmation for Continue/restart/cancel, where
-    % STATUS = 1 - restart FIR 
-    % STATUS = 0 - dont restart FIR 
-    % STATUS = -1 - no Action
-function [STATUS] = tmfc_continue_GUI(INDEX, option)
+    % STATUS = 1    - restart 
+    % STATUS = 0    - do not restart 
+    % STATUS = -1   - no action
+function [STATUS] = tmfc_continue_GUI(INDEX,option)
     
     res_str_0 = '';
     res_str_1 = {};
@@ -3323,7 +3295,7 @@ function [STATUS] = tmfc_continue_GUI(INDEX, option)
     uiwait();
 end
 
-%% Dialouge box for PPI recomputation explanation
+%% Dialog box for PPI recomputation explanation
 function PPI_recompute()
     TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'PPI');
     PPI_details = {'PPI computation completed. To change conditions of interest, recompute VOIs'};
@@ -3427,11 +3399,14 @@ function [win, bin] = tmfc_FIR_GUI(cases)
     uiwait();
 end
 
-%% Dialouge box for BGFC recomputation explanation
+%% Dialog box for BGFC recomputation
 function recompute_BGFC(tmfc)
 
-    TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'BGFC');    
-    B1 = {strcat('BGFC computation completed using ',32,num2str(tmfc.FIR.window),' Windows & ',32,num2str(tmfc.FIR.bins),' Bins.'),'To change the number of windows & bins, recompute FIRs'};
+    TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12], ...
+        'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'BGFC');    
+    B1 = {strcat('BGFC was calculated for all subjects, FIR settings: ', 32, num2str(tmfc.FIR.window), ...
+                 ' [s] window and ', 32, num2str(tmfc.FIR.bins),' time bins.'),...
+                 'To calculate BGFC with different FIR settings, recompute FIR task regression with desired window length and number of time bins.'};
     TMFC_BGFC_S1 = uicontrol(TMFC_BGFC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'fontunits','normalized','fontSize', 0.38,'backgroundcolor','w');
     ok_button = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.24],'fontunits','normalized','fontSize', 0.40,'callback', @ok_action);
     movegui(TMFC_BGFC_Diag,'center');
