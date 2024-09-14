@@ -1994,7 +1994,7 @@ end
 function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
 
 % Initial checks
-if ~isfield(tmfc, subjects)
+if ~isfield(tmfc,'subjects')
     error('Select subejcts'); 
 elseif strcmp(tmfc.subjects(1).path, '')
     error('Select subjects.');
@@ -3378,13 +3378,13 @@ end
 %% Dialog box for BGFC recomputation
 function recompute_BGFC(tmfc)
 
-    TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12], ...
+    TMFC_BGFC_Diag = figure('Name', 'BGFC', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.5 0.12], ...
         'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'BGFC');    
-    B1 = {strcat('BGFC was calculated for all subjects, FIR settings: ', 32, num2str(tmfc.FIR.window), ...
+    B1 = {strcat('BGFC was calculated for all subjects. FIR settings: ', 32, num2str(tmfc.FIR.window), ...
                  ' [s] window and ', 32, num2str(tmfc.FIR.bins),' time bins.'),...
                  'To calculate BGFC with different FIR settings, recompute FIR task regression with desired window length and number of time bins.'};
     TMFC_BGFC_S1 = uicontrol(TMFC_BGFC_Diag,'Style','text','String',B1,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'fontunits','normalized','fontSize', 0.38,'backgroundcolor','w');
-    ok_button = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.35 0.18 0.3 0.24],'fontunits','normalized','fontSize', 0.40,'callback', @ok_action);
+    ok_button = uicontrol(TMFC_BGFC_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.45 0.18 0.1 0.24],'fontunits','normalized','fontSize', 0.40,'callback', @ok_action);
     movegui(TMFC_BGFC_Diag,'center');
     
     function ok_action(~,~)
