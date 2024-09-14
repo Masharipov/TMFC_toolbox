@@ -1266,7 +1266,7 @@ elseif ~isfield(tmfc.subjects,'LSS')
     error('Compute LSS GLMs for all selected subjects.');
 end
 
-% Check LSS progress (last subject, last session)
+% Check LSS progress (w.r.t last subject, last session)
 LSS_progress = tmfc.subjects(length(tmfc.subjects)).LSS.session(max([tmfc.LSS.conditions.sess])).condition(size(tmfc.LSS.conditions,2)).trials; 
 if any(LSS_progress == 0)
     error('Compute LSS GLMs for all selected subjects.');
@@ -1295,7 +1295,7 @@ if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 1)
         % Processing BSC LSS & generation of default contrasts
         [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
 
-        % Update BSC progress and BSC contrasts in TMFC structure
+        % Update BSC progress & BSC contrasts in TMFC structure
         for i = 1:length(tmfc.subjects)
             tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
         end
@@ -1313,7 +1313,7 @@ if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 1)
 elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 0)
     
     fprintf('\nBSC was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.LSS.conditions.sess]), size(tmfc.LSS.conditions,2));
-    disp('To calculate BSC for different conditions, please recompute LSS GLMs with desired conditions.');         
+    disp('To calculate BSC for different conditions, recompute LSS GLMs with desired conditions.');         
 
     % Number of previously calculated contrasts
     N_contrasts = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
@@ -1984,7 +1984,7 @@ function LSS_FIR(ButtonH, EventData, TMFC_GUI)
 end
 
 %% =========================== [ BSC after FIR] ===========================
-% Performing BSC FIR processing 
+% Calculate beta-series correlations after FIR regression (BSC after FIR)
 % Dependencies: 
 %       - tmfc_BSC_after_FIR.m            (External)
 %       - tmfc_specify_contrasts_GUI.m    (External)
@@ -1993,133 +1993,109 @@ end
 
 function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
 
-    % Checking for subjects selection
-    try
-       % Change to project directory & Freeze TMFC Window
-       cd(tmfc.project_path);
-       freeze_GUI(1);
-       
-       % Track & Update BSC FIR progress to TMFC variable & Window
-       try
-           V_BSC = 0;
-            for subi = 1:length(tmfc.subjects)
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR','Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 1;
-                else
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 0;
-                end
-            end 
-       end
-       
-       % Update BSC progress to TMFC variable 
-       try
-           SZ_tmfc = size(tmfc.subjects);
-            V_BSC = 0;
-            for i = 1:SZ_tmfc(2)
-                % checking status of BSC completion
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR == 0
-                    V_BSC = i ;
-                    break;
-                end
-            end    
-       end
-       
-       % Track & Store the number of Conditions, Sessions, trial LSS for FIR
-       try
-           SZC_tmfc = size(tmfc.LSS_after_FIR.conditions);
-           post = tmfc.subjects(length(tmfc.subjects)).LSS_after_FIR.session(max([tmfc.LSS_after_FIR.conditions.sess])).condition(SZC_tmfc(2)).trials; 
-       end
-       
-       % Check if subjects have been selected
-       if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-           
-           % Check if LSS FIR has been computed
-           if isfield(tmfc.subjects, 'LSS_after_FIR')
-               
-               % Check if all LSS FIR variables have been processed
-               if ~any(post == 0)
-                   
-                   % Check if ROI set has been selected
-                   if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
-                       
-                        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 0
-                                % First time execution of BSC
-                                
-                                fprintf('\nInitiating BSC after FIR computation\n');  
-                                
-                                % Processing BSC LSS & generation of default contrasts
-                                [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
-                                
-                                % Assigning progress of contrasts, BSC FIR to TMFC
-                                for i = 1:length(tmfc.subjects)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
-                                end
-                                for i = 1:length(contrasts)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title = contrasts(i).title;
-                                    tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights = contrasts(i).weights;
-                                end
-                                fprintf('BSC after FIR computation completed\n');
-                                
-                        else
-                            
-                            % Restart case
-                            if tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).BSC_after_FIR == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).BSC_after_FIR == 1
-                                fprintf('\nBSC after FIR has been completely calculated using the LSS FIR settings of %d Sessions and %d Conditions. \n', max([tmfc.LSS_after_FIR.conditions.sess]), SZC_tmfc(2));
-                                fprintf('To calculate BSC after FIR with different settings, please recompute LSS FIR with desired combination of sessions and conditions \n');         
-                                fprintf('\nContinue to select contrasts\n');
-                                
-                                % Variable to store length of previously selected contrasts
-                                verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
-                                
-                                 % Selection of Contrasts
-                                 tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 4);
+% Initial checks
+if ~isfield(tmfc, subjects)
+    error('Select subejcts'); 
+elseif strcmp(tmfc.subjects(1).path, '')
+    error('Select subjects.');
+elseif ~isfield(tmfc,'project_path')
+    error('Select TMFC project folder.');
+elseif ~isfield(tmfc,'ROI_set_number')
+    error('Select ROI set number.');
+elseif ~isfield(tmfc,'ROI_set')
+    error('Select ROIs.');
+elseif ~isfield(tmfc.subjects,'LSS_after_FIR')
+    error('Compute LSS after FIR for all selected subjects.');
+end
 
-                                 % if new contrasts added then proceed with processing
-                                 if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)      
-                                     
-                                     % Perform computation of BSC FIR for all newly added contrasts
-                                     for i=verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)
-                                         
-                                        seed2vox_or_ROI2ROI(tmfc, i, 4);                                          
-                                     end
-                                    
-                                 end
-                                 
-                            else
-                                % Restart Computation
-                                
-                                % Processing BSC FIR computation
-                                sub_check = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
-                                for i = 1:length(tmfc.subjects)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
-                                end
-                                fprintf('\nBSC after FIR computation completed\n');
-                            end
-                            
-                        end
-                   
-                   else
-                        warning('Please select ROIs to continue with BSC computation');
-                   end
-                       
-               else
-                   warning('Please complete LSS FIR computation to proceed with BSC after FIR computation');
-               end
-               
-           else
-                warning('Please compute LSS FIR for the selected subjects to proceed with computation of Beta Series Correlation');
-           end
-           
-       else
-           warning('Please select subjects and compute LSS FIR to proceed with BSC after FIR computaiton');
-       end
-       
+% Check LSS after FIR progress (w.r.t last subject, last session)
+LSS_FIR_progress = tmfc.subjects(length(tmfc.subjects)).LSS_after_FIR.session(max([tmfc.LSS_after_FIR.conditions.sess])).condition(size(tmfc.LSS_after_FIR.conditions,2)).trials; 
+if any(LSS_FIR_progress == 0)
+    error('Compute LSS after FIR for all selected subjects.');
+end
+
+% Freeze main TMFC GUI
+cd(tmfc.project_path);
+freeze_GUI(1);
+
+% Update BSC after FIR progress
+for subi = 1:length(tmfc.subjects)
+    if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS_after_FIR', ...
+            'Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 1;
+    else
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC_after_FIR = 0;
+    end
+end
+
+% BSC after FIR was not calculated
+if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC_after_FIR] == 1)                           
+        
+    disp('Initiating BSC LSS after FIR computation...');   
+    
+    try
+        % Processing BSC after FIR & generation of default contrasts
+        [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+
+        % Update BSC after FIR progress & BSC after FIR contrasts in TMFC structure
+        for i = 1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
+        end
+        for i = 1:length(contrasts)
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title = contrasts(i).title;
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights = contrasts(i).weights;
+        end
+        disp('BSC LSS after FIR computation completed.');
     catch
-        warning('Please select subjects & compute LSS FIR to perform BSC after FIR computation');    
+        freeze_GUI(0);
+        error('Error: Calculate BSC after FIR for all subjects.');
     end
     
-   % Unfreeze main TMFC GUI
-   freeze_GUI(0);
+% BSC after FIR was calculated for all subjects
+elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR] == 0)
+    
+    fprintf('\nBSC after FIR was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.LSS_after_FIR.conditions.sess]), size(tmfc.LSS_after_FIR.conditions,2));
+    disp('To calculate BSC after FIR for different conditions, recompute LSS after FIR with desired conditions.');         
+
+    % Number of previously calculated contrasts
+    N_contrasts = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
+    
+    try
+        % Specify new contrasts
+        tmfc = tmfc_specify_contrasts_GUI(tmfc,tmfc.ROI_set_number,3);
+
+        % Calculate new contrasts
+        if N_contrasts ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)       
+            for i = N_contrasts+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)
+                seed2vox_or_ROI2ROI(tmfc,i,4);
+            end
+        end
+    catch
+        freeze_GUI(0);       
+        error('Error: Calculate new contrasts.');
+    end
+    
+% BSC after FIR was calculated for some subjects (recompute)
+else
+    
+    disp('Initiating BSC LSS after FIR computation...');
+    
+    try
+        sub_check = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+        for i = 1:length(tmfc.subjects)
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC_after_FIR = sub_check(i);
+        end
+
+        disp('BSC LSS after FIR computation completed.');
+    catch
+        freeze_GUI(0);
+        error('Error: Recompute BSC after FIR for all subjects.');
+    end
+
+end
+
+% Unfreeze main TMFC GUI
+freeze_GUI(0);
     
 end
 
