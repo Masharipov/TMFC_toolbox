@@ -378,7 +378,7 @@ elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
         start_sub = 1;
         define_gPPI_conditions = 1;
     else
-        error('VOI computation not initiated.');
+        disp('VOI computation not initiated.'); return;
     end 
 
 % VOI was calculated for some subjects  
@@ -389,14 +389,15 @@ else
 
     % Continue VOI computation
     if continue_VOI == 1
-        start_sub = track_VOI;    
+        start_sub = track_VOI;
+        define_gPPI_conditions = 0;
     % Restart VOI computation
     elseif continue_VOI == 0
         tmfc = reset_gPPI(tmfc,1);
         start_sub = 1;
         define_gPPI_conditions = 1;
     else
-        error('VOI computation not initiated.');
+        disp('VOI computation not initiated.'); return;
     end
 end
 
@@ -411,7 +412,7 @@ if define_gPPI_conditions == 1
         tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = gPPI_conditions;
         disp('Conditions of interest selected.');
     else
-        disp('Conditions of interest not selected.');
+        disp('Conditions of interest not selected.'); return;
     end
 end
 

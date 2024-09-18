@@ -569,16 +569,16 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
                 end 
                 end
         else
-            warning('Threshold not entered or is invalid, please re-enter');
+            warning('Threshold not entered or is invalid, please re-enter.');
         end
     end
 
     function action_6(~,~)
         
         if isempty(lst_2)
-            warning('No ROIs present to return');
+            warning('No ROIs present to return.');
         elseif isempty(selection_2)
-            warning('No ROIs selected to return');
+            warning('No ROIs selected to return.');
         else
             if length(selection_2) >= 2
                 hippo = 0;
@@ -589,7 +589,7 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
                 fprintf('Number of ROIs removed are %d \n', hippo);
             else
                 lst_2(selection_2,:,:) = [];
-                fprintf('Selected ROI has been removed \n');
+                disp('Selected ROI has been returned.');
             end
             
             if isempty(lst_2)
@@ -620,11 +620,11 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
 
     function action_8(~,~)
         if isempty(lst_2)
-            disp('Exporting existing set of ROis, No ROIs selected for removal');
+            disp('New ROI set has been defined. All selected ROIs have been saved.');
             EXPORT = ROI_set;
             close(ROI_4);
         else
-            disp('Exporting ROIs after removal of selected cropped regions');
+            disp('New ROI set has been defined. Highly cropped ROIs have been removed.');
             h_size = size(lst_2);
             inder = 0;
             for h = 1:h_size(1)
