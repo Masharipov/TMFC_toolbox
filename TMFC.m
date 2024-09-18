@@ -342,22 +342,19 @@ try
 end
 
 % Update main TMFC GUI
-try
-    track_VOI = 0;
-    for i = 1:nSub
-        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
-            track_VOI = i;
-            break;
-        end
+track_VOI = 0;
+for i = 1:nSub
+    if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).VOI == 0
+        track_VOI = i;
+        break;
     end
-
-    if track_VOI == 0
-        set(handles.TMFC_GUI_S3,'String', strcat(num2str(nSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-    elseif track_VOI == 1
-        set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-    else
-        set(handles.TMFC_GUI_S3,'String', strcat(num2str(track_VOI-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-    end
+end
+if track_VOI == 0
+    set(handles.TMFC_GUI_S3,'String', strcat(num2str(nSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+elseif track_VOI == 1
+    set(handles.TMFC_GUI_S3,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+else
+    set(handles.TMFC_GUI_S3,'String', strcat(num2str(track_VOI-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
 end
 
 restart_VOI = -1;
@@ -466,7 +463,7 @@ elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI')
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI,'conditions')
     error('Select conditions of interest.');
 elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
-    error('(Re-calculate VOIs for all subjects.');
+    error('Calculate VOIs for all subjects.');
 end
 
 nSub = length(tmfc.subjects);
@@ -493,24 +490,20 @@ for iSub = 1:nSub
 end
 
 % Update main TMFC GUI
-try
-    track_PPI = 0;
-    for iSub = 1:nSub
-        if tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).PPI == 0
-            track_PPI = iSub;
-            break;
-        end
-    end
-    
-    if track_PPI == 0
-        set(handles.TMFC_GUI_S4,'String', strcat(num2str(nSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-    elseif V_FIR == 1
-        set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
-    else
-        set(handles.TMFC_GUI_S4,'String', strcat(num2str(track_PPI-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+track_PPI = 0;
+for iSub = 1:nSub
+    if tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).PPI == 0
+        track_PPI = iSub;
+        break;
     end
 end
-      
+if track_PPI == 0
+    set(handles.TMFC_GUI_S4,'String', strcat(num2str(nSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+elseif V_FIR == 1
+    set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
+else
+    set(handles.TMFC_GUI_S4,'String', strcat(num2str(track_PPI-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+end   
 
 % PPI was not calculated
 if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 1)
@@ -564,139 +557,136 @@ end
     
 end
 
-%% =============================== [ gPPI ] ===============================
-% Performing gPPI processing for ROI sets
+%% ==============================[ gPPI ]==================================
+% Performing gPPI analysis for selected ROI set
 % Dependencies: 
-%       - tmfc_gPPI.m                   (External)
-%       - tmfc_ROI_to_ROI_contrast      (External)
-%       - tmfc_seed_to_voxel_contrast   (External)
-%       - tmfc_specify_contrasts_GUI    (External)
-%       - tmfc_continue_GUI()           (Internal)
+%       - tmfc_gPPI.m                    (External)
+%       - tmfc_ROI_to_ROI_contrast.m     (External)
+%       - tmfc_seed_to_voxel_contrast.m  (External)
+%       - tmfc_specify_contrasts_GUI.m   (External)
+%       - tmfc_continue_GUI()            (Internal)
 
 function gPPI(ButtonH, EventData, TMFC_GUI)
                
-            
-    % Checking for subjects selection
-    try 
-        % Change to project directory & Freeze TMFC Window
-        cd(tmfc.project_path);    
-        freeze_GUI(1);
+% Initial checks
+if ~isfield(tmfc,'subjects')
+    error('Select subjects.');
+elseif strcmp(tmfc.subjects(1).path, '')
+    error('Select subjects.');
+elseif ~exist(tmfc.subjects(1).path,'file')
+    error('SPM.mat file for the first subject does not exist.')
+elseif ~isfield(tmfc,'project_path')
+    error('Select TMFC project folder.');
+elseif ~isfield(tmfc,'ROI_set_number')
+    error('Select ROI set number.');
+elseif ~isfield(tmfc,'ROI_set')
+    error('Select ROIs.');
+elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI')
+    error('Select conditions of interest.');
+elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI,'conditions')
+    error('Select conditions of interest.');
+elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
+    error('Calculate VOIs for all subjects.');
+elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 0)
+    error('Calculate PPIs for all subjects.');
+end
+    
+nSub = length(tmfc.subjects);
+nROI = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);    
                 
-        % Track & Update gPPI progress to TMFC variable & Window 
-        try
-        V_gPPI = 0;
-        R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-        for subi = 1:length(tmfc.subjects)
-            for k = 1:R
-                if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(k).name, ...
-                        ['Subject_' num2str(subi,'%04.f') '_gPPI_GLM.mat']), 'file')
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 1;
-                else            
-                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).gPPI = 0;
-                end
-            end
+% Update TMFC structure 
+for iSub = 1:nSub
+    check_gPPI = zeros(1,nROI);
+    for jROI = 1:nROI
+        if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name, ...
+                'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name, ...
+                ['Subject_' num2str(iSub,'%04.f') '_gPPI_GLM.mat']), 'file')
+            check_gPPI(jROI) = 1;
         end
-        clear R
-        end
-        
-        % Update gPPI progress to TMFC variable & Window 
-        try
-            SZ_tmfc = size(tmfc.subjects);
-            V_gPPI = 0;
-            for i = 1:length(tmfc.subjects) 
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI == 0
-                    V_gPPI = i ;
-                    break;
-                end
-            end
-        end
-        
-        % Check if subjects have been selected
-        if isfield(tmfc,'subjects') && ~strcmp(tmfc.subjects(1).path, '')
-            
-            % Check if ROI set has been selected
-            if isfield(tmfc, 'ROI_set_number') && isstruct(tmfc.ROI_set)
-            
-                % Check if PPIs has been computed
-                if tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).PPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).PPI == 1
-                    
-                    % First time execution 
-                    if isstruct(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions) && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 0 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 0
-                        
-                        fprintf('\n Initiating gPPI computation\n');
-                        
-                        % Processing gPPIs & generation of default contrasts
-                        [sub_check, contrasts] = tmfc_gPPI(tmfc,tmfc.ROI_set_number, 1);
-                        
-                        % Assigning progress of contrasts, gPPI to TMFC
-                        for i = 1:length(contrasts)
-                            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title = contrasts(i).title;
-                            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights = contrasts(i).weights;
-                        end
-                        for i=1:length(tmfc.subjects)
-                            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI = sub_check(i);
-                        end
-                        fprintf('gPPI computation completed\n');
-                        
-                    else
-                        % Selection of Contrasts
-                        if isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI, 'conditions') && tmfc.ROI_set(tmfc.ROI_set_number).subjects(1).gPPI == 1 && tmfc.ROI_set(tmfc.ROI_set_number).subjects(length(tmfc.subjects)).gPPI == 1
-                             fprintf('\nContinue to select contrasts\n');
-                             
-                             % Variable to store length of previously selected contrasts
-                             verify_tmfc = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI);
-                             
-                             % Selection of Contrasts
-                             tmfc = tmfc_specify_contrasts_GUI(tmfc, tmfc.ROI_set_number, 1);
+    end
+    tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI = double(~any(check_gPPI(:) == 0));
+end
 
-                             % if new contrasts added then proceed with processing
-                             if verify_tmfc ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)    
-                                 
-                                 % Perform computation of gPPI for all newly added contrasts
-                                 for i = verify_tmfc+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)                                     
-                                     seed2vox_or_ROI2ROI(tmfc, i, 1);
-                                 end
-                             end
-                             
-                        else
-                            % Continue gPPI Computation
-                            STATUS = tmfc_continue_GUI(V_gPPI, 6);
-                            
-                            % Processing gPPI 
-                            if STATUS == 0
-                                sub_check = tmfc_gPPI(tmfc,tmfc.ROI_set_number, V_gPPI);
-                                for i=V_gPPI:length(tmfc.subjects)
-                                    tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI = sub_check(i);
-                                end
-                                disp('gPPI computation completed');
-                            else
-                                disp('gPPI computation not initiated');
-                            end
-                             
-                        end
-                        
-                    end
-                
-                else
-                    warning('Please complete PPI computation to proceed with gPPI computation');
-                end
-                
-            else
-                warning('Please select ROIs & compute VOIs to continue with PPI computation');
-            end
-            
-        else
-           warning('Please select subjects & compute PPIs to continue with gPPI computation');
-        end
+% Update main TMFC GUI
+track_gPPI = 0;
+for iSub = 1:nSub
+    if tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI == 0
+        track_gPPI = iSub;
+        break;
+    end
+end
         
+% gPPI was not calculated
+if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).gPPI] == 1)
+    
+    calculate_gPPI = 1;
+    start_sub = 1;   
+
+% gPPI was calculated for all subjects 
+elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).gPPI] == 0)
+    
+    calculate_gPPI = 0;
+    fprintf('\ngPPI was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.gPPI.conditions.sess]), size(tmfc.gPPI.conditions,2));
+    disp('To calculate gPPI for different conditions, recompute VOIs and PPIs with desired conditions.');         
+    
+    % Number of previously calculated contrasts
+    nCon = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI);
+    
+    try
+        % Specify new contrasts
+        tmfc = tmfc_specify_contrasts_GUI(tmfc,tmfc.ROI_set_number,1);
+        
+        % Calculate new contrasts
+        if nCon ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)
+            for iCon = nCon+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)                                     
+                seed2vox_or_ROI2ROI(tmfc,iCon,1);
+            end
+        end
     catch
-        warning('Please select subjects & compute PPIs to perform gPPI computation');
+        freeze_GUI(0);       
+        error('Error: Calculate new contrasts.');
     end
     
+% gPPI was calculated for some subjects
+else
+	% Ask user to continue gPPI computation
+    continue_gPPI = tmfc_continue_GUI(track_gPPI,6);
+    if continue_gPPI == 1
+        calculate_gPPI = 1;
+        start_sub = track_gPPI;
+    else
+        disp('gPPI computation not initiated'); return;
+    end
+end
+                
+% Compute gPPI
+if calculate_gPPI == 1    
+    
+    % Freeze main TMFC GUI
+    cd(tmfc.project_path);
+    freeze_GUI(1);
+
+	disp('Initiating gPPI computation...');
+    try
+        [sub_check, contrasts] = tmfc_gPPI(tmfc,tmfc.ROI_set_number,start_sub);    
+        for iSub = start_sub:nSub
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI = sub_check(iSub);
+        end
+        for iCon = 1:length(contrasts)
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(iCon).title = contrasts(iCon).title;
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(iCon).weights = contrasts(iCon).weights;
+        end
+        disp('gPPI computation completed.');
+    catch
+        freeze_GUI(0);
+        error('Error: Calculate gPPI for all subjects.');
+    end
+
     % Unfreeze main TMFC GUI
-    freeze_GUI(0);
-            
-end % Closing gPPI function
+    freeze_GUI(0);    
+end
+
+end
 
 %% ============================= [ gPPI FIR ] =============================
 % Performing gPPI FIR processing for ROI sets
@@ -718,7 +708,7 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
         
         % Track & Update gPPI FIR progress to TMFC variable & Window
         try
-        V_gPPI_FIR = 0;
+        track_gPPI_FIR = 0;
         R = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
         for subi = 1:length(tmfc.subjects)
             for k = 1:R
@@ -736,11 +726,11 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
         % Update gPPI FIR progress to TMFC variable & Window 
         try
             SZ_tmfc = size(tmfc.subjects);
-            V_gPPI_FIR = 0;
+            track_gPPI_FIR = 0;
             for i = 1:length(tmfc.subjects) 
                 % checking status of gPPI_FIR completion
                 if tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR == 0
-                    V_gPPI_FIR = i ;
+                    track_gPPI_FIR = i ;
                     break;
                 end
             end
@@ -805,12 +795,12 @@ function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
                              
                         else
                             % Continue gPPI FIR Computation
-                            STATUS = tmfc_continue_GUI(V_gPPI_FIR, 7);
+                            STATUS = tmfc_continue_GUI(track_gPPI_FIR, 7);
                             
                             % Processing gPPI FIR
                             if STATUS == 0
-                                sub_check = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, V_gPPI_FIR);
-                                for i=V_gPPI_FIR:length(tmfc.subjects)
+                                sub_check = tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number, track_gPPI_FIR);
+                                for i=track_gPPI_FIR:length(tmfc.subjects)
                                     tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).gPPI_FIR = sub_check(i);
                                 end
                                 disp('gPPI FIR computation completed');
@@ -1150,17 +1140,19 @@ if any(LSS_progress == 0)
     error('Compute LSS GLMs for all selected subjects.');
 end
 
+nSub = length(tmfc.subjects);
+
 % Freeze main TMFC GUI
 cd(tmfc.project_path);
 freeze_GUI(1);
 
 % Update BSC progress
-for subi = 1:length(tmfc.subjects)
+for iSub = 1:nSub
     if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'BSC_LSS', ...
-            'Beta_series',['Subject_' num2str(subi,'%04.f') '_beta_series.mat']), 'file')
-        tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 1;
+            'Beta_series',['Subject_' num2str(iSub,'%04.f') '_beta_series.mat']), 'file')
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).BSC = 1;
     else
-        tmfc.ROI_set(tmfc.ROI_set_number).subjects(subi).BSC = 0;
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).BSC = 0;
     end
 end
 
@@ -1174,12 +1166,12 @@ if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 1)
         [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
 
         % Update BSC progress & BSC contrasts in TMFC structure
-        for i = 1:length(tmfc.subjects)
-            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
+        for iSub = 1:nSub
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).BSC = sub_check(iSub);
         end
-        for i = 1:length(contrasts)
-            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title = contrasts(i).title;
-            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights = contrasts(i).weights;
+        for iSub = 1:nSub
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(iSub).title = contrasts(iSub).title;
+            tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(iSub).weights = contrasts(iSub).weights;
         end
         disp('BSC LSS computation completed.');
     catch
@@ -1194,16 +1186,16 @@ elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 0)
     disp('To calculate BSC for different conditions, recompute LSS GLMs with desired conditions.');         
 
     % Number of previously calculated contrasts
-    N_contrasts = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
+    nCon = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
     
     try
         % Specify new contrasts
         tmfc = tmfc_specify_contrasts_GUI(tmfc,tmfc.ROI_set_number,3);
 
         % Calculate new contrasts
-        if N_contrasts ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)       
-            for i = N_contrasts+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
-                seed2vox_or_ROI2ROI(tmfc,i,3);
+        if nCon ~= length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)       
+            for iCon = nCon+1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
+                seed2vox_or_ROI2ROI(tmfc,iCon,3);
             end
         end
     catch
@@ -1218,8 +1210,8 @@ else
     
     try
         sub_check = tmfc_BSC(tmfc,tmfc.ROI_set_number);
-        for i = 1:length(tmfc.subjects)
-            tmfc.ROI_set(tmfc.ROI_set_number).subjects(i).BSC = sub_check(i);
+        for iSub = 1:nSub
+            tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).BSC = sub_check(iSub);
         end
 
         disp('BSC LSS computation completed.');
