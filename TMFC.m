@@ -477,8 +477,8 @@ nCond = length(cond_list);
 % Update TMFC structure    
 for iSub = 1:nSub
     SPM = load(tmfc.subjects(iSub).path);
+    check_PPI = zeros(nROI,nCond);
     for jROI = 1:nROI
-        check_PPI = zeros(nROI,nCond);
         for kCond = 1:nCond
             if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(iSub,'%04.f')], ...
                         ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,' ','_') ...
@@ -522,6 +522,7 @@ if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 1)
 elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 0)
 	
     % Dialog window: Help info for PPI recomputation
+    calculate_PPI = 0;
     PPI_recompute();
     disp('Recompute VOIs to change conditions of interest for gPPI analysis.');
     
@@ -534,7 +535,7 @@ else
         calculate_PPI = 1;
         start_sub = track_PPI;
     else
-        error('PPI computation not initiated.');
+        disp('PPI computation not initiated.'); return;
     end
 end
 
