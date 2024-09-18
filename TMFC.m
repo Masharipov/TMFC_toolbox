@@ -3163,11 +3163,16 @@ end
 
 %% Dialog box for PPI recomputation explanation
 function PPI_recompute()
-    TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'PPI');
-    PPI_details = {'PPI computation completed. To change conditions of interest, recompute VOIs'};
-    TMFC_PPI_S1 = uicontrol(TMFC_PPI_Diag,'Style','text','String',PPI_details,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30],'backgroundcolor','w','fontunits','normalized','fontSize', 0.38);
-    ok_button = uicontrol(TMFC_PPI_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.38 0.18 0.23 0.2],'fontunits','normalized','fontSize', 0.48,'callback', @ok_action);
+    TMFC_PPI_Diag = figure('Name', 'PPI', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.45 0.24 0.12],'MenuBar', 'none', ...
+                           'ToolBar', 'none','color','w','Resize','off','WindowStyle', 'modal','CloseRequestFcn', @ok_action, 'Tag', 'PPI');
+    PPI_details = {'PPI computation completed.','To change conditions of interest, recompute VOIs.'};
+    TMFC_PPI_S1 = uicontrol(TMFC_PPI_Diag,'Style','text','String',PPI_details,'Units', 'normalized', 'Position',[0.05 0.5 0.90 0.30], ...
+                            'backgroundcolor','w','fontunits','normalized','fontSize', 0.38);
+    ok_button = uicontrol(TMFC_PPI_Diag,'Style','pushbutton', 'String', 'OK','Units', 'normalized', 'Position',[0.38 0.18 0.23 0.2], ...
+                            'fontunits','normalized','fontSize', 0.48,'callback', @ok_action);
+    
     movegui(TMFC_PPI_Diag,'center');
+    
     function ok_action(~,~)
         delete(TMFC_PPI_Diag);
     end
