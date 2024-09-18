@@ -359,6 +359,9 @@ try
         set(handles.TMFC_GUI_S3,'String', strcat(num2str(track_VOI-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
     end
 end
+
+restart_VOI = -1;
+continue_VOI = -1;
         
 % VOI was not calculated
 if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 1)    
@@ -374,7 +377,6 @@ elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
     
     % Reset VOI, PPI, gPPI and gPPI-FIR progress and delete old files
     if restart_VOI == 1
-        tmfc = reset_gPPI(tmfc,1);
         start_sub = 1;
         define_gPPI_conditions = 1;
     else
@@ -393,7 +395,6 @@ else
         define_gPPI_conditions = 0;
     % Restart VOI computation
     elseif continue_VOI == 0
-        tmfc = reset_gPPI(tmfc,1);
         start_sub = 1;
         define_gPPI_conditions = 1;
     else
@@ -401,20 +402,23 @@ else
     end
 end
 
-% Freeze main TMFC GUI
-cd(tmfc.project_path);
-freeze_GUI(1);
-               
 % Select gPPI conditions
 if define_gPPI_conditions == 1   
     gPPI_conditions = tmfc_gPPI_GUI(tmfc.subjects(1).path);   
     if isstruct(gPPI_conditions)
+        if restart_VOI == 1 || continue_VOI == 0
+        	tmfc = reset_gPPI(tmfc,1);
+        end
         tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions = gPPI_conditions;
         disp('Conditions of interest selected.');
     else
         disp('Conditions of interest not selected.'); return;
     end
 end
+
+% Freeze main TMFC GUI
+cd(tmfc.project_path);
+freeze_GUI(1);
 
 % Compute VOIs
 disp('Initiating VOI computation...');
@@ -3034,10 +3038,15 @@ switch option
         res_str_1 = {'Recompute PPIs', 'for all subjects?'};
 end
     
-TMFC_RES = figure('Name', res_str_0, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14],'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_WIN','CloseRequestFcn', @CANCEL); %X Y W H
-TMFC_RES_S1 = uicontrol(TMFC_RES,'Style','text','String',res_str_1 ,'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', 'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260],'backgroundcolor',get(TMFC_RES,'color'));
-TMFC_RES_ok = uicontrol(TMFC_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20],'callback', @restart);
-TMFC_RES_CL = uicontrol(TMFC_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', 'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20],'callback', @cancel);
+TMFC_RES = figure('Name', res_str_0, 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.44 0.18 0.14], ...
+                  'Resize','off','color','w','MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'Restart_WIN','CloseRequestFcn', @cancel);
+TMFC_RES_S1 = uicontrol(TMFC_RES,'Style','text','String',res_str_1 ,'Units', 'normalized', 'HorizontalAlignment', 'center','fontunits','normalized', ...
+                       'fontSize', 0.40, 'Position', [0.10 0.55 0.80 0.260],'backgroundcolor',get(TMFC_RES,'color'));
+TMFC_RES_ok = uicontrol(TMFC_RES,'Style','pushbutton','String', 'OK','Units', 'normalized','fontunits','normalized', ...
+                       'fontSize', 0.48, 'Position', [0.14 0.22 0.320 0.20],'callback', @restart);
+TMFC_RES_CL = uicontrol(TMFC_RES,'Style','pushbutton', 'String', 'Cancel','Units', 'normalized','fontunits','normalized', ...
+                       'fontSize', 0.48,'Position',[0.52 0.22 0.320 0.20],'callback', @cancel);
+                   
 movegui(TMFC_RES,'center');
 
 % Function to close the restart dialog window
