@@ -83,25 +83,22 @@ if nargin < 4
 end
 
 w = waitbar(0,'Please wait...','Name','Compute contrasts');
-N = length(tmfc.subjects);
-R = length(tmfc.ROI_set(ROI_set_number).ROIs);
+nSub = length(tmfc.subjects);
+nROI = length(tmfc.ROI_set(ROI_set_number).ROIs);
+nCon = length(contrast_number);
 SPM = load(tmfc.subjects(1).path); 
 
 switch type
     %================================gPPI==================================
     case 1
-        for i = 1:N
+        for iSub = 1:nSub
             tic
             % Load default contrasts for conditions of interest
             cond_list = tmfc.ROI_set(ROI_set_number).gPPI.conditions;
-            for j = 1:length(cond_list)               
-                cond_name = [];
-                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
-                
+            for jCond = 1:length(cond_list)                             
                 % If ROI-to-ROI analysis has not been performed for the default contrasts
-                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
-                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                         ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI gPPI analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
@@ -110,49 +107,45 @@ switch type
                 end
                 
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']));
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']));
     
-                matrices(j,:) = ppi_matrix(:)';
-                symm_matrices(j,:) = symm_ppi_matrix(:)';
+                matrices(jCond,:) = ppi_matrix(:)';
+                symm_matrices(jCond,:) = symm_ppi_matrix(:)';
                 clear ppi_matrix symm_ppi_matrix
             end
             % Calculate and save contrasts
-            for j = 1:length(contrast_number)
-                ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*matrices,[R,R]);
-                symm_ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).weights*symm_matrices,[R,R]);
+            for jCon = 1:nCon
+                ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(jCon)).weights*matrices,[nROI,nROI]);
+                symm_ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(jCon)).weights*symm_matrices,[nROI,nROI]);
                 save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','asymmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].mat']),'ppi_matrix');
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(contrast_number(jCon),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(jCon)).title,' ','_') '].mat']),'ppi_matrix');
                 save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(j)).title,' ','_') '].mat']),'symm_ppi_matrix');
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(contrast_number(jCon),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(contrast_number(jCon)).title,' ','_') '].mat']),'symm_ppi_matrix');
                 clear ppi_matrix symm_ppi_matrix
             end
             % Update waitbar
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
-            sub_check(i) = 1;
+            sub_check(iSub) = 1;
             clear matrices
         end 
 
     %==============================gPPI-FIR================================
     case 2
-        for i = 1:N
+        for iSub = 1:nSub
             tic
             % Load default contrasts for conditions of interest
             cond_list = tmfc.ROI_set(ROI_set_number).gPPI.conditions;
-            for j = 1:length(cond_list)               
-                cond_name = [];
-                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
-                
+            for jCond = 1:length(cond_list)                              
                 % If ROI-to-ROI analysis has not been performed for the default contrasts
-                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                                  ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
+                                  ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI gPPI-FIR analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
@@ -161,49 +154,45 @@ switch type
                 end
     
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']));
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']));
     
-                matrices(j,:) = ppi_matrix(:)';
-                symm_matrices(j,:) = symm_ppi_matrix(:)';
+                matrices(jCond,:) = ppi_matrix(:)';
+                symm_matrices(jCond,:) = symm_ppi_matrix(:)';
                 clear ppi_matrix symm_ppi_matrix
             end
             % Calculate and save contrasts
-            for j = 1:length(contrast_number)
-                ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).weights*matrices,[R,R]);
-                symm_ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).weights*symm_matrices,[R,R]);
+            for jCon = 1:nCon
+                ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(jCon)).weights*matrices,[nROI,nROI]);
+                symm_ppi_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(jCon)).weights*symm_matrices,[nROI,nROI]);
                 save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).title,' ','_') '].mat']),'ppi_matrix');
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(contrast_number(jCon),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(jCon)).title,' ','_') '].mat']),'ppi_matrix');
                 save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(j)).title,' ','_') '].mat']),'symm_ppi_matrix');
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(contrast_number(jCon),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(contrast_number(jCon)).title,' ','_') '].mat']),'symm_ppi_matrix');
                 clear ppi_matrix symm_ppi_matrix
             end
             % Update waitbar
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
-            sub_check(i) = 1;
+            sub_check(iSub) = 1;
             clear matrices
         end 
 
     %===============================BSC-LSS================================
     case 3
-        for i = 1:N
+        for iSub = 1:nSub
             tic
             % Load default contrasts for conditions of interest
             cond_list = tmfc.LSS.conditions;
-            for j = 1:length(cond_list)               
-                cond_name = [];
-                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
-    
+            for jCond = 1:length(cond_list)                            
                 % If ROI-to-ROI analysis has not been performed for the default contrasts
                 if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
-                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                         ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
@@ -212,42 +201,38 @@ switch type
                 end
                 
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']));
     
-                matrices(j,:) = z_matrix(:)';
+                matrices(jCond,:) = z_matrix(:)';
                 clear z_matrix
             end
             % Calculate and save contrasts
-            for j = 1:length(contrast_number)
-                z_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).weights*matrices,[R,R]);
+            for jCon = 1:nCon
+                z_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(jCon)).weights*matrices,[nROI,nROI]);
                 save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS','ROI_to_ROI', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(j)).title,' ','_') '].mat']),'z_matrix');
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(contrast_number(jCon),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC(contrast_number(jCon)).title,' ','_') '].mat']),'z_matrix');
                 clear z_matrix
             end
             % Update waitbar
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
-            sub_check(i) = 1;
+            sub_check(iSub) = 1;
             clear matrices
         end 
     
     %==========================BSC-LSS after FIR===========================
     case 4
-        for i = 1:N
+        for iSub = 1:nSub
             tic
             % Load default contrasts for conditions of interest
             cond_list = tmfc.LSS_after_FIR.conditions;
-            for j = 1:length(cond_list)               
-                cond_name = [];
-                cond_name = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                    regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];              
-
+            for jCond = 1:length(cond_list)               
                 % If ROI-to-ROI analysis has not been performed for the default contrasts
                 if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','ROI_to_ROI', ...
-                         ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']),'file')
+                         ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS (after FIR) analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
@@ -256,25 +241,25 @@ switch type
                 end
                 
                 load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','ROI_to_ROI', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' cond_name '.mat']));
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']));
 
-                matrices(j,:) = z_matrix(:)';
+                matrices(jCond,:) = z_matrix(:)';
                 clear z_matrix
             end
             % Calculate and save contrasts
-            for j = 1:length(contrast_number)
-                z_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(contrast_number(j)).weights*matrices,[R,R]);
+            for jCon = 1:nCon
+                z_matrix = reshape(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(contrast_number(jCon)).weights*matrices,[nROI,nROI]);
                 save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','ROI_to_ROI', ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(contrast_number(j),'%04.f') ...
-                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(contrast_number(j)).title,' ','_') '].mat']),'z_matrix');
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(contrast_number(jCon),'%04.f') ...
+                    '_[' regexprep(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(contrast_number(jCon)).title,' ','_') '].mat']),'z_matrix');
                 clear z_matrix
             end
             % Update waitbar
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end       
-            sub_check(i) = 1;
+            sub_check(iSub) = 1;
             clear matrices
         end    
 end

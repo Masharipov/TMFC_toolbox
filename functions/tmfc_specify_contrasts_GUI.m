@@ -42,15 +42,15 @@ LST_1 = genset_1(tmfc,TMFC_analysis);
 ctr_L1 = size(LST_1);
 if ctr_L1(1) == 0 
     switch(TMFC_analysis)
-            case 1
-                warning('Default contrasts do not exist for gPPI processing');
-            case 2 
-                warning('Default contrasts do not exist for gPPI FIR processing');
-            case 3
-                warning('Default contrasts do not exist for BSC processing');
-            case 4
-                warning('Default contrasts do not exist for BSC FIR processing');
-    end
+        case 1
+            warning('gPPI: Default contrasts have not calculated.');
+        case 2 
+            warning('gPPI FIR: Default contrasts have not calculated.');
+        case 3
+            warning('BSC: Default contrasts have not calculated.');
+        case 4
+            warning('BSC FIR: Default contrasts have not calculated.');
+	end
 else
     worker();
 end
@@ -89,7 +89,7 @@ function worker()
 %% Exit
     function stable_Exit (~,~)
         delete(SC_G1);
-        disp('Contrasts not confirmed');
+        disp('Contrasts not confirmed.');
     end
 
 %% Selection from list box

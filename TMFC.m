@@ -478,9 +478,7 @@ for iSub = 1:nSub
     for jROI = 1:nROI
         for kCond = 1:nCond
             if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(iSub,'%04.f')], ...
-                        ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,' ','_') ...
-                        ']_[Sess_' num2str(cond_list(kCond).sess) ']_[Cond_' num2str(cond_list(kCond).number) ']_[' ...
-                        regexprep(char(SPM.SPM.Sess(cond_list(kCond).sess).U(cond_list(kCond).number).name),' ','_') '].mat']), 'file')    
+                        ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,' ','_') ']_' cond_list(kCond).file_name '.mat']), 'file')    
             	check_PPI(jROI,kCond) = 1;
             end
         end
@@ -499,7 +497,7 @@ for iSub = 1:nSub
 end
 if track_PPI == 0
     set(handles.TMFC_GUI_S4,'String', strcat(num2str(nSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
-elseif V_FIR == 1
+elseif track_PPI == 1
     set(handles.TMFC_GUI_S4,'String', 'Not done', 'ForegroundColor', [0.773, 0.353, 0.067]);       
 else
     set(handles.TMFC_GUI_S4,'String', strcat(num2str(track_PPI-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
@@ -592,18 +590,29 @@ elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 0)
 end
     
 nSub = length(tmfc.subjects);
-nROI = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);    
+nROI = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
+nCond = length(cond_list);
                 
 % Update TMFC structure 
 for iSub = 1:nSub
-    check_gPPI = zeros(1,nROI);
-    for jROI = 1:nROI
-        if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name, ...
-                'gPPI','GLM_batches',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name, ...
-                ['Subject_' num2str(iSub,'%04.f') '_gPPI_GLM.mat']), 'file')
-            check_gPPI(jROI) = 1;
+    check_gPPI = ones(1,nCond);
+	for jCond = 1:nCond
+        % Check ROI-to-ROI files
+        if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
+            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                             ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
+            	check_gPPI(jCond) = 0;
+            end
         end
-    end
+        % Check seed-to-voxel files
+        if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
+            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+                             ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
+                check_gPPI(jCond) = 0;
+            end
+        end
+	end
     tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI = double(~any(check_gPPI(:) == 0));
 end
 
@@ -626,7 +635,8 @@ if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).gPPI] == 1)
 elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).gPPI] == 0)
     
     calculate_gPPI = 0;
-    fprintf('\ngPPI was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.gPPI.conditions.sess]), size(tmfc.gPPI.conditions,2));
+    fprintf('\ngPPI was calculated for all subjects, %d Session(s) and %d Condition(s). \n', ...
+        max([tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions.sess]), size(tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions,2));
     disp('To calculate gPPI for different conditions, recompute VOIs and PPIs with desired conditions.');         
     
     % Number of previously calculated contrasts
@@ -655,7 +665,7 @@ else
         calculate_gPPI = 1;
         start_sub = track_gPPI;
     else
-        disp('gPPI computation not initiated'); return;
+        disp('gPPI computation not initiated.'); return;
     end
 end
                 
@@ -1182,7 +1192,7 @@ if ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 1)
 % BSC was calculated for all subjects
 elseif ~any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).BSC] == 0)
     
-    fprintf('\nBSC was calculated for all subjects, %d Sessions and %d Conditions. \n', max([tmfc.LSS.conditions.sess]), size(tmfc.LSS.conditions,2));
+    fprintf('\nBSC was calculated for all subjects, %d Session(s) and %d Condition(s). \n', max([tmfc.LSS.conditions.sess]), size(tmfc.LSS.conditions,2));
     disp('To calculate BSC for different conditions, recompute LSS GLMs with desired conditions.');         
 
     % Number of previously calculated contrasts
@@ -2368,9 +2378,7 @@ try
         for jROI = 1:nROI
             for kCond = 1:nCond
                 if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'PPIs',['Subject_' num2str(iSub,'%04.f')], ...
-                            ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,' ','_') ...
-                            ']_[Sess_' num2str(cond_list(kCond).sess) ']_[Cond_' num2str(cond_list(kCond).number) ']_[' ...
-                            regexprep(char(SPM.SPM.Sess(cond_list(kCond).sess).U(cond_list(kCond).number).name),' ','_') '].mat']), 'file')
+                        ['PPI_[' regexprep(tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,' ','_') ']_' cond_list(kCond).file_name '.mat']), 'file')
                     check_PPI(jROI,kCond) = 1;
                 end
             end
@@ -2403,14 +2411,24 @@ end
 % Update TMFC structure
 try
     for iSub = 1:nSub
-        check_gPPI = zeros(1,nROI);
-        for jROI = 1:nROI
-            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','GLM_batches', ...
-                    tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,['Subject_' num2str(iSub,'%04.f') '_gPPI_GLM.mat']),'file')
-                check_gPPI(jROI) = 1;
+        check_gPPI = ones(1,nCond);
+        for jCond = 1:nCond
+            % Check ROI-to-ROI files
+            if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                                 ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
+                    check_gPPI(jCond) = 0;
+                end
+            end
+            % Check seed-to-voxel files
+            if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+                                 ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
+                    check_gPPI(jCond) = 0;
+                end
             end
         end
-        tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI = double(~any(check_gPPI == 0));
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI = double(~any(check_gPPI(:) == 0));
     end
 end
 
@@ -2419,14 +2437,24 @@ end
 % Update TMFC structure
 try
     for iSub = 1:nSub
-        check_gPPI_FIR = zeros(1,nROI);
-        for jROI = 1:nROI
-            if exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','GLM_batches', ...
-                    tmfc.ROI_set(tmfc.ROI_set_number).ROIs(jROI).name,['Subject_' num2str(iSub,'%04.f') '_gPPI_FIR_GLM.mat']), 'file')
-                check_gPPI_FIR(jROI) = 1;
+        check_gPPI_FIR = ones(1,nCond);
+        for jCond = 1:nCond
+            % Check ROI-to-ROI files
+            if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
+                                 ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
+                    check_gPPI_FIR(jCond) = 0;
+                end
+            end
+            % Check seed-to-voxel files
+            if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+                                 ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
+                    check_gPPI_FIR(jCond) = 0;
+                end
             end
         end
-        tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI_FIR = double(~any(check_gPPI_FIR == 0));
+        tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).gPPI_FIR = double(~any(check_gPPI_FIR(:) == 0));
     end
 end
 

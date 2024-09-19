@@ -90,7 +90,10 @@ elseif nargin == 2
    clear_BSC = 1;
 end
 
-R = length(tmfc.ROI_set(ROI_set_number).ROIs);
+nROI = length(tmfc.ROI_set(ROI_set_number).ROIs);
+nSub = length(tmfc.subjects);
+cond_list = tmfc.LSS_after_FIR.conditions;
+nCond = length(cond_list);
 
 % Clear previosly created BSC (after FIR) folders
 if clear_BSC == 1
@@ -111,9 +114,9 @@ if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
 end
 
 if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
-    for ROI_number = 1:R
-        if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name))
-            mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name));
+    for iROI = 1:nROI
+        if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(iROI).name))
+            mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(iROI).name));
         end
     end
 end
@@ -129,11 +132,11 @@ hdr.mat = SPM.SPM.Vbeta(1).mat;
 % Loading ROIs
 w = waitbar(0,'Please wait...','Name','Loading ROIs');
 
-for i = 1:R
-    ROIs(i).mask = spm_data_read(spm_data_hdr_read(tmfc.ROI_set(ROI_set_number).ROIs(i).path_masked),'xyz',XYZ);
-    ROIs(i).mask(ROIs(i).mask == 0) = NaN;
+for iROI = 1:nROI
+    ROIs(iROI).mask = spm_data_read(spm_data_hdr_read(tmfc.ROI_set(ROI_set_number).ROIs(iROI).path_masked),'xyz',XYZ);
+    ROIs(iROI).mask(ROIs(iROI).mask == 0) = NaN;
     try
-        waitbar(i/R,w,['ROI No ' num2str(i,'%.f')]);
+        waitbar(iROI/nROI,w,['ROI No ' num2str(iROI,'%.f')]);
     end
 end
 
@@ -143,61 +146,55 @@ end
 
 % Extract and correlate mean beta series from ROIs
 w = waitbar(0,'Please wait...','Name','Extract and correlate mean beta series');
-N = length(tmfc.subjects);
 
-cond_list = tmfc.LSS_after_FIR.conditions;
-
-for i = 1:N
+for iSub = 1:nSub
     tic
-    SPM = load(tmfc.subjects(i).path); 
+    SPM = load(tmfc.subjects(iSub).path); 
 
     % Number of trials per condition
-    E_C = [];
-    for j = 1:length(cond_list)
-        E_C(j) = length(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).ons);
-        beta_series(j).condition = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
+    nTrialCond = [];
+    for jCond = 1:nCond
+        nTrialCond(jCond) = length(SPM.SPM.Sess(cond_list(jCond).sess).U(cond_list(jCond).number).ons);
     end
     
-
     % Conditions of interest
-    for j = 1:length(cond_list)
+    for jCond = 1:nCond
 
         % Extract mean beta series from ROIs
-        for k = 1:E_C(j)
-            betas(k,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                ['Beta_' beta_series(j).condition '_[Trial_' num2str(k) '].nii'])),'xyz',XYZ);
-            for ROI_number = 1:R
-                beta_series(j).ROI_mean(k,ROI_number) = nanmean(ROIs(ROI_number).mask.*betas(k,:));
+        for kTrial = 1:nTrialCond(jCond)
+            betas(kTrial,:) = spm_data_read(spm_data_hdr_read(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'Betas', ...
+                ['Beta_' beta_series(jCond).condition '_[Trial_' num2str(kTrial) '].nii'])),'xyz',XYZ);
+            for kROI = 1:nROI
+                beta_series(jCond).ROI_mean(kTrial,kROI) = nanmean(ROIs(kROI).mask.*betas(kTrial,:));
             end
         end      
 
         % ROI-to-ROI correlation
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-            z_matrix = atanh(corr(beta_series(j).ROI_mean));
+            z_matrix = atanh(corr(beta_series(jCond).ROI_mean));
             z_matrix(1:size(z_matrix,1)+1:end) = nan;     
 
             % Save BSC matrices
             save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','ROI_to_ROI', ...
-                ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.mat']),'z_matrix');
+                ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' beta_series(jCond).condition '.mat']),'z_matrix');
 
             clear z_matrix
         end
 
         % Seed-to-voxel correlation
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
-            for ROI_number = 1:R
-                BSC_image(ROI_number).z_value = atanh(corr(beta_series(j).ROI_mean(:,ROI_number),betas));
+            for kROI = 1:nROI
+                BSC_image(kROI).z_value = atanh(corr(beta_series(jCond).ROI_mean(:,kROI),betas));
             end
 
             % Save BSC images
-            for ROI_number = 1:R
+            for kROI = 1:nROI
                 hdr.fname = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR', ...
-                    'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(ROI_number).name, ...
-                    ['Subject_' num2str(i,'%04.f') '_Contrast_' num2str(j,'%04.f') '_' beta_series(j).condition '.nii']);
-                hdr.descrip = ['z-value map: ' beta_series(j).condition];    
+                    'Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(kROI).name, ...
+                    ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' beta_series(jCond).condition '.nii']);
+                hdr.descrip = ['z-value map: ' beta_series(jCond).condition];    
                 image = NaN(SPM.SPM.xVol.DIM');
-                image(iXYZ) = BSC_image(ROI_number).z_value;
+                image(iXYZ) = BSC_image(kROI).z_value;
                 spm_write_vol(hdr,image);
             end
 
@@ -209,26 +206,24 @@ for i = 1:N
 
     % Save mean beta-series
     save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BSC_LSS_after_FIR','Beta_series', ...
-        ['Subject_' num2str(i,'%04.f') '_beta_series.mat']),'beta_series');
+        ['Subject_' num2str(iSub,'%04.f') '_beta_series.mat']),'beta_series');
 
     % Update waitbar
-    hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+    hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
     try
-        waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+        waitbar(iSub/nSub, w, [num2str(iSub/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
     end
 
-    sub_check(i) = 1;
+    sub_check(iSub) = 1;
 
     clear beta_series E_C SPM
 end
 
 % Default contrasts info
-SPM = load(tmfc.subjects(1).path);
-for j = 1:length(cond_list)
-    contrasts(j).title = ['[Sess_' num2str(cond_list(j).sess) ']_[Cond_' num2str(cond_list(j).number) ']_[' ...
-                regexprep(char(SPM.SPM.Sess(cond_list(j).sess).U(cond_list(j).number).name),' ','_') ']'];
-    contrasts(j).weights = zeros(1,length(cond_list));
-    contrasts(j).weights(1,j) = 1;
+for iCond = 1:nCond
+    contrasts(iCond).title = cond_list(iCond).file_name;
+    contrasts(iCond).weights = zeros(1,nCond);
+    contrasts(iCond).weights(1,iCond) = 1;
 end
 
 % Close waitbar
