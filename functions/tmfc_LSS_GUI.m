@@ -211,17 +211,13 @@ end
 
 %% Function to perform removal of indiviudual conditon
 function action_6(~,~)
-
     % Logical condition to check if there are conditions present to remove
     if isempty(LST_2)
-        warning('No conditions present to remove');
-
+        warning('No conditions present to remove.');
     % Logical condition if no conditions are selected by the user for removal
     elseif isempty(selection_2)
-        warning('No conditions selected to remove');
-
+        warning('No conditions selected to remove.');
     else
-
        % Listing the number of conditions removed 
        LST_2(selection_2,:) = [];
        sizer = length(selection_2);
@@ -229,25 +225,20 @@ function action_6(~,~)
        set(LSS_E2_lst, 'Value', []);
        set(LSS_E2_lst, 'String', LST_2);
        selection_2 = {};
-
     end
-
 end
 
 %% Function to perform removal of all conditions
-
 function action_7(~,~) 
-
     % Logical condition to check if there are selected condition
     if isempty(LST_2)
-        warning('No conditions present to remove');
+        warning('No conditions present to remove.');
     else
         LST_2 = {};                                             
         set(LSS_E2_lst, 'String', []);
         selection_2 = {};
-        warning('All selected conditions have been removed');
+        warning('All selected conditions have been removed.');
     end
-
 end
 
 %% Function to launch help window for Selection of conditions
@@ -277,64 +268,64 @@ end
 
 end
 
+%% Function to get information about conditions
+function [cond_list] = generate_LSS_conditions(SPM)
+try
+    load(SPM);
 
-%%
-% Function to create & generate LSS conditions for selection via GUI interface
-    function [cond_list] = generate_LSS_conditions(SPM)
-            try
-                load(SPM);
-
-                k = 1;
-                for i = 1:length(SPM.Sess)
-                    for j = 1:length({SPM.Sess(i).U(:).name})
-                        cond_list(k).sess = i;
-                        cond_list(k).number = j;
-                        cond_list(k).name = char(SPM.Sess(i).U(j).name);
-                        cond_list(k).list_name = [char(SPM.Sess(i).U(j).name) ' (Sess' num2str(i) ', Cond' num2str(j) ')'];
-                        k = k + 1;
-                    end 
-                end
-            catch 
-                disp('Conditions not selected or incorrect format');
-            end
+    k = 1;
+    for iSess = 1:length(SPM.Sess)
+        for jCond = 1:length({SPM.Sess(iSess).U(:).name})
+            cond_list(k).sess = iSess;
+            cond_list(k).number = jCond;
+            cond_list(k).name = char(SPM.Sess(iSess).U(jCond).name);
+            cond_list(k).list_name = [char(SPM.Sess(iSess).U(jCond).name) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
+            cond_list(k).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+                                      regexprep(char(SPM.SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
+            k = k + 1;
+        end 
     end
-
-%%
-% Function to perform intial sorting of LSS conditions
-function [out_list] = sorter_1(in_list)
-    [~,index] = sortrows([in_list.sess; in_list.number]');
-    out_list = in_list(index); 
-    clear index
+catch 
+    disp('Selected SPM.mat file does not exist or is invalid.');
+end
 end
 
-%%
-% Function to perform selective Sorting after selection of conditions 
+%% Function to perform intial sorting of LSS conditions
+function [out_list] = sorter_1(in_list)
+
+[~,index] = sortrows([in_list.sess; in_list.number]');
+out_list = in_list(index); 
+clear index
+
+end
+
+%% Function to perform sorting after selection of conditions 
 function [sorted_list] = sorter_2(disp_set, full_set)
 
-    temp = {};
-    k = 1;
-    for i = 1:length(disp_set)
-        for j = 1:length(full_set)
-            if strcmp(disp_set(i),full_set(j).list_name)
-                if k == 1
-                    temp = full_set(j);
-                    k = k + 1;
-                else 
-                    temp(k) = full_set(j);
-                    k = k + 1;
-                end
+temp = {};
+k = 1;
+for i = 1:length(disp_set)
+    for j = 1:length(full_set)
+        if strcmp(disp_set(i),full_set(j).list_name)
+            if k == 1
+                temp = full_set(j);
+                k = k + 1;
+            else 
+                temp(k) = full_set(j);
+                k = k + 1;
             end
         end
     end
+end
 
-    [~,index] = sortrows([temp.sess; temp.number]');
-    out_list = temp(index); 
+[~,index] = sortrows([temp.sess; temp.number]');
+out_list = temp(index); 
 
-    sorted_list = {};
-    for x = 1:length(out_list) 
-        sorted_list = vertcat(sorted_list, out_list(x).list_name);
-    end
+sorted_list = {};
+for x = 1:length(out_list) 
+    sorted_list = vertcat(sorted_list, out_list(x).list_name);
+end
 
-    clear index
+clear index
 
 end

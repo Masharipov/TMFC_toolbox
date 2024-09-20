@@ -254,24 +254,24 @@ end
 
 %% Function to get information about conditions
 function [cond_list] = generate_gPPI_conditions(SPM)
-    try
-        load(SPM);
+try
+    load(SPM);
 
-        k = 1;
-        for iSess = 1:length(SPM.Sess)
-            for jCond = 1:length({SPM.Sess(iSess).U(:).name})
-            	cond_list(k).sess = iSess;
-                cond_list(k).number = jCond;
-                cond_list(k).name = char(SPM.Sess(iSess).U(jCond).name);
-                cond_list(k).list_name = [char(SPM.Sess(iSess).U(jCond).name) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
-                cond_list(k).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
-                                          regexprep(char(SPM.SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
-                k = k + 1;
-            end 
-        end
-    catch 
-        disp('Selected SPM.mat file does not exist or is invalid.');
+    k = 1;
+    for iSess = 1:length(SPM.Sess)
+        for jCond = 1:length({SPM.Sess(iSess).U(:).name})
+            cond_list(k).sess = iSess;
+            cond_list(k).number = jCond;
+            cond_list(k).name = char(SPM.Sess(iSess).U(jCond).name);
+            cond_list(k).list_name = [char(SPM.Sess(iSess).U(jCond).name) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
+            cond_list(k).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+                                      regexprep(char(SPM.SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
+            k = k + 1;
+        end 
     end
+catch 
+    disp('Selected SPM.mat file does not exist or is invalid.');
+end
 end
 
 % Function to perform intial sorting of gPPI conditions
