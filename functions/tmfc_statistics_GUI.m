@@ -1065,7 +1065,7 @@ end
 function run_test(thresholded,pval,tval,conval,alpha,correction)
 
 % Plot results  
-figure('Name','TMFC Simulation: Output','NumberTitle', 'off','Units', 'normalized', 'Position', [0.4 0.25 0.50 0.50],'Tag', 'TMFC Simulation: Output','WindowStyle', 'modal');
+figure('Name','TMFC statistics','NumberTitle', 'off','Units', 'normalized', 'Position', [0.4 0.25 0.50 0.50],'Tag', 'TMFC statistics','WindowStyle', 'modal');
 sgtitle('Results');  
 subplot(1,2,1); imagesc(conval);        subtitle('Group mean'); axis square; colorbar; caxis(tmfc_axis(conval,1));  
 subplot(1,2,2); imagesc(thresholded);   subtitle(['p' correction '<' num2str(alpha)]); axis square; colorbar;  
@@ -1086,7 +1086,7 @@ tmfc_res.alpha = alpha;
 function save_stat = int_data_saver(~,~)
        
     % Ask user for Filename & location name:
-    [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as'); %pwd
+    [filename_SO, pathname_SO] = uiputfile('*.mat', 'Save TMFC variable as');
     
     % Set Flag save status to Zero, this flag is used in the future as
     % a reference to check if the Save was successful or not
@@ -1094,7 +1094,7 @@ function save_stat = int_data_saver(~,~)
     
     % Check if FileName or Path is missing or not available 
     if isequal(filename_SO, 0) || isequal(pathname_SO, 0)
-        error('Simulation Results not saved, File name or Save Directory not selected');
+        error('Results not saved. File name or Save Directory not selected.');
     
     else
         % If all data is available
@@ -1109,9 +1109,9 @@ function save_stat = int_data_saver(~,~)
         
         % If the variable was successfully saved then display info
         if save_stat == 1
-            fprintf('Simulations results saved successfully in path: %s\n', fullpath);
+            fprintf('Results saved successfully in path: %s.\n', fullpath);
         else
-            fprintf('Simulation results not saved ');
+            disp('Results not saved.');
         end
     end
           
@@ -1120,7 +1120,7 @@ end % Closing Save project Function
 function save_stat = int_plot_saver(~,~)
        
     % Ask user for Filename & location name:
-    [filename_SO, pathname_SO] = uiputfile('*.png', 'Save TMFC Plots as'); %pwd
+    [filename_SO, pathname_SO] = uiputfile('*.png', 'Save TMFC Plots as');
     
     % Set Flag save status to Zero, this flag is used in the future as
     % a reference to check if the Save was successful or not
@@ -1128,7 +1128,7 @@ function save_stat = int_plot_saver(~,~)
     
     % Check if FileName or Path is missing or not available 
     if isequal(filename_SO, 0) || isequal(pathname_SO, 0)
-        error('Simulation results plots not saved, File name or Save Directory not selected');
+        error('Result plots not saved. File name or Save Directory not selected.');
     
     else
         % If all data is available
@@ -1143,9 +1143,9 @@ function save_stat = int_plot_saver(~,~)
         
         % If the variable was successfully saved then display info
         if save_stat == 1
-            fprintf('Simulation plots saved successfully in path: %s\n', fullpath);
+            fprintf('Plots saved successfully in path: %s.\n', fullpath);
         else
-            fprintf('Simulation plots not saved\n');
+            disp('Plots not saved.');
         end
     end
           
@@ -1168,7 +1168,7 @@ function SAVER_STAT =  saver_plot(save_path)
 % 0 - Successfull save, 1 - Failed save
     try 
         %save(save_path, 'tmfc_res');
-        F = findobj('Type', 'figure', 'Tag', 'TMFC Simulation: Output');
+        F = findobj('Type', 'figure', 'Tag', 'TMFC statistics');
         saveas(F, save_path);
         SAVER_STAT = 1;
         % Save Success

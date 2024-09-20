@@ -57,32 +57,32 @@ else
     matrices = contrast.*matrices;
 end
 
-N_ROI = size(matrices,1);
+nROI = size(matrices,1);
 conval = mean(matrices,3);
 
-for roii = 1:N_ROI
-    for roij = roii+1:N_ROI
-        [~,pval(roii,roij),~,stat] = ttest(shiftdim(matrices(roii,roij,:)),[],'tail','right');
-        tval(roii,roij) = stat.tstat;
-        pval(roij,roii) = pval(roii,roij);
-        tval(roij,roii) = tval(roii,roij);
+for iROI = 1:nROI
+    for jROI = iROI+1:nROI
+        [~,pval(iROI,jROI),~,stat] = ttest(shiftdim(matrices(iROI,jROI,:)),[],'tail','right');
+        tval(iROI,jROI) = stat.tstat;
+        pval(jROI,iROI) = pval(iROI,jROI);
+        tval(jROI,iROI) = tval(iROI,jROI);
     end
 end
 
 switch correction
     case 'uncorr'
         thresholded = double(pval<alpha);
-        thresholded(1:1+N_ROI:end) = 0;
+        thresholded(1:1+nROI:end) = 0;
 
     case 'FDR'
         [alpha_FDR] = FDR(lower_triangle(pval),alpha);
         thresholded = double(pval<alpha_FDR);
-        thresholded(1:1+N_ROI:end) = 0;
+        thresholded(1:1+nROI:end) = 0;
 
     case 'Bonf'
-        alpha_Bonf = alpha/(N_ROI*(N_ROI-1)/2);
+        alpha_Bonf = alpha/(nROI*(nROI-1)/2);
         thresholded = double(pval<alpha_Bonf);
-        thresholded(1:1+N_ROI:end) = 0;
+        thresholded(1:1+nROI:end) = 0;
 
     otherwise
         thresholded = [];

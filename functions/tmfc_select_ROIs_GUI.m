@@ -179,7 +179,6 @@ function Fitter(NUM)
     if Flag_2 == 1 && Flag_1 == 1
     
         % Remove Empty ROIs
-        %biege = {};
         a = {};
         in_ctr = 1;
         for i = 1:length(ROI_set(CTR).ROIs)
@@ -194,8 +193,7 @@ function Fitter(NUM)
             constructor = {};
             eject = size(a);
             for i = 1:eject(1)
-                biege = horzcat('№ ',num2str(a{i,1}),': ',a{i,2});
-                %disp(biege);
+                biege = horzcat('No ',num2str(a{i,1}),': ',a{i,2});
                 constructor = vertcat(constructor, biege);
             end
             ROI_F3(constructor);
