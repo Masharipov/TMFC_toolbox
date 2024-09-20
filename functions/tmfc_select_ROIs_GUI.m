@@ -33,14 +33,7 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 %
 % Contact email: masharipov@ihb.spb.ru
 
-
 full_flag = 0;
-% % check if the code is called from GUI or CLI
-% OPD = findobj('Tag', 'TMFC_GUI');
-
-
-
-% if code is called from CLI 
 
 if ~isempty(tmfc.subjects(1).path)
 
@@ -222,17 +215,13 @@ function Fitter(NUM)
             end
         else
             Flag_3 = 1;
-    %                         disp('No eligible ROIs left for selection, Please try again');
-    %                         disp('check 1');
         end
-    
     end
     
     if Flag_1 == 1 && Flag_2 == 1 && Flag_3 == 1
         ROI_set = ROI_F4(ROI_set, CTR);
         if ~isempty(ROI_set) 
-            full_flag = 1;
-            
+            full_flag = 1;            
         end
     end      
 end      
@@ -269,12 +258,12 @@ function [RF1_flag, ret_name] = ROI_F1(~,~)
         % check for existing name
 
         if ~strcmp(name,'') & ~strcmp(name(1),' ')            
-            fprintf('Name ROI set %s\n', name);
+            fprintf('Name ROI set %s.\n', name);
             delete(ROI_1);
             RF1_flag = 1;
             ret_name = name;
         else
-            warning('Name not entered or is invalid, please re-enter');
+            warning('Name not entered or is invalid, please re-enter.');
         end
 
     end
@@ -317,7 +306,7 @@ function ROI_F3(dis_data)
     function ROI_3_function(~,~)
         close(ROI_3);
     end
-    fprintf('Removed %s ', num2str(length(dis_data)) ,' ROIs from the ROI set\n');
+    fprintf('Removed %s ', num2str(length(dis_data)) ,' ROIs from the ROI set.\n');
     uiwait();
 end
 
@@ -483,9 +472,9 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
             thres = str2double(name);
             
             if isnan(thres)
-                warning('Entered threshold should be a numeric character, please re-enter');
+                warning('Entered threshold should be a natural number, please re-enter.');
             elseif (thres<0) | (thres>100)
-                warning('Entered threshold is beyond the bounds, please enter a threshold between 0 and 100%');
+                warning('Please enter a threshold between 0 and 100%.');
             else
                 sz_rd = size(lst_1);
                 bpm = [];
@@ -561,11 +550,11 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
                         assignin('base', 'lst_2', lst_2);
                         assignin('base', 'lst_3', lst_3);
                 elseif new_ones(1) == 2 && size(lst_2,1) == 0
-                        warning('ROIs below this threshold do not exist');
+                        warning('ROIs below this threshold do not exist.');
                     elseif new_ones(1) == 0
-                        warning('All ROIs below this threshold have already been removed');
+                        warning('All ROIs below this threshold have already been removed.');
                     else
-                        fprintf('%d ROIs selected at threshold %d \n', new_ones(1),thres);     
+                        fprintf('%d ROIs selected at threshold %d. \n', new_ones(1),thres);     
                 end 
                 end
         else
@@ -586,7 +575,7 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
                     lst_2(selection_2(c)-hippo,:,:) = [];
                     hippo = hippo + 1;
                 end
-                fprintf('Number of ROIs removed are %d \n', hippo);
+                fprintf('Number of ROIs removed are %d. \n', hippo);
             else
                 lst_2(selection_2,:,:) = [];
                 disp('Selected ROI has been returned.');
@@ -607,13 +596,13 @@ function [EXPORT] = ROI_F4(ROI_set, CTR)
 
     function action_7(~,~)
         if isempty(lst_2)
-            warning('No ROIs present to return');
+            warning('No ROIs present to return.');
         else
             lion = size(lst_2);
             lst_2 = {};
             set(ROI_4_disp_2, 'String', lst_2);
             set(ROI_4_disp_2, 'Value', []);
-            fprintf('%d ROIs have been returned \n',lion(1));
+            fprintf('%d ROIs have been returned. \n',lion(1));
         end
     end
 
