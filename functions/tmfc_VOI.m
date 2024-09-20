@@ -84,16 +84,16 @@ try
     set(main_GUI.TMFC_GUI_S3,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067]);       
 end
 
-N = length(tmfc.subjects);
-R = length(tmfc.ROI_set(ROI_set_number).ROIs);
-
+nSub = length(tmfc.subjects);
+nROI = length(tmfc.ROI_set(ROI_set_number).ROIs);
 cond_list = tmfc.ROI_set(ROI_set_number).gPPI.conditions;
-sess = []; sess_num = []; N_sess = [];
-for i = 1:length(cond_list)
-    sess(i) = cond_list(i).sess;
+nCond = length(cond_list);
+sess = []; sess_num = []; nSess = [];
+for iSub = 1:nCond
+    sess(iSub) = cond_list(iSub).sess;
 end
 sess_num = unique(sess);
-N_sess = length(sess_num);
+nSess = length(sess_num);
 
 % Initialize waitbar for sequential or parallel computations
 switch tmfc.defaults.parallel
@@ -105,7 +105,7 @@ switch tmfc.defaults.parallel
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
             w = waitbar(0,'Please wait...','Name','VOI time-series extraction','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
-            tmfc_parfor_waitbar(w,N);
+            tmfc_parfor_waitbar(w,nSub);
         catch % No waitbar for MATLAB R2016b and earlier
             opts = struct('WindowStyle','non-modal','Interpreter','tex');
             w = warndlg({'\fontsize{12}Sorry, waitbar progress update is not available for parallel computations in MATLAB R2016b and earlier.',[],...
@@ -126,15 +126,15 @@ end
 spm('defaults','fmri');
 spm_jobman('initcfg');
 
-for i = start_sub:N
+for iSub = start_sub:nSub
     tic
     % Calculate F-contrast for all conditions of interest
-    SPM = load(tmfc.subjects(i).path);
-    matlabbatch{1}.spm.stats.con.spmmat = {tmfc.subjects(i).path};
+    SPM = load(tmfc.subjects(iSub).path);
+    matlabbatch{1}.spm.stats.con.spmmat = {tmfc.subjects(iSub).path};
     matlabbatch{1}.spm.stats.con.consess{1}.fcon.name = 'F_conditions_of_interest';
-    weights = zeros(length(cond_list),size(SPM.SPM.xX.X,2));
-    for j = 1:length(cond_list)
-        weights(j,SPM.SPM.Sess(cond_list(j).sess).col(cond_list(j).number)) = 1;
+    weights = zeros(nCond,size(SPM.SPM.xX.X,2));
+    for jCond = 1:nCond
+        weights(jCond,SPM.SPM.Sess(cond_list(jCond).sess).col(cond_list(jCond).number)) = 1;
     end
     matlabbatch{1}.spm.stats.con.consess{1}.fcon.weights = weights;
     matlabbatch{1}.spm.stats.con.consess{1}.fcon.sessrep = 'none';
@@ -142,81 +142,81 @@ for i = start_sub:N
     spm_get_defaults('cmdline',true);
     spm_jobman('run',matlabbatch);
     clear matlabbatch
-    SPM = load(tmfc.subjects(i).path);
+    SPM = load(tmfc.subjects(iSub).path);
 
-    if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]))
-        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]),'s');
+    if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(iSub,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(iSub,'%04.f')]),'s');
     end
 
-    if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]))
-        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(i,'%04.f')]));
+    if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(iSub,'%04.f')]))
+        mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs',['Subject_' num2str(iSub,'%04.f')]));
     end
     
-    for j = 1:N_sess
-        for k = 1:R
-            matlabbatch{1}.spm.util.voi.spmmat = {tmfc.subjects(i).path};
+    for jSess = 1:nSess
+        for kROI = 1:nROI
+            matlabbatch{1}.spm.util.voi.spmmat = {tmfc.subjects(iSub).path};
             matlabbatch{1}.spm.util.voi.adjust = length(SPM.SPM.xCon);
-            matlabbatch{1}.spm.util.voi.session = sess_num(j);
-            matlabbatch{1}.spm.util.voi.name = tmfc.ROI_set(ROI_set_number).ROIs(k).name;
-            matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {tmfc.ROI_set(ROI_set_number).ROIs(k).path_masked};
+            matlabbatch{1}.spm.util.voi.session = sess_num(jSess);
+            matlabbatch{1}.spm.util.voi.name = tmfc.ROI_set(ROI_set_number).ROIs(kROI).name;
+            matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked};
             matlabbatch{1}.spm.util.voi.roi{1}.mask.threshold = 0.1;
             matlabbatch{1}.spm.util.voi.expression = 'i1';    
-            batch{k} = matlabbatch;
+            batch{kROI} = matlabbatch;
             clear matlabbatch
         end
         
         switch tmfc.defaults.parallel
             case 0                              % Sequential
-                for k = 1:R
+                for kROI = 1:nROI
                     spm('defaults','fmri');
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
-                    spm_jobman('run',batch{k});
-                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']), ...
+                    spm_jobman('run',batch{kROI});
+                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '.mat']), ...
                              fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ... 
-                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']));
-                    if exist(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']),'file')
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']));
+                                      ['Subject_' num2str(iSub,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '.mat']));
+                    if exist(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '_eigen.nii']),'file')
+                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '_eigen.nii']));
                     else
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
+                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_eigen.nii']));
                     end
-                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
+                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_mask.nii']));
                 end
                 
             case 1                              % Parallel
-                parfor k = 1:R
+                parfor kROI = 1:nROI
                     spm('defaults','fmri');
                     spm_jobman('initcfg');
                     spm_get_defaults('cmdline',true);
-                    spm_jobman('run',batch{k});
-                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']), ...
+                    spm_jobman('run',batch{kROI});
+                    movefile(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '.mat']), ...
                              fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ... 
-                                      ['Subject_' num2str(i,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '.mat']));
-                    if exist(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']),'file')
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_' num2str(cond_list(j).sess) '_eigen.nii']));
+                                      ['Subject_' num2str(iSub,'%04.f')],['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '.mat']));
+                    if exist(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '_eigen.nii']),'file')
+                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(cond_list(jSess).sess) '_eigen.nii']));
                     else
-                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_eigen.nii']));
+                        delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_eigen.nii']));
                     end
-                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(k).name '_mask.nii']));
+                    delete(fullfile(SPM.SPM.swd,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_mask.nii']));
                 end
         end
 
         clear batch
     end
     
-    sub_check(i) = 1;
+    sub_check(iSub) = 1;
     pause(0.0001)
     
     % Update waitbar
     switch tmfc.defaults.parallel
         case 0                              % Sequential
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
             try                                                             % Updating the TMFC GUI window with the progress
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                set(main_GUI.TMFC_GUI_S3,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                set(main_GUI.TMFC_GUI_S3,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
             
         case 1                              % Parallel
@@ -225,7 +225,7 @@ for i = start_sub:N
             end
             try                                                             % Updating the TMFC GUI window with the progress
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                set(main_GUI.TMFC_GUI_S3,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                set(main_GUI.TMFC_GUI_S3,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
     end
 
@@ -255,20 +255,20 @@ end
 
 % Waitbar for parallel mode
 function tmfc_parfor_waitbar(waitbarHandle,iterations)
-    persistent count h N start
+    persistent count h nSub start
 
     if nargin == 2
         count = 0;
         h = waitbarHandle;
-        N = iterations;
+        nSub = iterations;
         start = tic;
         
     else
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
-            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+            hms = fix(mod(((nSub-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
+            waitbar(count/nSub, h, [num2str(count/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
 end
