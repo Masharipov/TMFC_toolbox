@@ -105,15 +105,15 @@ end
 spm('defaults','fmri');
 spm_jobman('initcfg');
    
-N = length(tmfc.subjects);
-
+nSub = length(tmfc.subjects);
 cond_list = tmfc.LSS_after_FIR.conditions;
-sess = []; sess_num = []; N_sess = [];
-for i = 1:length(cond_list)
-    sess(i) = cond_list(i).sess;
+nCond = length(cond_list);
+sess = []; sess_num = []; nSess = [];
+for iCond = 1:nCond
+    sess(iCond) = cond_list(iCond).sess;
 end
 sess_num = unique(sess);
-N_sess = length(sess_num);
+nSess = length(sess_num);
 
 EXIT_STATUS_LSS = 0;
 
@@ -127,7 +127,7 @@ switch tmfc.defaults.parallel
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
             w = waitbar(0,'Please wait...','Name','LSS regression','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
-            tmfc_parfor_waitbar(w,N);     
+            tmfc_parfor_waitbar(w,nSub);     
         catch % No waitbar for MATLAB R2016b and earlier
             opts = struct('WindowStyle','non-modal','Interpreter','tex');
             w = warndlg({'\fontsize{12}Sorry, waitbar progress update is not available for parallel computations in MATLAB R2016b and earlier.',[],...
@@ -146,7 +146,7 @@ switch tmfc.defaults.parallel
 end
 
 % Loop through subjects
-for i = start_sub:N
+for iSub = start_sub:nSub
     tic
 
     if EXIT_STATUS_LSS == 1 
@@ -154,75 +154,76 @@ for i = start_sub:N
         break;
     end
     
-    SPM = load(tmfc.subjects(i).path);
+    SPM = load(tmfc.subjects(iSub).path);
     
-    if isdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')]))
-        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')]),'s');
+    if isdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')]),'s');
     end
 
-    if ~isdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')]))
-        mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas'));
-        mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches'));
+    if ~isdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')]))
+        mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'Betas'));
+        mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'GLM_batches'));
     end
 
     % Loop through sessions
-    for j = 1:N_sess       
+    for jSess = 1:nSess       
         
         if EXIT_STATUS_LSS == 1 
             break;
         end
         
         % Trials of interest
-        E = 0;
+        nTrial = 0;
         ons_of_int = [];
         dur_of_int = [];
         cond_of_int = [];
         trial.cond = [];
         trial.number = [];
-        for k = 1:length(cond_list)
-            if cond_list(k).sess == sess_num(j)
-                E = E + length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons);
-                ons_of_int = [ons_of_int; SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons];
-                dur_of_int = [dur_of_int; SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).dur];
-                cond_of_int = [cond_of_int cond_list(k).number];
-                trial.cond = [trial.cond; repmat(cond_list(k).number,length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons),1)];
-                trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(j)).U(cond_list(k).number).ons))'];
+        for kCond = 1:nCond
+            if cond_list(kCond).sess == sess_num(jSess)
+                nTrial = nTrial + length(SPM.SPM.Sess(sess_num(jSess)).U(cond_list(kCond).number).ons);
+                ons_of_int = [ons_of_int; SPM.SPM.Sess(sess_num(jSess)).U(cond_list(kCond).number).ons];
+                dur_of_int = [dur_of_int; SPM.SPM.Sess(sess_num(jSess)).U(cond_list(kCond).number).dur];
+                cond_of_int = [cond_of_int cond_list(kCond).number];
+                trial.cond = [trial.cond; repmat(cond_list(kCond).number,length(SPM.SPM.Sess(sess_num(jSess)).U(cond_list(kCond).number).ons),1)];
+                trial.number = [trial.number; (1:length(SPM.SPM.Sess(sess_num(jSess)).U(cond_list(kCond).number).ons))'];
             end
         end
 
-        all_trials_number = (1:E)';  
+        all_trials_number = (1:nTrial)';  
 
         % Trials of no interest
-        cond_of_no_int = setdiff((1:length(SPM.SPM.Sess(sess_num(j)).U)),cond_of_int);
+        cond_of_no_int = setdiff((1:length(SPM.SPM.Sess(sess_num(jSess)).U)),cond_of_int);
         ons_of_no_int = [];
         dur_of_no_int = [];
-        for k = 1:length(cond_of_no_int)
-            ons_of_no_int = [ons_of_no_int; SPM.SPM.Sess(sess_num(j)).U(cond_of_no_int(k)).ons];
-            dur_of_no_int = [dur_of_no_int; SPM.SPM.Sess(sess_num(j)).U(cond_of_no_int(k)).dur];
+        for kCondNoInt = 1:length(cond_of_no_int)
+            ons_of_no_int = [ons_of_no_int; SPM.SPM.Sess(sess_num(jSess)).U(cond_of_no_int(kCondNoInt)).ons];
+            dur_of_no_int = [dur_of_no_int; SPM.SPM.Sess(sess_num(jSess)).U(cond_of_no_int(kCondNoInt)).dur];
         end
         
         % Loop through trials of interest
-        for k = 1:E
+        for kTrial = 1:nTrial
 
-            if isdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]))
-                rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
+            if isdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)]))
+                rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)]),'s');
             end
-                   
-            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)])};
+            
+            mkdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)]));
+            matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)])};
             matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
             matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
             matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
             matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = SPM.SPM.xBF.T0;
                         
             % Functional images
-            for image = 1:SPM.SPM.nscan(sess_num(j))
-                matlabbatch{1}.spm.stats.fmri_spec.sess.scans{image,1} = fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],['Res_' num2str(SPM.SPM.Sess(sess_num(j)).row(image),'%.4d') '.nii,1']);
+            for image = 1:SPM.SPM.nscan(sess_num(jSess))
+                matlabbatch{1}.spm.stats.fmri_spec.sess.scans{image,1} = fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')],['Res_' num2str(SPM.SPM.Sess(sess_num(jSess)).row(image),'%.4d') '.nii,1']);
             end
     
             % Current trial vs all other trials (of interest and no interrest)
-            current_trial_ons = ons_of_int(k);
-            current_trial_dur = dur_of_int(k);
-            other_trials = all_trials_number(all_trials_number~=k);
+            current_trial_ons = ons_of_int(kTrial);
+            current_trial_dur = dur_of_int(kTrial);
+            other_trials = all_trials_number(all_trials_number~=kTrial);
             other_trials_ons = [ons_of_int(other_trials); ons_of_no_int];
             other_trials_dur = [dur_of_int(other_trials); dur_of_no_int];
             
@@ -255,12 +256,12 @@ for i = start_sub:N
             matlabbatch{1}.spm.stats.fmri_spec.mask = {fullfile(SPM.SPM.swd,'mask.nii')};
             matlabbatch{1}.spm.stats.fmri_spec.cvi = 'None';
 
-            matlabbatch_2{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'SPM.mat')};
+            matlabbatch_2{1}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'SPM.mat')};
             matlabbatch_2{1}.spm.stats.fmri_est.write_residuals = 0;
             matlabbatch_2{1}.spm.stats.fmri_est.method.Classical = 1;
             
-            batch{k} = matlabbatch;
-            batch_2{k} = matlabbatch_2;
+            batch{kTrial} = matlabbatch;
+            batch_2{kTrial} = matlabbatch_2;
             clear matlabbatch matlabbatch_2 current* other*
         end        
         
@@ -268,7 +269,7 @@ for i = start_sub:N
         switch tmfc.defaults.parallel    
             % -------------------- Sequential Computing -----------------------
             case 0
-                for k = 1:E
+                for kTrial = 1:nTrial
                     if EXIT_STATUS_LSS ~= 1                                             % IF Cancel/X button has NOT been pressed, then contiune execution
                         try
                             % Specify LSS GLM
@@ -278,47 +279,47 @@ for i = start_sub:N
                             spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                             spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                             spm_get_defaults('stats.fmri.ufp',1);
-                            spm_jobman('run',batch{k});
+                            spm_jobman('run',batch{kTrial});
     
                             % Use explicit mask
-                            SPM_LSS = load(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'SPM.mat'));
+                            SPM_LSS = load(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'SPM.mat'));
                             SPM_LSS.SPM.xM.TH = -Inf(size(SPM_LSS.SPM.xM.TH));
-                            tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
+                            tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'SPM.mat'),SPM_LSS.SPM);
     
                             % Estimate LSS GLM
-                            spm_jobman('run',batch_2{k});
+                            spm_jobman('run',batch_2{kTrial});
     
                             % Save individual trial beta image
-                            copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'beta_0001.nii'),...
-                                fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                                ['Beta_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
+                            copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'beta_0001.nii'),...
+                                fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'Betas', ...
+                                ['Beta_[Sess_' num2str(sess_num(jSess)) ']_[Cond_' num2str(trial.cond(kTrial)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(jSess)).U(trial.cond(kTrial)).name),' ','_') ']_[Trial_' num2str(trial.number(kTrial)) '].nii']));
     
                             % Save GLM_batch.mat file
-                            tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                                ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
+                            tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'GLM_batches',...
+                                ['GLM_[Sess_' num2str(sess_num(jSess)) ']_[Cond_' num2str(trial.cond(kTrial)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(jSess)).U(trial.cond(kTrial)).name),' ','_') ']_[Trial_' num2str(trial.number(kTrial)) '].mat']),batch{kTrial});
     
                             % Remove temporal LSS directory
-                            rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
+                            rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)]),'s');
                             
                             pause(0.01)
     
-                            condition(trial.cond(k)).trials(trial.number(k)) = 1;
+                            condition(trial.cond(kTrial)).trials(trial.number(kTrial)) = 1;
                         catch
-                            condition(trial.cond(k)).trials(trial.number(k)) = 0;
+                            condition(trial.cond(kTrial)).trials(trial.number(kTrial)) = 0;
                         end
                     else
-                        waitbar(N,w, sprintf('Cancelling Operation'));
+                        waitbar(nSub,w, sprintf('Cancelling Operation'));
                         delete(w);
                         try                                                             % Updating the TMFC GUI window with the progress
                             main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                            set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                            set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
                         end
                         break;
                     end
                 end
             % --------------------- Parallel Computing ------------------------        
             case 1
-                parfor k = 1:E
+                parfor kTrial = 1:nTrial
                     try
                         % Specify LSS GLM
                         spm('defaults','fmri');
@@ -327,43 +328,43 @@ for i = start_sub:N
                         spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                         spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                         spm_get_defaults('stats.fmri.ufp',1);
-                        spm_jobman('run',batch{k});
+                        spm_jobman('run',batch{kTrial});
 
                         % Use explicit mask
-                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'SPM.mat'));
+                        SPM_LSS = load(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'SPM.mat'));
                         SPM_LSS.SPM.xM.TH = -Inf(size(SPM_LSS.SPM.xM.TH));
-                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'SPM.mat'),SPM_LSS.SPM);
+                        tmfc_parsave_SPM(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'SPM.mat'),SPM_LSS.SPM);
 
                         % Estimate LSS GLM
-                        spm_jobman('run',batch_2{k});
+                        spm_jobman('run',batch_2{kTrial});
 
                         % Save individual trial beta image
-                        copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)],'beta_0001.nii'),...
-                            fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'Betas', ...
-                            ['Beta_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].nii']));
+                        copyfile(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)],'beta_0001.nii'),...
+                            fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'Betas', ...
+                            ['Beta_[Sess_' num2str(sess_num(jSess)) ']_[Cond_' num2str(trial.cond(kTrial)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(jSess)).U(trial.cond(kTrial)).name),' ','_') ']_[Trial_' num2str(trial.number(kTrial)) '].nii']));
 
                         % Save GLM_batch.mat file
-                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],'GLM_batches',...
-                            ['GLM_[Sess_' num2str(sess_num(j)) ']_[Cond_' num2str(trial.cond(k)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(j)).U(trial.cond(k)).name),' ','_') ']_[Trial_' num2str(trial.number(k)) '].mat']),batch{k});
+                        tmfc_parsave_batch(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],'GLM_batches',...
+                            ['GLM_[Sess_' num2str(sess_num(jSess)) ']_[Cond_' num2str(trial.cond(kTrial)) ']_[' regexprep(char(SPM.SPM.Sess(sess_num(jSess)).U(trial.cond(kTrial)).name),' ','_') ']_[Trial_' num2str(trial.number(kTrial)) '].mat']),batch{kTrial});
 
                         % Remove temporal LSS directory
-                        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(i,'%04.f')],['LSS_Sess_' num2str(sess_num(j)) '_Trial_' num2str(k)]),'s');
+                        rmdir(fullfile(tmfc.project_path,'LSS_regression_after_FIR',['Subject_' num2str(iSub,'%04.f')],['LSS_Sess_' num2str(sess_num(jSess)) '_Trial_' num2str(kTrial)]),'s');
                         
-                        trials(k) = 1;
+                        trials(kTrial) = 1;
                     catch
-                        trials(k) = 0;
+                        trials(kTrial) = 0;
                     end
                     
                 end
 
-                for k = 1:E
-                    condition(trial.cond(k)).trials(trial.number(k)) = trials(k);
+                for kTrial = 1:nTrial
+                    condition(trial.cond(kTrial)).trials(trial.number(kTrial)) = trials(kTrial);
                 end
                 clear trials
                 
         end
 
-        sub_check(i).session(sess_num(j)).condition = condition;
+        sub_check(iSub).session(sess_num(jSess)).condition = condition;
         pause(0.0001)
 
         clear E ons* dur* cond_of_int cond_of_no_int trial all_trials_number condition 
@@ -373,14 +374,14 @@ for i = start_sub:N
     % Update waitbar for sequential or parallel computing
     switch(tmfc.defaults.parallel)
         case 0
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-            	waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+            	waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
 
             try                                                             % Updating the TMFC GUI window with the progress
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
         case 1
             try 
@@ -388,7 +389,7 @@ for i = start_sub:N
             end
             try                                                             % Updating the TMFC GUI window with the progress
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                         % Finding the GUI's object via handle
-                set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
+                set(main_GUI.TMFC_GUI_S10,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    % Assigning the status to the TMFC varaible
             end
     end
 
@@ -435,20 +436,20 @@ end
 
 % Waitbar for parallel mode
 function tmfc_parfor_waitbar(waitbarHandle,iterations)
-    persistent count h N start
+    persistent count h nSub start
 
     if nargin == 2
         count = 0;
         h = waitbarHandle;
-        N = iterations;
+        nSub = iterations;
         start = tic;
         
     else
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
-            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+            hms = fix(mod(((nSub-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
+            waitbar(count/nSub, h, [num2str(count/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
 end

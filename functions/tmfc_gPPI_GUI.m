@@ -40,8 +40,7 @@ end
 %% Function to select conditions of interest for gPPI analysis via GUI
 function gPPI_Cond_GUI(~,~)
 
-% Local Variables that work throughout the RunTime upto checking stage
-% Variable to store all conditions possible 
+% All conditions
 try
     if ~isempty(all_cond)
 
@@ -55,7 +54,6 @@ try
 catch
     LST_1 = {};
 end
-
 
 LST_2 = {};
 selection_1 = {};          % Variable to store the selected list of conditions in BOX 1(as INDEX)
@@ -100,7 +98,7 @@ function action_select_2(~,~)
     selection_2 = index;             
 end
 
-%% Function to Add single condition
+%% Function to add single condition
 function action_3(~,~)
     % Checking if there is a selection from the user
     if isempty(selection_1)
@@ -108,7 +106,6 @@ function action_3(~,~)
         warning('No conditions selected.');
     else
         % Else continue to add selected condition to selected list
-
         len_exst = length(LST_2);     % Find length of existing subjects in selected condition
         NEW_paths = {};               % Creation of empty array to store new paths
 
@@ -137,7 +134,7 @@ function action_3(~,~)
 end
 
 %% Function to add all conditions 
-function action_4(~,~) % Add ll
+function action_4(~,~) 
     % Logical condition to check if all elements are already present
     if length(LST_2) == length(LST_1)
         warning('All conditions are already selected.');
@@ -170,21 +167,21 @@ end
 
 %% Function to continue performing gPPI related operations
 function action_5(~,~)
-    % Logical condition to Check if there are elements selected for Export
+   % Logical condition to Check if there are elements selected for Export
    if isempty(LST_2)
        warning('Please select conditions.');
    else
        cond = struct;
        ctr = 1;
-       for kgb = 1:length(all_cond_copy)
-           for fsb = 1:length(LST_2)
-
-               MATCH = strcmp(all_cond_copy(kgb).list_name, LST_2(fsb));
+       for i = 1:length(all_cond_copy)
+           for j = 1:length(LST_2)
+               MATCH = strcmp(all_cond_copy(i).list_name, LST_2(j));
                if MATCH == 1
-                   cond(ctr).sess = all_cond_copy(kgb).sess;
-                   cond(ctr).number = all_cond_copy(kgb).number;
-                   cond(ctr).name = all_cond_copy(kgb).name;
-                   cond(ctr).list_name = all_cond_copy(kgb).list_name;
+                   cond(ctr).sess = all_cond_copy(i).sess;
+                   cond(ctr).number = all_cond_copy(i).number;
+                   cond(ctr).name = all_cond_copy(i).name;
+                   cond(ctr).list_name = all_cond_copy(i).list_name;
+                   cond(ctr).file_name = all_cond_copy(i).file_name;
                    ctr = ctr + 1;
                end
            end

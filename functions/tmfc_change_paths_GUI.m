@@ -72,9 +72,9 @@ function execute_change(~,~)
     newp = get(CP_T3_A, 'String');
     try   
         spm_changepath(char(paths),char(oldp),char(newp));        
-        disp('Paths have been sucessfully modified');
+        disp('Paths have been changed.');
     catch 
-        disp('Paths have not been changed');
+        disp('Paths have not been changed.');
     end
     close(CP_1);
 end

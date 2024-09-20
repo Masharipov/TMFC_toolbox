@@ -75,15 +75,18 @@ end
 spm('defaults','fmri');
 spm_jobman('initcfg');
 
-for i = start_sub:length(tmfc.subjects)
-    
-    SPM = load(tmfc.subjects(i).path);
+nSub = length(tmfc.subjects);
 
-    if isdir(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')]))
-        rmdir(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')]),'s');
+for iSub = start_sub:nSub
+    
+    SPM = load(tmfc.subjects(iSub).path);
+
+    if isdir(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')]))
+        rmdir(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')]),'s');
     end
     
-    matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')])};
+    mkdir(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')]));
+    matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')])};
     matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.SPM.xBF.UNITS;
     matlabbatch{1}.spm.stats.fmri_spec.timing.RT = SPM.SPM.xY.RT;
     matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = SPM.SPM.xBF.T;
@@ -138,17 +141,15 @@ for i = start_sub:length(tmfc.subjects)
         matlabbatch{1}.spm.stats.fmri_spec.cvi = 'FAST';
     end
 
-    matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat')};
+    matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = {fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')],'SPM.mat')};
     matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
     matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
     
-    batch{i} = matlabbatch;
+    batch{iSub} = matlabbatch;
     clear matlabbatch SPM; 
 end
 
-N = length(tmfc.subjects);
-
-% Parallel or sequential computing
+% Sequential or parallel computing
 switch tmfc.defaults.parallel
     % ----------------------- Sequential Computing ------------------------
     case 0
@@ -160,10 +161,9 @@ switch tmfc.defaults.parallel
         cleanupObj = onCleanup(@cleanMeUp);
         
         % Serial Execution of FIR Regression
-        for i = start_sub:N   
+        for iSub = start_sub:nSub   
             tic
-            if exit_status ~= 1   % IF Cancel/X button has NOT been pressed, contiune execution
-                
+            if exit_status ~= 1   % IF Cancel/X button has NOT been pressed, contiune execution   
                 try
                     spm('defaults','fmri');
                     spm_jobman('initcfg');
@@ -171,20 +171,20 @@ switch tmfc.defaults.parallel
                     spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                     spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                     spm_get_defaults('stats.fmri.ufp',1);
-                    spm_jobman('run', batch{i});
-                    tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat'),NaN);
-                    tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'GLM_batch.mat'),batch{i});
-                    sub_check(i) = 1;
+                    spm_jobman('run', batch{iSub});
+                    tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')],'SPM.mat'),NaN);
+                    tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')],'GLM_batch.mat'),batch{iSub});
+                    sub_check(iSub) = 1;
                 catch
-                    sub_check(i) = 0;
+                    sub_check(iSub) = 0;
                 end
             else
-                waitbar(N,w,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
+                waitbar(nSub,w,sprintf('Cancelling Operation'));      % Else condition if Cancel button is pressed
                 delete(w);
                 
                 try  % Updating the TMFC GUI window with the progress
                     main_GUI = guidata(findobj('Tag','TMFC_GUI'));          
-                    set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i-1), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    
+                    set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(iSub-1), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);    
                 end
 
                 break;
@@ -192,13 +192,13 @@ switch tmfc.defaults.parallel
             
             try  % Updating the TMFC GUI window with the progress                      
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
-                set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    
+                set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'), 'ForegroundColor', [0.219, 0.341, 0.137]);    
             end
             
             % Update waitbar
-            hms = fix(mod(((N-i)*toc/i), [0, 3600, 60]) ./ [3600, 60, 1]);
+            hms = fix(mod(((nSub-iSub)*toc/iSub), [0, 3600, 60]) ./ [3600, 60, 1]);
             try
-                waitbar(i/N, w, [num2str(i/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+                waitbar(iSub/nSub, w, [num2str(iSub/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
             end
         end
         
@@ -212,7 +212,7 @@ switch tmfc.defaults.parallel
             D = parallel.pool.DataQueue;            % Creation of parallel pool 
             w = waitbar(0,'Please wait...','Name','FIR task regression','Tag','tmfc_waitbar');
             afterEach(D, @tmfc_parfor_waitbar);     % Command to update waitbar
-            tmfc_parfor_waitbar(w,N);     
+            tmfc_parfor_waitbar(w,nSub);     
         catch % No waitbar for MATLAB R2016b and earlier
             D = [];
             opts = struct('WindowStyle','non-modal','Interpreter','tex');
@@ -233,7 +233,7 @@ switch tmfc.defaults.parallel
         end
 
         % Parallel Loop
-        parfor i = start_sub:N
+        parfor iSub = start_sub:nSub
             try
                 spm('defaults','fmri');
                 spm_jobman('initcfg');
@@ -241,12 +241,12 @@ switch tmfc.defaults.parallel
                 spm_get_defaults('stats.resmem',tmfc.defaults.resmem);
                 spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
                 spm_get_defaults('stats.fmri.ufp',1);
-                spm_jobman('run',batch{i});
-                tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'SPM.mat'),NaN);
-                tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(i,'%04.f')],'GLM_batch.mat'),batch{i});
-                sub_check(i) = 1;
+                spm_jobman('run',batch{iSub});
+                tmfc_write_residuals(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')],'SPM.mat'),NaN);
+                tmfc_parsave(fullfile(tmfc.project_path,'FIR_regression',['Subject_' num2str(iSub,'%04.f')],'GLM_batch.mat'),batch{iSub});
+                sub_check(iSub) = 1;
             catch
-                sub_check(i) = 0;
+                sub_check(iSub) = 0;
             end
             try
                 send(D,[]); 
@@ -254,14 +254,14 @@ switch tmfc.defaults.parallel
             try 
                 % Updating the TMFC GUI with the progress (within the loop)                
                 main_GUI = guidata(findobj('Tag','TMFC_GUI'));                             
-                set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(i), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+                set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(iSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
             end    
         end
         
         try
             % Updating the TMFC GUI with the progress (after loop completion)               
             main_GUI = guidata(findobj('Tag','TMFC_GUI'));                                 
-            set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(N), '/', num2str(N), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
+            set(main_GUI.TMFC_GUI_S8,'String', strcat(num2str(nSub), '/', num2str(nSub), ' done'),'ForegroundColor',[0.219, 0.341, 0.137]);       
         end 
 
         % Closing the Waitbar after execution
@@ -300,20 +300,20 @@ end
 
 % Waitbar for parallel mode
 function tmfc_parfor_waitbar(waitbarHandle,iterations)
-    persistent count h N start
+    persistent count h nSub start
 
     if nargin == 2
         count = 0;
         h = waitbarHandle;
-        N = iterations;
+        nSub = iterations;
         start = tic;
         
     else
         if isvalid(h)         
             count = count + 1;
             time = toc(start);
-            hms = fix(mod(((N-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
-            waitbar(count / N, h, [num2str(count/N*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
+            hms = fix(mod(((nSub-count)*time/count), [0, 3600, 60]) ./ [3600, 60, 1]);
+            waitbar(count/nSub, h, [num2str(count/nSub*100,'%.f') '%, ' num2str(hms(1)) ':' num2str(hms(2)) ':' num2str(hms(3)) ' [hr:min:sec] remaining']);
         end
     end
 end
