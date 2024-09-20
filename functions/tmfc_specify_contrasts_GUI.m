@@ -161,7 +161,7 @@ function worker()
                 set(SC_B2_lst, 'string', LST_2);
             end
         else
-            warning('No contrasts present to remove');
+            warning('No contrasts present to remove.');
         end
 
     end
@@ -175,9 +175,9 @@ function worker()
             ctr = 1;
             set(SC_B2_lst,'Value',[]);
             set(SC_B2_lst, 'string', LST_2);
-            disp('All Contrasts have been removed');
+            disp('All Contrasts have been removed.');
         else
-            warning('No contrasts present to remove');
+            warning('No contrasts present to remove.');
         end
     end
 

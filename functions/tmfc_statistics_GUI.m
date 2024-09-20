@@ -930,10 +930,10 @@ function flag = ROI_check(C, ralpher, new_files)
                        if (s3(1) == s4(1) && s3(2) == s4(2)) == 0
                            fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                            fprintf('\n File 1: %s ',C{1,:});
-                           fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s3));
+                           fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s3));
 
                            fprintf('\n File 2: %s has been excluded from the selection', k, C{k,:});
-                           fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s4));
+                           fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s4));
                            holder_2(m) = k;
                            m = m+1;
                            flag = 1;
@@ -945,10 +945,10 @@ function flag = ROI_check(C, ralpher, new_files)
                        if (s3(1) == s4(1) && s3(2) == s4(2) && s3(3) == s4(3)) == 0
                            fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                            fprintf('\n File 1: %s ',C{1,:});
-                           fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s3));
+                           fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s3));
 
                            fprintf('\n File 2: %s has been excluded from the selection', k, C{k,:});
-                           fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s4));
+                           fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s4));
                            holder_2(m) = k;
                            m = m+1;
                            flag = 1;
@@ -987,10 +987,10 @@ function flag = ROI_check(C, ralpher, new_files)
                    if (s3(1) == s4(1) && s3(2) == s4(2)) == 0
                        fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                        fprintf('\n File 1: %s ',C{1,:});
-                       fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s3));
+                       fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s3));
 
                        fprintf('\n File 2: %s has been excluded from the selection', new_files{1,:});
-                       fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s4));
+                       fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s4));
                        holder_2(m) = 1;
                        m = m+1;
                        flag = 1;
@@ -1000,10 +1000,10 @@ function flag = ROI_check(C, ralpher, new_files)
                        if (s3(1) == s4(1) && s3(2) == s4(2) && s3(3) == s4(3)) == 0
                            fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                            fprintf('\n File 1: %s ',C{1,:});
-                           fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s3));
+                           fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s3));
 
                            fprintf('\n File 2: %s has been excluded from the selection', new_files{1,:});
-                           fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s4));
+                           fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s4));
                            holder_2(m) = 1;
                            m = m+1;
                            flag = 1;
@@ -1030,10 +1030,10 @@ function flag = ROI_check(C, ralpher, new_files)
                            if (s3(1) == s4(1) && s3(2) == s4(2)) == 0
                                fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                                fprintf('\n File 1: %s ',C{1,:});
-                               fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s3));
+                               fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s3));
 
                                fprintf('\n File 2: %s has been excluded from the selection', k, new_files{k,:});
-                               fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s4));
+                               fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s4));
                                holder_2(m) = k;
                                m = m+1;
                                flag = 1;
@@ -1045,10 +1045,10 @@ function flag = ROI_check(C, ralpher, new_files)
                            if (s3(1) == s4(1) && s3(2) == s4(2) && s3(3) == s4(3)) == 0
                                fprintf('\n ROI x ROI dimensions of following files are not equal, please re-select files with consistent ROI dimensions:');
                                fprintf('\n File 1: %s ',C{1,:});
-                               fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s3));
+                               fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s3));
 
                                fprintf('\n File 2: %s has been excluded from the selection', k, new_files{k,:});
-                               fprintf('\n Dimensiosn (ROI x ROI) %s \n', num2str(s4));
+                               fprintf('\n Dimensions (ROI x ROI) %s \n', num2str(s4));
                                holder_2(m) = k;
                                m = m+1;
                                flag = 1;
