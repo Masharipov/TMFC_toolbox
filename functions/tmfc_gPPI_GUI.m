@@ -265,7 +265,7 @@ try
             cond_list(k).name = char(SPM.Sess(iSess).U(jCond).name);
             cond_list(k).list_name = [char(SPM.Sess(iSess).U(jCond).name) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
             cond_list(k).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
-                                      regexprep(char(SPM.SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
+                                      regexprep(char(SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
             k = k + 1;
         end 
     end

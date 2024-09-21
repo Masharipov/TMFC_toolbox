@@ -273,7 +273,6 @@ else
         tmfc.ROI_set_number = ROI_set_number;
         set(handles.TMFC_GUI_S2,'String', horzcat(tmfc.ROI_set(ROI_set_number).set_name, ' (',num2str(length(tmfc.ROI_set(ROI_set_number).ROIs)),' ROIs)'),'ForegroundColor',[0.219, 0.341, 0.137]);
         tmfc = update_gPPI(tmfc);
-    
     % If user cancels operation
     else
         disp('No new ROI set selected.');
@@ -467,7 +466,7 @@ elseif ~isfield(tmfc,'ROI_set')
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI')
     error('Select conditions of interest.');
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI,'conditions')
-    error('Select conditions of interest.');
+    error('Select conditions of interest. Calculate VOIs for all subjects.');
 elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
     error('Calculate VOIs for all subjects.');
 end
@@ -588,9 +587,9 @@ elseif ~isfield(tmfc,'ROI_set_number')
 elseif ~isfield(tmfc,'ROI_set')
     error('Select ROIs.');
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI')
-    error('Select conditions of interest.');
+    error('Select conditions of interest. Calculate VOIs for all subjects.');
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI,'conditions')
-    error('Select conditions of interest.');
+    error('Select conditions of interest. Calculate VOIs for all subjects.');
 elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
     error('Calculate VOIs for all subjects.');
 elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 0)
@@ -731,9 +730,9 @@ elseif ~isfield(tmfc,'ROI_set_number')
 elseif ~isfield(tmfc,'ROI_set')
     error('Select ROIs.');
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number),'gPPI')
-    error('Select conditions of interest.');
+    error('Select conditions of interest. Calculate VOIs for all subjects.');
 elseif ~isfield(tmfc.ROI_set(tmfc.ROI_set_number).gPPI,'conditions')
-    error('Select conditions of interest.');
+    error('Select conditions of interest. Calculate VOIs for all subjects.');
 elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).VOI] == 0)
     error('Calculate VOIs for all subjects.');
 elseif any([tmfc.ROI_set(tmfc.ROI_set_number).subjects(:).PPI] == 0)
@@ -2331,7 +2330,10 @@ end
 % Function to update VOI, PPI, gPPI and gPPI_FIR progress
 % =========================================================================
 function [tmfc] = update_gPPI(tmfc)
-    
+
+nSub  = length(tmfc.subjects);
+nROI  = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
+
 try
     cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
     sess = []; sess_num = []; nSess = [];
@@ -2340,9 +2342,7 @@ try
     end
     sess_num = unique(sess);
     nSess = length(sess_num);
-    nCond = length(cond_list);
-    nROI  = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
-    nSub  = length(tmfc.subjects);
+    nCond = length(cond_list);    
 end
     
 % ------------------------[Update VOI progress]----------------------------
