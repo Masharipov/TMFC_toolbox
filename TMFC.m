@@ -611,14 +611,14 @@ for iSub = 1:nSub
 	for jCond = 1:nCond
         % Check ROI-to-ROI files
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
                              ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
             	check_gPPI(jCond) = 0;
             end
         end
         % Check seed-to-voxel files
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
-            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(nROI).name, ...
                              ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
                 check_gPPI(jCond) = 0;
             end
@@ -754,14 +754,14 @@ for iSub = 1:nSub
 	for jCond = 1:nCond
         % Check ROI-to-ROI files
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
+            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
                              ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
             	check_gPPI_FIR(jCond) = 0;
             end
         end
         % Check seed-to-voxel files
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
-            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+            if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(nROI).name, ...
                              ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
                 check_gPPI_FIR(jCond) = 0;
             end
@@ -2429,14 +2429,14 @@ try
         for jCond = 1:nCond
             % Check ROI-to-ROI files
             if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','ROI_to_ROI','symmetrical', ...
                                  ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
                     check_gPPI(jCond) = 0;
                 end
             end
             % Check seed-to-voxel files
             if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
-                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI','Seed_to_voxel',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(nROI).name, ...
                                  ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
                     check_gPPI(jCond) = 0;
                 end
@@ -2455,14 +2455,14 @@ try
         for jCond = 1:nCond
             % Check ROI-to-ROI files
             if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
                                  ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.mat']),'file')
                     check_gPPI_FIR(jCond) = 0;
                 end
             end
             % Check seed-to-voxel files
             if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
-                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(ROI_set_number).ROIs(nROI).name, ...
+                if ~exist(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'gPPI_FIR','Seed_to_voxel',tmfc.ROI_set(tmfc.ROI_set_number).ROIs(nROI).name, ...
                                  ['Subject_' num2str(iSub,'%04.f') '_Contrast_' num2str(jCond,'%04.f') '_' cond_list(jCond).file_name '.nii']),'file')
                     check_gPPI_FIR(jCond) = 0;
                 end
