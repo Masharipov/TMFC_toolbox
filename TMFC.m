@@ -1989,43 +1989,49 @@ freeze_GUI(0);
 end
 
 %% ==========================[ Load project ]==============================
-% Loading of (*.mat) into TMFC toolbox
+% Loading TMFC project (*.mat) into TMFC toolbox
 % Dependencies:
 %       - evaluate_file() (Internal)
+%
+% Variable description: 
+% filename = Name of .mat file selected by user (e.g. tmfc_project.mat)
+% path     = path of .mat file selected by user (e.g. C:\User\matlab\)
+% fullpath = complete path + filename as one string (e.g. C:\User\matlab\tmfc_project.mat)
+% loaded_data = using function ('load'), data from .mat file is loaded to internal workspace 
+% variable_name = temporary storage of variable to compare if loaded file is in TMFC format or not. 
 
 function load_project(ButtonH, EventData, TMFC_GUI)
 
     % Get File name, Directory of File to be loaded
-    [filename_LO, pathname_LO] = uigetfile(pwd,'*.mat', 'Select .mat file');
+    [filename, path] = uigetfile(pwd,'*.mat', 'Select .mat file');
 
     % If user has selected a file the proceed else warning
-    if filename_LO ~= 0                                              
+    if filename ~= 0                                              
         % Construct Full Path to file
-        fullpath_L = fullfile(pathname_LO, filename_LO);            
+        fullpath = fullfile(path, filename);           
 
         % Load Data from File into temporary variable
-        loaded_data_L = load(fullpath_L);            
+        loaded_data = load(fullpath);            
 
         % Get the name of the variable as in file 
-        variable_name_L = fieldnames(loaded_data_L);                
+        variable_name = fieldnames(loaded_data);                 
            
-        if strcmp('tmfc', variable_name_L{1}) 
+        if strcmp('tmfc', variable_name{1}) 
             
-            % Get value of the variable as in file
-            tmfc = loaded_data_L.(variable_name_L{1});      
+        	% Get value of the variable as in file
+            tmfc = loaded_data.(variable_name{1});       
 
             % Evaluate file & Update TMFC, TMFC window with progress
             tmfc = evaluate_file(tmfc);
-            fprintf('Successfully loaded file "%s"\n', filename_LO);
+            fprintf('Successfully loaded file "%s"\n', filename);
             
         else
-            warning('Selected file is not in TMFC format, please select again');
+            warning('Selected file is not in TMFC format, please select again.');
         end
     else
-        warning('No file selected to load');
+        warning('No file selected to load.');
     end
-
-end  % Closing Load project function
+end
 
 %% ==========================[ Save project ]==============================
 % Function to perform Saving of TMFC variable from workspace to individual .mat file in user desired location
