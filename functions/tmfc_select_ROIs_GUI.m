@@ -257,10 +257,11 @@ function ROI_name_HW(~,~)
     'Second, select one or more ROI masks (*.nii files). TMFC toolbox will create a group mean binary mask based on individual subjects 1st-level masks (see SPM.VM) and apply it to all selected ROIs Empty ROIs will be excluded from further analysis. Masked ROIs will be limited to only voxels which have data for all subjects. The dimensions, orientation, and voxel sizes of the masked ROI images will be adjusted according to the group mean binary mask. These files will be stored in "Masked_ROIs"',...
     '','Third, exclude heavily cropped ROIs from further analysis, if necessary.','','Note: You can define several ROI sets and switch between them. Push the "ROI_set" button and then push "Add new ROI set". Each time you need to switch between ROI sets push the "ROI_set" button.'};
 
-    ROI_name_HW_MW = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.67 0.31 0.16 0.36],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none','Windowstyle', 'Modal');
-    ROI_name_HW_MW_S = uicontrol(ROI_name_HW_MW,'Style','text','String', help_string,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.0365,'HorizontalAlignment', 'left', 'Position',[0.05 0.14 0.89 0.82],'backgroundcolor',get(ROI_name_HW_MW,'color'));
+    ROI_name_HW_MW = figure('Name', 'Select ROIs', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.67 0.31 0.2 0.45],'Resize','off','color','w','MenuBar', 'none','ToolBar', 'none','Windowstyle', 'Modal');
+    ROI_name_HW_MW_S = uicontrol(ROI_name_HW_MW,'Style','text','String', help_string,'Units', 'normalized', 'fontunits','normalized', 'fontSize', 0.0356,'HorizontalAlignment', 'left', 'Position',[0.05 0.14 0.89 0.82],'backgroundcolor',get(ROI_name_HW_MW,'color'));
     ROI_name_HW_MW_OK = uicontrol(ROI_name_HW_MW,'Style','pushbutton', 'String', 'OK','Units', 'normalized','fontunits','normalized', 'fontSize', 0.45,'Position',[0.34 0.06 0.30 0.06],'callback', @ROI_name_HW_MW_close);
-
+    movegui(ROI_name_HW_MW,'center');
+    
     function ROI_name_HW_MW_close(~,~)
         close(ROI_name_HW_MW);
     end
@@ -442,19 +443,17 @@ function REM_THRS(~,~)
 
     ROI_crop_val = get(ROI_C_MW_CROP, 'String'); % Extract Crop value from user
 
-    if ~strcmp(ROI_crop_val,'') & ~strcmp(ROI_crop_val(1),' ')  % Checking if ROI value is not space or empty 
+    if ~strcmp(ROI_crop_val,'')
 
         threshold = str2double(ROI_crop_val); 
 
         if isnan(threshold) % Logical check of ROI Crop value
             warning('Entered threshold should be a natural number, please re-enter.');
 
-        elseif (threshold<0) | (threshold>100)
+        elseif (threshold<0) || (threshold>100)
             warning('Please enter a threshold between 0 and 100%.');
 
         else
-            % If threshold is valid, continue with execution 
-            % Comparing Crop value of Existing ROIs to user value
             temp_ROI_list = [];
             ROI_index = 1;
             for iROI = 1:size(ROI_C_MW_L1,1)
