@@ -30,7 +30,7 @@ function [conditions] = tmfc_gPPI_GUI(SPM_path)
 % Get all conditions from the SPM.mat file
 all_cond = generate_gPPI_conditions(SPM_path);
 
-% Check if is not empty
+% Check if SPM.mat is not empty
 if isempty(all_cond)
     error('Selected SPM.mat file is empty.');
 else
@@ -245,29 +245,26 @@ end
 
 %% Function to get information about conditions ===========================
 function [cond_list] = generate_gPPI_conditions(SPM_path)
-
-cond_list = {}; 
-
-try
-    load(SPM_path);
-
-    n_cond = 1;
-    for iSess = 1:length(SPM.Sess)
-        for jCond = 1:length({SPM.Sess(iSess).U(:).name})
-            cond_list(n_cond).sess = iSess;
-            cond_list(n_cond).number = jCond;
-            cond_list(n_cond).name = char(SPM.Sess(iSess).U(jCond).name);
-            cond_list(n_cond).list_name = [char(SPM.Sess(iSess).U(jCond).name) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
-            cond_list(n_cond).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
-                                      regexprep(char(SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
-            n_cond = n_cond + 1;
-        end 
+    cond_list = {}; 
+    try
+        load(SPM_path);
+        n_cond = 1;
+        for iSess = 1:length(SPM.Sess)
+            for jCond = 1:length({SPM.Sess(iSess).U(:).name})
+                cond_list(n_cond).sess = iSess;
+                cond_list(n_cond).number = jCond;
+                cond_list(n_cond).name = char(SPM.Sess(iSess).U(jCond).name);
+                cond_list(n_cond).list_name = [char(SPM.Sess(iSess).U(jCond).name) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
+                cond_list(n_cond).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+                                          regexprep(char(SPM.Sess(iSess).U(jCond).name),' ','_') ']'];
+                n_cond = n_cond + 1;
+            end 
+        end
+        clear SPM n_cond; 
+    catch 
+        disp('Selected SPM.mat file does not exist or is invalid.');
+        cond_list = {};
     end
-    clear SPM n_cond; 
-catch 
-    disp('Selected SPM.mat file does not exist or is invalid.');
-    cond_list = {};
-end
 end
 
 %% Function to perform sorting of selected conditions =====================
