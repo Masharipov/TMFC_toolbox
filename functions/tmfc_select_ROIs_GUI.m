@@ -338,6 +338,7 @@ movegui(ROI_C_MW,'center');
 
 function ROI_C_MW_EXIT(~,~)
    delete(ROI_C_MW);
+   disp('ROIs not selected.');
 end
 
 function LB1_SEL(~,~)
