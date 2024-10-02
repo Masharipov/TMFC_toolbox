@@ -38,7 +38,7 @@ LST_2 = {};
 carbs = struct;
 ctr = 1;
 
-LST_1 = genset_1(tmfc,TMFC_analysis);
+LST_1 = genset_1(tmfc,TMFC_analysis,ROI_set_number);
 ctr_L1 = size(LST_1);
 if ctr_L1(1) == 0 
     switch(TMFC_analysis)
@@ -100,7 +100,7 @@ function worker()
 
 %%  Add new contrast
     function action3(~,~)
-        [D, c] = tmfc_BSC_MINI(tmfc, TMFC_analysis);
+        [D, c] = tmfc_BSC_MINI(tmfc,TMFC_analysis,ROI_set_number);
         if ~isempty(D)
             if ~isfield(carbs, 'no')
                 % first addition
@@ -187,7 +187,7 @@ function worker()
         if isempty(LST_2)
             warning('Please specify new contrast(s)');
         else
-            tmfc = Finisher(tmfc, carbs, TMFC_analysis);
+            tmfc = Finisher(tmfc,carbs,TMFC_analysis,ROI_set_number);
             fprintf('Number of newly added contrast for processing: %d\n',length(LST_2));
             delete(SC_G1);
         end
@@ -205,21 +205,21 @@ end
 
 end
 %%
-function [constructor_2] = genset_1(tmfc, A_case)
+function [constructor_2] = genset_1(tmfc,A_case,ROI_set_number)
 
 switch (A_case)
 
 % gPPI
 case 1        
     constructor = {};
-    for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI)
-        constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title);
+    for i=1:length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI)
+        constructor = vertcat(constructor, tmfc.ROI_set(ROI_set_number).contrasts.gPPI(i).title);
     end
 
     eject = size(constructor);
     constructor_2 = {};
     for i = 1:eject(1)
-        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).weights),']');
+        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(i).weights),']');
         constructor_2 = vertcat(constructor_2, biege);
     end
 
@@ -227,14 +227,14 @@ case 1
     % gPPI FIR
 case 2        
     constructor = {};
-    for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR)
-        constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).title);
+    for i=1:length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR)
+        constructor = vertcat(constructor, tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(i).title);
     end
 
     eject = size(constructor);
     constructor_2 = {};
     for i = 1:eject(1)
-        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).weights),']');
+        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(i).weights),']');
         constructor_2 = vertcat(constructor_2, biege);
     end
 
@@ -242,14 +242,14 @@ case 2
     % BSC
 case 3        
     constructor = {};
-    for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC)
-        constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title);
+    for i=1:length(tmfc.ROI_set(ROI_set_number).contrasts.BSC)
+        constructor = vertcat(constructor, tmfc.ROI_set(ROI_set_number).contrasts.BSC(i).title);
     end
 
     eject = size(constructor);
     constructor_2 = {};
     for i = 1:eject(1)
-        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).weights),']');
+        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(ROI_set_number).contrasts.BSC(i).weights),']');
         constructor_2 = vertcat(constructor_2, biege);
     end
 
@@ -258,14 +258,14 @@ case 3
 % BSC_after_FIR
 case 4        
     constructor = {};
-    for i=1:length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR)
-        constructor = vertcat(constructor, tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title);
+    for i=1:length(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR)
+        constructor = vertcat(constructor, tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(i).title);
     end
 
     eject = size(constructor);
     constructor_2 = {};
     for i = 1:eject(1)
-        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).weights),']');
+        biege = horzcat('No ',num2str(i),' :: ',constructor{i},' :: ', 'c = [',num2str(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(i).weights),']');
         constructor_2 = vertcat(constructor_2, biege);
     end
 end
@@ -274,36 +274,36 @@ end
 
 %%
 
-function [TTL,C1] = tmfc_BSC_MINI(tmfc,TMFC_analysis)
+function [TTL,C1] = tmfc_BSC_MINI(tmfc,TMFC_analysis,ROI_set_number)
 
 switch(TMFC_analysis)
 
     case 1
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(1).weights);
+        Czs = length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(1).weights);
         constructor = {};
         for i=1:Czs
-            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(i).title));   
+            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(ROI_set_number).contrasts.gPPI(i).title));   
         end
 
     case 2 
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(1).weights);
+        Czs = length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(1).weights);
         constructor = {};
         for i=1:Czs
-            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(i).title));   
+            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(i).title));   
         end
 
     case 3 
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(1).weights);
+        Czs = length(tmfc.ROI_set(ROI_set_number).contrasts.BSC(1).weights);
         constructor = {};
         for i=1:Czs
-            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(i).title));   
+            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(ROI_set_number).contrasts.BSC(i).title));   
         end
 
     case 4 
-        Czs = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(1).weights);
+        Czs = length(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(1).weights);
         constructor = {};
         for i=1:Czs
-            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(i).title));   
+            constructor = vertcat(constructor, strcat('C',num2str(i),' : ', 32,tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(i).title));   
         end
 
 end
@@ -482,40 +482,40 @@ end
 
 
 %%
-function [tmfc] = Finisher(tmfc,carbs, TMFC_analysis)
+function [tmfc] = Finisher(tmfc,carbs,TMFC_analysis,ROI_set_number)
 
     switch (TMFC_analysis)
 
         case 1
             % gPPI
-            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI);
+            yard = length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI(yard+i).weights = carbs(i).weights; 
+               tmfc.ROI_set(ROI_set_number).contrasts.gPPI(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(ROI_set_number).contrasts.gPPI(yard+i).weights = carbs(i).weights; 
             end
 
         case 2
             % gPPI FIR
-            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR);
+            yard = length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.gPPI_FIR(yard+i).weights = carbs(i).weights; 
+               tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(yard+i).weights = carbs(i).weights; 
             end
 
         case 3
             % BSC
-            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC);
+            yard = length(tmfc.ROI_set(ROI_set_number).contrasts.BSC);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC(yard+i).weights = carbs(i).weights; 
+               tmfc.ROI_set(ROI_set_number).contrasts.BSC(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(ROI_set_number).contrasts.BSC(yard+i).weights = carbs(i).weights; 
             end
 
         case 4
             % BSC FIR
-            yard = length(tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR);
+            yard = length(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR);
             for i = 1:length(carbs)
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).title = carbs(i).title;
-               tmfc.ROI_set(tmfc.ROI_set_number).contrasts.BSC_after_FIR(yard+i).weights = carbs(i).weights; 
+               tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(yard+i).title = carbs(i).title;
+               tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(yard+i).weights = carbs(i).weights; 
             end
     end
     

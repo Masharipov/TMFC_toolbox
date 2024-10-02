@@ -110,7 +110,7 @@ switch type
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel gPPI analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 3;
-                    tmfc_gPPI(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_gPPI(tmfc,ROI_set_number,1);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -159,7 +159,7 @@ switch type
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel gPPI-FIR analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 3;
-                    tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_gPPI_FIR(tmfc,ROI_set_number,1);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -208,7 +208,7 @@ switch type
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel BSC-LSS analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 3;
-                    tmfc_BSC(tmfc,tmfc.ROI_set_number,0);
+                    tmfc_BSC(tmfc,ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -257,7 +257,7 @@ switch type
                     disp('Seed-to-voxel analysis has not been performed previously. Performing seed-to-voxel BSC-LSS (after FIR) analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 3;
-                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,0);
+                    tmfc_BSC_after_FIR(tmfc,ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 

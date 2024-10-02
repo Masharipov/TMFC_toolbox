@@ -102,7 +102,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI gPPI analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_gPPI(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_gPPI(tmfc,ROI_set_number,1);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -149,7 +149,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI gPPI-FIR analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_gPPI_FIR(tmfc,tmfc.ROI_set_number,1);
+                    tmfc_gPPI_FIR(tmfc,ROI_set_number,1);
                     tmfc.defaults.analysis = analysis;
                 end
     
@@ -196,7 +196,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_BSC(tmfc,tmfc.ROI_set_number,0);
+                    tmfc_BSC(tmfc,ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 
@@ -236,7 +236,7 @@ switch type
                     disp('ROI-to-ROI analysis has not been performed previously. Performing ROI-to-ROI BSC-LSS (after FIR) analysis, please wait...');
                     analysis = tmfc.defaults.analysis;
                     tmfc.defaults.analysis = 2;
-                    tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,0);
+                    tmfc_BSC_after_FIR(tmfc,ROI_set_number,0);
                     tmfc.defaults.analysis = analysis;
                 end
                 

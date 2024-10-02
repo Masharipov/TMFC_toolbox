@@ -1,4 +1,4 @@
-function [conditions] = tmfc_LSS_GUI(SPM)
+function [conditions] = tmfc_LSS_GUI(SPM_path)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -8,8 +8,6 @@ function [conditions] = tmfc_LSS_GUI(SPM)
 % FORMAT [conditions] = tmfc_LSS_GUI(SPM)
 %   SPM          - Path to individual subject SPM.mat file
 %
-% FORMAT [conditions] = tmfc_LSS_GUI(SPM,start_case,start_sub)
-% To run this function from main TMFC GUI
 % =========================================================================
 %
 % Copyright (C) 2024 Ruslan Masharipov
@@ -30,7 +28,7 @@ function [conditions] = tmfc_LSS_GUI(SPM)
 % Contact email: masharipov@ihb.spb.ru
 
 try
-    all_cond = generate_LSS_conditions(SPM);
+    all_cond = generate_LSS_conditions(SPM_path);
     LSS_Cond_GUI();
 catch
     warning('Conditions of interest cannot be selected.');
