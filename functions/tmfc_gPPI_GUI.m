@@ -134,7 +134,7 @@ function MW_add_all(~,~)
         % Selection of all elements
         len_exist = length(cond_L2);
         new_conds = {};                                             
-        new_conds = vertcat(new_conds,cond_L1(k));             
+        new_conds = vertcat(new_conds,cond_L1);             
 
        % Addition & extraction of unique selected conditions
         cond_L2 = vertcat(cond_L2,new_conds);
