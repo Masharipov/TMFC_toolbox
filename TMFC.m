@@ -116,40 +116,34 @@ if isempty(findobj('Tag', 'TMFC_GUI')) == 1
     
     % CallBack functions corresponding to each button
     set(handles.TMFC_GUI, 'CloseRequestFcn', {@close_GUI, handles.TMFC_GUI}); 
-    set(handles.TMFC_GUI_B1, 'callback', {@select_subjects, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B2, 'callback', {@ROI, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B3, 'callback', {@VOI, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B4, 'callback', {@PPI, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B5a, 'callback', {@gPPI, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B5b, 'callback', {@gPPI_FIR, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B6, 'callback', {@LSS_GLM, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B7, 'callback', {@BSC, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B8, 'callback', {@FIR, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B9, 'callback', {@BGFC, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B10, 'callback', {@LSS_FIR, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B11, 'callback', {@BSC_after_FIR, handles.TMFC_GUI});   
-    set(handles.TMFC_GUI_B12a, 'callback', {@statistics, handles.TMFC_GUI});               
-    set(handles.TMFC_GUI_B12b, 'callback', {@results, handles.TMFC_GUI});               
-    set(handles.TMFC_GUI_B13a, 'callback', {@load_project, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B13b, 'callback', {@save_project, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B14a, 'callback', {@change_paths, handles.TMFC_GUI});
-    set(handles.TMFC_GUI_B14b, 'callback', {@settings, handles.TMFC_GUI});    
+    set(handles.TMFC_GUI_B1,   'callback',   {@select_subjects_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B2,   'callback',   {@ROI_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B3,   'callback',   {@VOI_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B4,   'callback',   {@PPI_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B5a,  'callback',   {@gPPI_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B5b,  'callback',   {@gPPI_FIR_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B6,   'callback',   {@LSS_GLM_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B7,   'callback',   {@BSC_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B8,   'callback',   {@FIR_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B9,   'callback',   {@BGFC_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B10,  'callback',   {@LSS_FIR_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B11,  'callback',   {@BSC_after_FIR_GUI, handles.TMFC_GUI});   
+    set(handles.TMFC_GUI_B12a, 'callback',   {@statistics_GUI, handles.TMFC_GUI});               
+    set(handles.TMFC_GUI_B12b, 'callback',   {@results_GUI, handles.TMFC_GUI});               
+    set(handles.TMFC_GUI_B13a, 'callback',   {@load_project_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B13b, 'callback',   {@save_project_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B14a, 'callback',   {@change_paths_GUI, handles.TMFC_GUI});
+    set(handles.TMFC_GUI_B14b, 'callback',   {@settings_GUI, handles.TMFC_GUI});    
     warning('off','backtrace')
 else
     % Warning if user tries to open TMFC when it is already running
     figure(findobj('Tag', 'TMFC_GUI')); 
-    warning('TMFC toolbox is already running');    
+    warning('TMFC toolbox is already running.');    
 end
 
 %% ========================[ Select subjects ]=============================
 % Select subjects and check SPM.mat files
-% Dependencies: 
-%       - tmfc_select_subjects_GUI.m (External)
-%       - tmfc_select_project_path   (Internal)
-%       - major_reset                (Internal)
-%       - freeze_GUI                 (Internal)
-
-function select_subjects(ButtonH, EventData, TMFC_GUI)
+function select_subjects_GUI(ButtonH, EventData, TMFC_GUI)
     
 % Freeze main TMFC GUI
 freeze_GUI(1);
@@ -198,14 +192,7 @@ end
 
 %% ============================[ ROI set ]=================================
 % Select ROIs and apply group-mean binary mask to them
-% Dependencies: 
-%       - tmfc_select_ROIs_GUI.m (External)
-%       - ROI_set_initializer    (Internal)
-%       - ROI_set_switcher       (Internal)
-%       - update_gPPI            (Internal)
-%       - freeze_GUI             (Internal)
-
-function ROI(ButtonH, EventData, TMFC_GUI)
+function ROI_GUI(ButtonH, EventData, TMFC_GUI)
 
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -284,17 +271,9 @@ freeze_GUI(0);
    
 end
 
-%% ===============================[ VOIs ]=================================
-% Performing VOI computation for selected ROI set
-% Dependencies: 
-%       - tmfc_VOI.m           (External)
-%       - tmfc_gPPI_GUI.m      (External)
-%       - reset_gPPI()         (Internal)
-%       - tmfc_restart_GUI()   (Internal)
-%       - tmfc_continue_GUI()  (Internal)
-%       - freeze_GUI()         (Internal)
-
-function VOI(ButtonH, EventData, TMFC_GUI)
+%% =============================[ VOIs ]===================================
+% Perform VOI computation for selected ROI set
+function VOI_GUI(ButtonH, EventData, TMFC_GUI)
     
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -441,14 +420,8 @@ freeze_GUI(0);
 end
 
 %% ===============================[ PPIs ]=================================
-% Performing PPI computation for selected ROI set
-% Dependencies: 
-%       - tmfc_PPI.m           (External)
-%       - PPI_recompute()      (Internal)
-%       - tmfc_continue_GUI()  (Internal)
-%       - freeze_GUI()         (Internal)
-
-function PPI(ButtonH, EventData, TMFC_GUI)
+% Perform PPI computation for selected ROI set
+function PPI_GUI(ButtonH, EventData, TMFC_GUI)
     
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -563,15 +536,8 @@ freeze_GUI(0);
 end
 
 %% ==============================[ gPPI ]==================================
-% Performing gPPI analysis for selected ROI set
-% Dependencies: 
-%       - tmfc_gPPI.m                    (External)
-%       - tmfc_ROI_to_ROI_contrast.m     (External)
-%       - tmfc_seed_to_voxel_contrast.m  (External)
-%       - tmfc_specify_contrasts_GUI.m   (External)
-%       - tmfc_continue_GUI()            (Internal)
-
-function gPPI(ButtonH, EventData, TMFC_GUI)
+% Perform gPPI analysis for selected ROI set
+function gPPI_GUI(ButtonH, EventData, TMFC_GUI)
                
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -705,16 +671,8 @@ freeze_GUI(0);
 end
 
 %% =============================[ gPPI FIR ]===============================
-% Performing gPPI analysis for selected ROI set
-% Dependencies: 
-%       - tmfc_gPPI_FIR.m               (External)
-%       - tmfc_ROI_to_ROI_contrast      (External)
-%       - tmfc_seed_to_voxel_contrast   (External)
-%       - tmfc_specify_contrasts_GUI    (External)
-%       - tmfc_FIR_GUI()                (Internal)
-%       - tmfc_continue_GUI()           (Internal)
-
-function gPPI_FIR(ButtonH, EventData, TMFC_GUI)
+% Perform gPPI-FIR analysis for selected ROI set
+function gPPI_FIR_GUI(ButtonH, EventData, TMFC_GUI)
 
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -855,14 +813,8 @@ freeze_GUI(0);
 end
 
 %% ============================[ LSS GLM ]=================================
-% Performing LSS GLM processing 
-% Dependencies: 
-%       - tmfc_LSS_GUI.m          (External)
-%       - tmfc_LSS.m              (External)
-%       - tmfc_restart_GUI()      (Internal)
-%       - tmfc_continue_GUI()     (Internal)
-
-function LSS_GLM(ButtonH, EventData, TMFC_GUI)
+% Estimate LSS GLMs
+function LSS_GLM_GUI(ButtonH, EventData, TMFC_GUI)
 
     try
         % Change to project directory & Freeze TMFC Window
@@ -1139,7 +1091,7 @@ end
 %       - tmfc_ROI_to_ROI_contrast.m         (External)
 %       - tmfc_seed_to_voxel_contrast.m      (External)
 
-function BSC(buttonH, EventData, TMFC_GUI)
+function BSC_GUI(buttonH, EventData, TMFC_GUI)
 
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -1257,7 +1209,7 @@ end
 %       - tmfc_restart_GUI()     (Internal)
 %       - tmfc_continue_GUI()    (Internal)
 
-function FIR(ButtonH, EventData, TMFC_GUI)
+function FIR_GUI(ButtonH, EventData, TMFC_GUI)
     
     % Checking for subjects selection
     %try
@@ -1488,7 +1440,7 @@ end
 %       - tmfc_continue_GUI()    (Internal)
 %       - recompute_BGFC()       (Internal)
 
-function BGFC(buttonH, EventData, TMFC_GUI)
+function BGFC_GUI(buttonH, EventData, TMFC_GUI)
 
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -1594,7 +1546,7 @@ end
 %       - tmfc_restart_GUI()        (Internal)
 %       - tmfc_continue_GUI()       (Internal)
     
-function LSS_FIR(ButtonH, EventData, TMFC_GUI)
+function LSS_FIR_GUI(ButtonH, EventData, TMFC_GUI)
 
     % Checking for subjects selection
     try
@@ -1880,7 +1832,7 @@ end
 %       - tmfc_ROI_to_ROI_contrast.m      (External)
 %       - tmfc_seed_to_voxel_contrast.m   (External)
 
-function BSC_after_FIR(ButtonH, EventData, TMFC_GUI)
+function BSC_after_FIR_GUI(ButtonH, EventData, TMFC_GUI)
 
 % Initial checks
 if ~isfield(tmfc,'subjects')
@@ -2000,7 +1952,7 @@ end
 % loaded_data = using function ('load'), data from .mat file is loaded to internal workspace 
 % variable_name = temporary storage of variable to compare if loaded file is in TMFC format or not. 
 
-function load_project(ButtonH, EventData, TMFC_GUI)
+function load_project_GUI(ButtonH, EventData, TMFC_GUI)
 
     % Get File name, Directory of File to be loaded
     [filename, path] = uigetfile(pwd,'*.mat', 'Select .mat file');
@@ -2022,7 +1974,7 @@ function load_project(ButtonH, EventData, TMFC_GUI)
             tmfc = loaded_data.(variable_name{1});       
 
             % Evaluate file & Update TMFC, TMFC window with progress
-            tmfc = evaluate_file(tmfc);
+            tmfc = load_project(tmfc);
             fprintf('Successfully loaded file "%s"\n', filename);
             
         else
@@ -2038,7 +1990,7 @@ end
 % Dependencies:
 %       - saver() (Internal)
 
-function save_status = save_project(ButtonH, EventData, TMFC_GUI)
+function save_status = save_project_GUI(ButtonH, EventData, TMFC_GUI)
        
     % Ask user for Filename & location name:
     [filename, pathname] = uiputfile('*.mat', 'Save TMFC variable as');
@@ -2088,7 +2040,7 @@ end
 % Dependencies:
 %       - tmfc_select_subjects_GUI.m (External)
 
-function change_paths(ButtonH, EventData, TMFC_GUI)
+function change_paths_GUI(ButtonH, EventData, TMFC_GUI)
     
 	disp('Select SPM.mat files to change paths...');
     
@@ -2110,7 +2062,7 @@ set_computing = {'Sequential computing', 'Parallel computing'};
 set_storage = {'Store temporary files for GLM estimation in RAM', 'Store temporary files for GLM estimation on disk'};
 set_analysis = {'Seed-to-voxel and ROI-to-ROI','ROI-to-ROI only','Seed-to-voxel only'};
 
-function settings(ButtonH, EventData, TMFC_GUI)
+function settings_GUI(ButtonH, EventData, TMFC_GUI)
         
     % Create the Main figure for settings window
     tmfc_set = figure('Name', 'TMFC Toolbox','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', 'Units', 'norm', 'Position', [0.380 0.0875 0.250 0.850], 'color', 'w', 'Tag', 'TMFC_GUI_Settings','resize', 'off','WindowStyle','modal');
@@ -2254,7 +2206,7 @@ end
 % Function to Exit toolbox AFTER saving TMFC variable
 function ex_w_save(~,~)
     % Performs saving of TMFC variable using SAVE_PROJECT function
-    save_status = save_project();
+    save_status = save_project_GUI();
 
     % Based on the result of successful save, TMFC toolbox is
     % closed (i.e. Save->Save Status-> Close Main GUI)
@@ -2268,27 +2220,18 @@ end
 end
 
 %% ==========================[ Statistics ]================================
-function statistics(ButtonH, EventData, TMFC_GUI)
+function statistics_GUI(ButtonH, EventData, TMFC_GUI)
     freeze_GUI(1);
     tmfc_statistics_GUI();
     freeze_GUI(0);
 end
 
 %% ===========================[ Results ]==================================
-function results(ButtonH, EventData, TMFC_GUI)
+function results_GUI(ButtonH, EventData, TMFC_GUI)
     tmfc_results_GUI();
 end
 
-%% =====================[ Supporting Functions ]===========================
-
-% GUI Data Sync for main TMFC GUI
-try 
-    guidata(handles.TMFC_GUI, handles);
-end
-
-% =========================================================================
-% Freeze/unfreeze main TMFC GUI 
-% =========================================================================
+%% =================[ Freeze/unfreeze main TMFC GUI ]======================
 function freeze_GUI(state)
 
     switch(state)
@@ -2305,9 +2248,7 @@ function freeze_GUI(state)
 
 end      
 
-% =========================================================================
-% Reset main TMFC GUI & TMFC structure
-% =========================================================================
+%% ==============[ Reset main TMFC GUI & TMFC structure ]==================
 function [tmfc] = major_reset(tmfc)
 
 try 
@@ -2337,9 +2278,7 @@ set([handles.TMFC_GUI_S3,handles.TMFC_GUI_S4,handles.TMFC_GUI_S6,handles.TMFC_GU
 
 end
 
-% =========================================================================
-% Function to update VOI, PPI, gPPI and gPPI_FIR progress
-% =========================================================================
+%% ===========[ Update VOI, PPI, gPPI and gPPI_FIR progress ]==============
 function [tmfc] = update_gPPI(tmfc)
 
 nSub  = length(tmfc.subjects);
@@ -2348,8 +2287,8 @@ nROI  = length(tmfc.ROI_set(tmfc.ROI_set_number).ROIs);
 try
     cond_list = tmfc.ROI_set(tmfc.ROI_set_number).gPPI.conditions;
     sess = []; sess_num = []; nSess = [];
-    for i = 1:length(cond_list)
-        sess(i) = cond_list(i).sess;
+    for iCond = 1:length(cond_list)
+        sess(iCond) = cond_list(iCond).sess;
     end
     sess_num = unique(sess);
     nSess = length(sess_num);
@@ -2485,9 +2424,7 @@ end
 
 end
 
-% =========================================================================
-% Function to reset VOI, PPI, gPPI, gPPI-FIR progress and delete old files
-% =========================================================================
+%% ====[ Reset VOI, PPI, gPPI, gPPI-FIR progress and delete old files ]====
 function [tmfc] = reset_gPPI(tmfc,cases)
 
 disp('Deleting old files...');
@@ -2507,7 +2444,6 @@ switch cases
         % Delete old VOI files
         rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(tmfc.ROI_set_number).set_name,'VOIs'),'s'); 
         
-
     case 2 
         % Reset PPI, gPPI, gPPI-FIR 
         for iSub = 1:length(tmfc.subjects)
@@ -2545,10 +2481,8 @@ end
 
 end
 
-% =========================================================================
-% Function to update the main TMFC GUI after loading a TMFC project
-% =========================================================================
-function tmfc = evaluate_file(tmfc) 
+%% =======[ Update the main TMFC GUI after loading a TMFC project ]========
+function tmfc = load_project(tmfc) 
     
     try
         freeze_GUI(1);
