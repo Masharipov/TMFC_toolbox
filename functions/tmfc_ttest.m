@@ -58,17 +58,17 @@ end
 
 switch correction
     case 'uncorr'
-        thresholded = double(pval<alpha);
+        thresholded = double(pval<=alpha);
         thresholded(1:1+nROI:end) = 0;
 
     case 'FDR'
         [alpha_FDR] = FDR(lower_triangle(pval),alpha);
-        thresholded = double(pval<alpha_FDR);
+        thresholded = double(pval<=alpha_FDR);
         thresholded(1:1+nROI:end) = 0;
 
     case 'Bonf'
         alpha_Bonf = alpha/(nROI*(nROI-1)/2);
-        thresholded = double(pval<alpha_Bonf);
+        thresholded = double(pval<=alpha_Bonf);
         thresholded(1:1+nROI:end) = 0;
 
     otherwise
@@ -76,7 +76,7 @@ switch correction
         pval = [];
         tval = [];
         conval = [];
-        warning('Work in progress. Please wait for future updates.');
+        warning('Unsupported correction type for tmfc_ttest.');
 end
 end
 
@@ -124,6 +124,6 @@ tval(zv & m == 0) = 0;
 tval(zv & m ~= 0) = sign(m(zv)) .* Inf;
 
 % Right-tailed p-value
-p = 1 - spm_Tcdf(tval, df);
+p = 1 - tmfc_tcdf(tval, df);
 
 end

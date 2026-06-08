@@ -1,4 +1,4 @@
-function tmfc_results_GUI(sig,pval,tval,conval,alpha,correction)
+function tmfc_results_GUI(sig,pval,tval,conval,alpha,correction,nperm,components,score)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -12,7 +12,12 @@ function tmfc_results_GUI(sig,pval,tval,conval,alpha,correction)
 
 if nargin == 0
 
-    file = spm_select(1,'.mat','Select TMFC results *.mat file created by TMFC statistics',{},pwd,'.');
+    [file, path] = uigetfile('*.mat', 'Select TMFC results *.mat file created by TMFC statistics');
+    if isequal(file,0)
+        file = '';
+    else
+        file = fullfile(path, file); 
+    end   
 
     if ~isempty(file)
         loaded_path = load(file);
@@ -27,6 +32,25 @@ if nargin == 0
                 conval = tmfc_results.conval;
                 alpha = tmfc_results.alpha;
                 correction = tmfc_results.correction;
+
+                if isfield(tmfc_results,'nperm')
+                    nperm = tmfc_results.nperm;
+                else
+                    nperm = [];
+                end
+
+                if isfield(tmfc_results,'components')
+                    components = tmfc_results.components;
+                else
+                    components = [];
+                end
+
+                if isfield(tmfc_results,'score')
+                    score = tmfc_results.score;
+                else
+                    score = [];
+                end
+
                 create_plot();
             else
                 warning('Selected .mat file is not in TMFC results format. Please select valid TMFC results .mat file.');
@@ -41,7 +65,16 @@ if nargin == 0
         clear file
     end
 
-elseif nargin == 6 
+elseif nargin >= 6
+    if nargin < 7 || isempty(nperm)
+        nperm = [];
+    end
+    if nargin < 8 || isempty(components)
+        components = [];
+    end
+    if nargin < 9 || isempty(score)
+        score = [];
+    end
     create_plot();
 end
 
@@ -55,9 +88,9 @@ function create_plot(~,~)
             'Tag','TMFC_results','WindowStyle','modal');
         
         movegui(res_win,'center');
-        
-        thr_key = threshold_key(correction);
 
+        plot_title = results_title(correction, alpha);
+        
         ax1 = subplot(1,2,1,'Parent',res_win);
         imagesc(ax1,conval);
         try, subtitle(ax1,'Group mean'); catch, title(ax1,'Group mean'); end
@@ -65,8 +98,8 @@ function create_plot(~,~)
 
         ax2 = subplot(1,2,2,'Parent',res_win);
         imagesc(ax2, sig);
-        try, subtitle(ax2, ['p-' thr_key '<' num2str(alpha)]);
-        catch, title(ax2, ['p-' thr_key '<' num2str(alpha)]); end
+        try, subtitle(ax2, plot_title, 'Interpreter','none');
+        catch, title(ax2, plot_title, 'Interpreter','none'); end
         axis(ax2,'square'); colorbar(ax2);
         
         colormap(ax1,'turbo');  
@@ -92,6 +125,18 @@ function create_plot(~,~)
         tmfc_results.conval = conval;
         tmfc_results.alpha = alpha;
         tmfc_results.correction = correction;
+
+        if ~isempty(nperm)
+            tmfc_results.nperm = nperm;
+        end
+
+        if ~isempty(components)
+            tmfc_results.components = components;
+        end
+
+        if ~isempty(score)
+            tmfc_results.score = score;
+        end
     end
 end
 
@@ -143,8 +188,12 @@ function savestat_flag =  saver(save_path)
 end
 
 function saveplot_flag =  saver_plot(save_path)
+    saveplot_flag = 0;
+    temp_res_win = [];
+
     try
-        thr_key = threshold_key(correction);
+        plot_title = results_title(correction, alpha);
+
         temp_res_win = figure('NumberTitle','off','Units','normalized', ...
             'Position',[0.4 0.25 0.55 0.42],'Tag','TMFC_results','Visible','off');
 
@@ -155,35 +204,65 @@ function saveplot_flag =  saver_plot(save_path)
 
         ax2 = subplot(1,2,2,'Parent',temp_res_win);
         imagesc(ax2, sig);
-        try, subtitle(ax2, ['p-' thr_key '<' num2str(alpha)]);
-        catch, title(ax2, ['p-' thr_key '<' num2str(alpha)]); end
+        try, subtitle(ax2, plot_title, 'Interpreter','none');
+        catch, title(ax2, plot_title, 'Interpreter','none'); end
         axis(ax2,'square'); colorbar(ax2);
 
-        colormap(ax1,'turbo');
+        try, colormap(ax1,'turbo'); end
         set(findall(temp_res_win,'-property','FontSize'),'FontSize',16);
 
         saveas(temp_res_win,save_path);
-        delete(temp_res_win);
         saveplot_flag = 1;
-    catch
-        saveplot_flag = 0;
-        warning('File not saved.');
-    end    
+    catch ME
+        disp(['File not saved: ' ME.message]);
+    end
+
+    if ~isempty(temp_res_win) && isgraphics(temp_res_win)
+        delete(temp_res_win);
+    end
 end
 end
 
-%% Threshold type: Long title -> Short title (for plots and tmfc_ttest/tmfc_ttest2 functions)
+%% Title for result plot
+function txt = results_title(correction, alpha)
+switch correction
+    case {'Uncorrected (Parametric)','uncorr'}
+        txt = ['p-uncorr<', num2str(alpha)];
+    case {'FDR (Parametric)','FDR'}
+        txt = ['pFDR<', num2str(alpha)];
+    case {'Bonferroni (Parametric)','Bonf'}
+        txt = ['pBonf<', num2str(alpha)];
+    case {'Uncorrected (Non-parametric)','perm_uncorr'}
+        txt = ['p-perm-uncorr<', num2str(alpha)];
+    case {'FDR (Non-parametric)','perm_FDR'}
+        txt = ['p-permFDR<=', num2str(alpha)];
+    case {'NBS FWE (Extent)','NBS_extent'}
+        txt = ['NBS extent, pFWE<', num2str(alpha)];
+    case {'NBS FWE (Intensity)','NBS_intensity'}
+        txt = ['NBS intensity, pFWE<', num2str(alpha)];
+    case {'Threshold-free NBS FWE','TFNBS'}
+        txt = ['TFNBS, pFWE<', num2str(alpha)];
+    otherwise
+        txt = correction;
+end
+end
+
+%% Threshold type: Long title -> Short title
 function thr_key = threshold_key(thr_type)
-    thr_key = '';    
-    switch thr_type 
-        % Long -> short
-        case 'Uncorrected (Parametric)';  thr_key = 'uncorr';
-        case 'FDR (Parametric)';          thr_key = 'FDR';
-        case 'Bonferroni (Parametric)';   thr_key = 'Bonf';
-        % Already short -> return as-is
-        case {'uncorr','FDR','Bonf'}
+    thr_key = '';
+    switch thr_type
+        case 'Uncorrected (Parametric)';      thr_key = 'uncorr';
+        case 'FDR (Parametric)';              thr_key = 'FDR';
+        case 'Bonferroni (Parametric)';       thr_key = 'Bonf';
+        case 'Uncorrected (Non-parametric)';  thr_key = 'perm_uncorr';
+        case 'FDR (Non-parametric)';          thr_key = 'perm_FDR';
+        case 'NBS FWE (Extent)';              thr_key = 'NBS_extent';
+        case 'NBS FWE (Intensity)';           thr_key = 'NBS_intensity';
+        case 'Threshold-free NBS FWE';        thr_key = 'TFNBS';
+        case {'uncorr','FDR','Bonf','perm_uncorr','perm_FDR', ...
+              'NBS_extent','NBS_intensity','TFNBS'}
             thr_key = thr_type;
         otherwise
-            thr_key = '';      
+            thr_key = '';
     end
 end

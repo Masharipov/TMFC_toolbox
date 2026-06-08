@@ -5,7 +5,7 @@ authors:
     given-names: "Ruslan"
     orcid: "https://orcid.org/0000-0003-4162-3725"
 title: "TMFC toolbox"
-version: "1.9.0"
-date-released: 2026-02-03
+version: "1.9.5"
+date-released: 2026-06-08
 url: "https://github.com/IHB-IBR-department/TMFC_toolbox"
 

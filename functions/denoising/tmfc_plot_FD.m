@@ -132,7 +132,7 @@ function plot_data(FD_threshold,iSub)
         if jSess>1
             plot(ax_frame, [sess(jSess) sess(jSess)],[y(1) y(2)],'-k'); 
         end
-        text(ax_frame, sess(jSess)+10, y(2), {['Sess ' num2str(jSess)]}, 'VerticalAlignment','top');
+        text(ax_frame, sess(jSess)+10, y(2), {['Run ' num2str(jSess)]}, 'VerticalAlignment','top');
     end
     % Plot FD threshold
     S = plot(ax_frame, [x(1) x(2)],[FD_threshold FD_threshold],'--','Color',[0.9 0.2 0.2],'LineWidth',2); text(ax_frame, x(2)+2, FD_threshold, {'FDthr'}); 
@@ -168,7 +168,10 @@ function update_text(~,~)
     
     lb1_str = {};
     for jSub = 1:length(FD)
-        lb1_str = [lb1_str; {strcat(FD(jSub).Subject,' :: (',num2str(round(flagged(jSub).total_prc,1),'%.1f'),'% above FDthr) :: (',num2str(flagged(jSub).total),' scans flagged) ')}];
+        lb1_str = [lb1_str; {strcat(FD(jSub).Subject, ...
+            ' :: (', num2str(round(flagged(jSub).total_prc,1),'%.1f'), ...
+            '% above FDthr) :: (', num2str(flagged(jSub).total), ...
+            ' scans flagged) ')}];
     end
     
     stat_str = {strcat(num2str(N_25prc),' subjects have >25% scans above FD threshold'),...

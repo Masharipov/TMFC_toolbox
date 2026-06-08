@@ -135,7 +135,7 @@ if isempty(def_root), def_root = filesep; end
 anat_root = def_root; % default root = parent of Subject 1
 
 % Button: Select parent folder (contains sub-*/anat)
-ST_MW_S0 = uicontrol(ST_MW,'Style','pushbutton','String','Select parent folder (contains sub-*/anat)', ...
+ST_MW_S0 = uicontrol(ST_MW,'Style','pushbutton','String','Select parent folder (contains sub-*/.../anat)', ...
     'TooltipString','Folder that directly contains subject folders (e.g., sub-01, sub-02) with ANAT subfolders (which include *T1*.nii images).',...
     'Units','normalized','Position',[0.025 0.82 0.41 0.080],'FontUnits','normalized','FontSize',0.295, ...
     'callback',@select_anat_root);
@@ -207,7 +207,7 @@ end
 % Select parent folder (contains sub-*/anat)
 % -------------------------------------------------------------------------
 function select_anat_root(~,~)
-    tmp = deblank(spm_select(1,'dir','Select parent folder (contains sub-*/anat)',{},anat_root,'..'));
+    tmp = deblank(spm_select(1,'dir','Select parent folder (contains sub-*/.../anat)',{},anat_root,'..'));
     if ~isempty(tmp)
         anat_root = tmp;
         set(ST_MW_S0_txt,'String',anat_root,'ForegroundColor',[0 0 0],...

@@ -107,7 +107,7 @@ if any(goodX) && any(goodY)
 
                     % Mirror to lower block if off-diagonal
                     if j1 > i1
-                        Rgg(vIdx(j1:j2), vIdx(i1:i2)) = Rblk.'; %#ok<*UDIM>
+                        Rgg(vIdx(j1:j2), vIdx(i1:i2)) = Rblk.'; 
                     end
                 end
             end

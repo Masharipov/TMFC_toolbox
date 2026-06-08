@@ -1,11 +1,11 @@
 function options = tmfc_denoise_options_GUI()
 
-% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.4.4]=
+% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.5.0]=
 % 
 % Opens a GUI to select denoising options.
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -48,7 +48,7 @@ set_WM_CSF = {'None','Add WM and CSF signals (2Phys)','Add WM and CSF signals al
 set_GSR = {'None','Add whole-brain signal (GSR)','Add whole-brain signal and its temporal derivative (2GSR)','Add whole-brain signal, its temporal derivative, and 2 quadratic terms (4GSR)'};
 set_PAR = {'None','Enable parallel computations'};
 
-tmfc_DN_GUI = figure('Name','TMFC denoise v1.4.4','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', ...
+tmfc_DN_GUI = figure('Name','TMFC denoise v1.5.0','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', ...
     'Units', 'normalized', 'Position', [0.345 0.062 0.310 0.850], 'color', 'w', 'Tag', 'TMFC_DN_GUI','resize','on', ...
     'CloseRequestFcn',@close_options_GUI);
 

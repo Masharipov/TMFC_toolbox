@@ -12,8 +12,8 @@
 
 **Features planned for future releases:**
 1) Statistical inference for TMFC matrices
-   - Network-Based Statistic (NBS) with Family-Wise Error (FWE) correction
-   - Threshold-Free Network-Based Statistic (TFNBS)
+   - Network-Based Statistic (NBS) with Family-Wise Error (FWE) correction ✅
+   - Threshold-Free Network-Based Statistic (TFNBS) ✅
 2) ReadTheDocs documentation
 3) Performance improvements (migration from SPM batch system to internal TMFC functions)
      - VOI extraction ✅
@@ -24,11 +24,12 @@
 -------------------------------------------------------------------------------------------
 
 TMFC toolbox implements:
- - Beta-series correlations based on the least-squares separate approach (**BSC-LSS**);
+ - Beta-series correlations based on the least-squares separate approach (**BSC-LSS**) and beta scrubbing;
  - Generalized psychophysiological interactions (**gPPI**) with deconvolution procedure;
  - **Seed-to-voxel** analysis and **ROI-to-ROI** analysis (to create FC matrices);
  - Finite impulse response (**FIR**) task regression to remove co-activations;
- - **TMFC denoise**: toolbox to perform denoising for further TMFC analysis. Calculates 12HMP/24HMP, FD/DVARS, aCompCorr, GSR, WM/CSF regression, spike regression and robust WLS.
+ - **TMFC_denoise**: toolbox to perform denoising for further TMFC analysis. Calculates 12HMP/24HMP, FD/DVARS, aCompCorr, GSR, WM/CSF regression, spike regression and robust WLS.
+ - **TMFC_statistics**: toolbox for statistical inference on TMFC matrices. Includes Network-Based Statistics (**NBS**) and Threshold-Free Network-Based Statistics (**TFNBS**).
  - Graphical user interface (**GUI**) and command line interface (**CLI**);
  - RAM control (allows to estimate model parameters in the whole-brain at a time without dividing into chunks);
  - Parallel computations.
@@ -285,6 +286,12 @@ Once the calculations are complete, TMFC toolbox will create a **"...\TMFC_proje
 
 To perform BSC-LSS analysis for selected ROI set, click **BSC LSS** button.
 
+Beta series correlation window will appear. Select **First eigenvariate** and **No** beta scrubbing, then click OK.
+
+<p align="center">
+<img src = "illustrations/04_BSC_LSS_options.PNG">
+</p>
+
 Once the calculations are complete, TMFC toolbox will create a **"...\TMFC_project_name\ROI_sets\ROI_set_name\BSC_LSS"** folder with three subfolders:
 * **Beta_series** - contains beta series extracted for the selected ROI set (beta parameters are averaged across voxels for each ROI mask);
 * **ROI_to_ROI**  - contains **BSC-LSS functional connectivity matrices** (Pearson’s r converted to Fisher's Z);
@@ -314,12 +321,14 @@ You can use the SPM12/SPM25 software to perform voxel-wise statistical inference
 
 ### ROI-to-ROI results
 
-Click **Results** button. Select "TaskA_vs_TaskB" contrasts for 20 subjects. Enter contrast value = 1.
-Specify alpha value = 0.0005 (i.e. 0.001/2, two-sided). Select FDR (parametric) threshold and click **Run** button: 
+Click **Results** button:
 
 <p align="center">
-<img src = "illustrations/04_BSC_LSS_results_GUI_1.PNG">
+<img src = "illustrations/TMFC_statistics.PNG">
 </p>
+
+Select "TaskA_vs_TaskB" contrasts for 20 subjects. Enter contrast value = 1.
+Specify alpha value = 0.0005 (i.e. 0.001/2, two-sided). Select FDR (parametric) threshold and click **Run** button: 
 
 The results window will appear:
 

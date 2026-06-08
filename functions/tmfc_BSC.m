@@ -1,4 +1,4 @@
-function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC)
+function [sub_check,contrasts,beta_scrubbing_summary] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC,perform_beta_scrubbing,beta_scrubbing_options)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
@@ -88,16 +88,41 @@ function [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC)
 %                            (0 - do not clear, 1 - clear)
 %                            (by default, clear_BSC = 1)
 %
+% FORMAT [sub_check,contrasts,beta_scrubbing_summary] = tmfc_BSC(tmfc,ROI_set_number,clear_BSC, ...
+%                                                                       perform_beta_scrubbing, ...
+%                                                                       beta_scrubbing_options)
+%
+%   perform_beta_scrubbing - 0 (do not perform beta scrubbing, default)
+%                            1 (perform beta scrubbing)
+%
+%   beta_scrubbing_options - Structure with fields:
+%                            .FD_thr          - FD threshold in mm
+%                                               (default = 0.5)
+%                            .time_window     - Time window in seconds from
+%                                               trial onset (default = 12)
+%                            .min_flagged_TRs - Minimum number of flagged
+%                                               TRs to remove beta value
+%                                               (default = 1)
+%
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
     
-if nargin == 1
+if nargin < 2 || isempty(ROI_set_number)
     ROI_set_number = 1;
+end
+
+if nargin < 3 || isempty(clear_BSC)
     clear_BSC = 1;
-elseif nargin == 2
-    clear_BSC = 1;
+end
+
+if nargin < 4 || isempty(perform_beta_scrubbing)
+    perform_beta_scrubbing = 0;
+end
+
+if nargin < 5
+    beta_scrubbing_options = [];
 end
 
 if ~isfield(tmfc.ROI_set(ROI_set_number),'BSC')
@@ -118,6 +143,94 @@ nSub = length(tmfc.subjects);
 sub_check = zeros(1,nSub);
 cond_list = tmfc.LSS.conditions;
 nCond = length(cond_list);
+
+% Beta scrubbing options
+%--------------------------------------------------------------------------
+beta_scrubbing_summary = [];
+
+if perform_beta_scrubbing == 1
+
+    user_provided_beta_scrubbing_options = (nargin >= 5 && ~isempty(beta_scrubbing_options));
+
+    if ~user_provided_beta_scrubbing_options
+        beta_scrubbing_options = [];
+    end
+    
+    % Default beta-scrubbing options
+    if ~isfield(beta_scrubbing_options,'FD_thr') || isempty(beta_scrubbing_options.FD_thr)
+        beta_scrubbing_options.FD_thr = 0.5;
+    end
+    if ~isfield(beta_scrubbing_options,'time_window') || isempty(beta_scrubbing_options.time_window)
+        beta_scrubbing_options.time_window = 12;
+    end
+    if ~isfield(beta_scrubbing_options,'min_flagged_TRs') || isempty(beta_scrubbing_options.min_flagged_TRs)
+        beta_scrubbing_options.min_flagged_TRs = 1;
+    end
+
+    % Load existing FD.mat files 
+    disp('Preparing FD time series...');
+    FD = repmat(tmfc_empty_FD(), nSub, 1);
+    missing_FD = false(nSub,1);
+
+    for iSub = 1:nSub
+        [FD_i, ok] = tmfc_load_subject_FD(tmfc.subjects(iSub).path);
+
+        if ok
+            FD(iSub) = FD_i;
+        else
+            missing_FD(iSub) = true;
+        end
+    end
+
+    % Calculate FD only for subjects without valid FD.mat
+    if any(missing_FD)
+
+        % Define motion parameters 
+        motion_options = tmfc_motion_definition_GUI;
+
+        % User closed motion-definition GUI
+        if isempty(motion_options)
+            sub_check = [];
+            contrasts = [];
+            beta_scrubbing_summary = [];
+            disp('BSC LSS computation not initiated. Motion definition was not specified.');
+            return;
+        end
+
+        missing_idx = find(missing_FD);
+
+        for ii = 1:numel(missing_idx)
+            iSub = missing_idx(ii);
+            FD(iSub) = tmfc_calculate_subject_FD(tmfc.subjects(iSub).path,motion_options);
+        end
+    end
+
+    % If user did not specify options, open GUI
+    if ~user_provided_beta_scrubbing_options
+        beta_scrubbing_options = tmfc_beta_scrubbing_GUI(tmfc,FD,'LSS');
+    end
+
+    % User closed beta-scrubbing GUI
+    if isempty(beta_scrubbing_options)
+        sub_check = [];
+        contrasts = [];
+        beta_scrubbing_summary = [];
+        disp('BSC LSS computation not initiated. Beta-scrubbing parameters were not specified.');
+        return;
+    end
+
+    beta_scrubbing_summary.perform = 1;
+    beta_scrubbing_summary.FD_thr = beta_scrubbing_options.FD_thr;
+    beta_scrubbing_summary.time_window = beta_scrubbing_options.time_window;
+    beta_scrubbing_summary.min_flagged_TRs = beta_scrubbing_options.min_flagged_TRs;
+else
+    FD = struct([]);
+    beta_scrubbing_options = [];
+    beta_scrubbing_summary.perform = 0;
+    beta_scrubbing_summary.FD_thr = [];
+    beta_scrubbing_summary.time_window = [];
+    beta_scrubbing_summary.min_flagged_TRs = [];
+end
 
 % Clear previously created BSC folders
 if clear_BSC == 1
@@ -184,7 +297,7 @@ switch tmfc.defaults.parallel
         cleanupObj = onCleanup(@unfreeze_after_ctrl_c);        
 
         for iSub = 1:nSub
-            tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iXYZ,hdr,iSub);
+            tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iXYZ,hdr,iSub,FD,perform_beta_scrubbing,beta_scrubbing_options);
             sub_check(iSub) = 1;
 
             % Update waitbar
@@ -226,7 +339,7 @@ switch tmfc.defaults.parallel
         end
 
         parfor iSub = 1:nSub
-            tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iXYZ,hdr,iSub);
+            tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iXYZ,hdr,iSub,FD,perform_beta_scrubbing,beta_scrubbing_options);
             sub_check(iSub) = 1;
 
             % Update waitbar 
@@ -264,8 +377,12 @@ end
 %% ========================================================================
 
 % Extract and correlate betas
-function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iXYZ,hdr,iSub)
+function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iXYZ,hdr,iSub,FD,perform_beta_scrubbing,beta_scrubbing_options)
     SPM = load(tmfc.subjects(iSub).path).SPM; 
+
+    if perform_beta_scrubbing == 1
+        FD_subject = FD(iSub);
+    end
 
     clear beta_series
     
@@ -281,11 +398,9 @@ function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iX
     for jCond = 1:nCond
 
         % Extract average beta series from ROIs
-        % -------------------------------------
         disp(['Extracting average beta series: Subject: ' num2str(iSub) ' || Condition: ' num2str(jCond)]);
         
         % Exclude edge trials (onset < 0s or onset > end-8s)
-        % -------------------------------------------------------------
         iSess = cond_list(jCond).sess;
         iU    = cond_list(jCond).number;
 
@@ -304,6 +419,7 @@ function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iX
 
         keep = (ons_sec >= 0) & (ons_sec <= tMax);
         trial_idx = find(keep);
+        trial_onsets_sec = ons_sec(keep);
 
         % If no valid trials 
         if isempty(trial_idx)
@@ -319,7 +435,14 @@ function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iX
                 ['Beta_' cond_list(jCond).file_name '_[Trial_' num2str(kTrial) '].nii'])),'xyz',XYZ);
         end
 
-        clear iSess iU RT tEnd tMax ons ons_sec keep trial_idx kk kTrial
+        % Beta scrubbing flags for loaded trials
+        if perform_beta_scrubbing == 1
+            flagged_beta = tmfc_flag_betas_from_FD(FD_subject.Sess(iSess).FD_ts,trial_onsets_sec,RT,beta_scrubbing_options);
+        else
+            flagged_beta = zeros(length(trial_idx),1);
+        end
+
+        clear iSess iU RT tEnd tMax ons ons_sec keep kk kTrial
 
         % Remove NaN columns (voxels outside brain)
         tmp_betas = betas;
@@ -344,36 +467,94 @@ function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iX
         end
 
         betas(badRows,:) = [];
+        trial_idx(badRows) = [];
+        trial_onsets_sec(badRows) = [];
+        flagged_beta(badRows) = [];
+
+        % Save all beta values before scrubbing
+        beta_series(jCond).trial_numbers = trial_idx(:);
+        beta_series(jCond).trial_onsets_sec = trial_onsets_sec(:);
+        beta_series(jCond).beta_flagged = logical(flagged_beta(:));
+        beta_series(jCond).FD_thr = [];
+        beta_series(jCond).beta_values = [];
+        beta_series(jCond).beta_values_thresholded = [];
+
+        % Use all remaining betas before scrubbing
+        betas_all = betas;
+
+        % Apply beta scrubbing
+        if perform_beta_scrubbing == 1
+            keep_beta = ~logical(flagged_beta(:));
+            betas_for_corr = betas(keep_beta,:);
+            beta_series(jCond).FD_thr = beta_scrubbing_options.FD_thr;
+            beta_series(jCond).time_window = beta_scrubbing_options.time_window;
+            beta_series(jCond).min_flagged_TRs = beta_scrubbing_options.min_flagged_TRs;
+        else
+            keep_beta = true(size(betas,1),1);
+            betas_for_corr = betas;
+        end
+
+        % If too few betas remain after scrubbing
+        if size(betas_for_corr,1) < 3
+            error('Condition has fewer than 3 usable beta values (Sub %d, Sess %d, %s).', ...
+                iSub, cond_list(jCond).sess, cond_list(jCond).file_name);
+        end
 
         for kROI = 1:nROI
-            betas_masked = betas;
-            betas_masked(:,isnan(ROIs(kROI).mask)) = []; 
+            betas_masked_all = betas_all;
+            betas_masked_all(:,isnan(ROIs(kROI).mask)) = []; 
+
             if strcmp(tmfc.ROI_set(ROI_set_number).BSC,'mean')
-                beta_series(jCond).ROI_average(:,kROI) = mean(betas_masked,2);
+                beta_series(jCond).beta_values(:,kROI) = mean(betas_masked_all,2);
             elseif strcmp(tmfc.ROI_set(ROI_set_number).BSC,'first_eigenvariate')
-                betas_masked = betas_masked - mean(betas_masked,1);
-                [m,n]   = size(betas_masked);
+                betas_masked_all = betas_masked_all - mean(betas_masked_all,1);
+                [m,n] = size(betas_masked_all);
                 if m > n
-                    [v,s,v] = svd(betas_masked'*betas_masked);
+                    [v,s,v] = svd(betas_masked_all'*betas_masked_all);
                     s       = diag(s);
                     v       = v(:,1);
-                    u       = betas_masked*v/sqrt(s(1));
+                    u       = betas_masked_all*v/sqrt(s(1));
                 else
-                    [u,s,u] = svd(betas_masked*betas_masked');
+                    [u,s,u] = svd(betas_masked_all*betas_masked_all');
                     s       = diag(s);
                     u       = u(:,1);
-                    v       = betas_masked'*u/sqrt(s(1));
+                    v       = betas_masked_all'*u/sqrt(s(1));
                 end
-                d       = sign(sum(v));
-                u       = u*d;
-                beta_series(jCond).ROI_average(:,kROI) = (u*sqrt(s(1)/n))'; 
-                clear betas_masked v s u d
+                d = sign(sum(v));
+                u = u*d;
+                beta_series(jCond).beta_values(:,kROI) = (u*sqrt(s(1)/n))'; 
+                clear betas_masked_all v s u d m n
+            end
+
+            betas_masked_thr = betas_for_corr;
+            betas_masked_thr(:,isnan(ROIs(kROI).mask)) = []; 
+
+            if strcmp(tmfc.ROI_set(ROI_set_number).BSC,'mean')
+                beta_series(jCond).beta_values_thresholded(:,kROI) = mean(betas_masked_thr,2);
+            elseif strcmp(tmfc.ROI_set(ROI_set_number).BSC,'first_eigenvariate')
+                betas_masked_thr = betas_masked_thr - mean(betas_masked_thr,1);
+                [m,n] = size(betas_masked_thr);
+                if m > n
+                    [v,s,v] = svd(betas_masked_thr'*betas_masked_thr);
+                    s       = diag(s);
+                    v       = v(:,1);
+                    u       = betas_masked_thr*v/sqrt(s(1));
+                else
+                    [u,s,u] = svd(betas_masked_thr*betas_masked_thr');
+                    s       = diag(s);
+                    u       = u(:,1);
+                    v       = betas_masked_thr'*u/sqrt(s(1));
+                end
+                d = sign(sum(v));
+                u = u*d;
+                beta_series(jCond).beta_values_thresholded(:,kROI) = (u*sqrt(s(1)/n))'; 
+                clear betas_masked_thr v s u d m n
             end
         end
 
         % ROI-to-ROI correlation
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 2
-            z_matrix = atanh(tmfc_corr(beta_series(jCond).ROI_average));
+            z_matrix = atanh(tmfc_corr(beta_series(jCond).beta_values_thresholded));
             z_matrix(1:size(z_matrix,1)+1:end) = nan;     
 
             % Save BSC matrices
@@ -386,7 +567,7 @@ function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iX
         % Seed-to-voxel correlation
         if tmfc.defaults.analysis == 1 || tmfc.defaults.analysis == 3
             for kROI = 1:nROI
-                BSC_image(kROI).z_value = atanh(tmfc_corr(beta_series(jCond).ROI_average(:,kROI),betas));
+                BSC_image(kROI).z_value = atanh(tmfc_corr(beta_series(jCond).beta_values_thresholded(:,kROI),betas_for_corr));
             end
 
             % Save BSC images
@@ -403,7 +584,7 @@ function tmfc_extract_betas(tmfc,ROI_set_number,ROIs,nROI,nCond,cond_list,XYZ,iX
             clear BSC_image tmp_betas isZeroRow idxZero idxOut2SD rowNorm validRows mu sd badRows
         end
 
-        clear betas  
+        clear betas betas_all betas_for_corr keep_beta flagged_beta trial_idx trial_onsets_sec
     end
 
     % Save average beta-series
@@ -432,4 +613,152 @@ function tmfc_parfor_waitbar(waitbarHandle,iterations,firstsub)
         end
     end
 end
-           
+
+% =========================================================================
+% Empty FD structure
+function FD_subject = tmfc_empty_FD()
+
+    FD_subject = struct;
+    FD_subject.Sess = struct([]);
+    FD_subject.FD_mean = NaN;
+    FD_subject.FD_max = NaN;
+end
+
+% =========================================================================
+% Load existing FD.mat
+function [FD_subject, ok] = tmfc_load_subject_FD(SPM_path)
+
+    FD_subject = tmfc_empty_FD();
+    ok = false;
+
+    FD_path = fullfile(tmfc_get_TMFC_denoise_dir(SPM_path),'FD.mat');
+
+    if ~exist(FD_path,'file')
+        return
+    end
+
+    tmp = load(FD_path);
+
+    if ~isfield(tmp,'FramewiseDisplacement')
+        return
+    end
+
+    FD_loaded = tmp.FramewiseDisplacement;
+
+    if ~isfield(FD_loaded,'Sess') || isempty(FD_loaded.Sess)
+        return
+    end
+
+    sub_FD_mean = nan(1,length(FD_loaded.Sess));
+    sub_FD_max  = nan(1,length(FD_loaded.Sess));
+
+    for jSess = 1:length(FD_loaded.Sess)
+
+        if ~isfield(FD_loaded.Sess(jSess),'FD_ts') || isempty(FD_loaded.Sess(jSess).FD_ts)
+            return
+        end
+
+        FD_subject.Sess(jSess).FD_ts = FD_loaded.Sess(jSess).FD_ts(:);
+        FD_subject.Sess(jSess).FD_mean = mean(FD_subject.Sess(jSess).FD_ts);
+        FD_subject.Sess(jSess).FD_max  = max(FD_subject.Sess(jSess).FD_ts);
+
+        sub_FD_mean(jSess) = FD_subject.Sess(jSess).FD_mean;
+        sub_FD_max(jSess)  = FD_subject.Sess(jSess).FD_max;
+    end
+
+    FD_subject.FD_mean = mean(sub_FD_mean);
+    FD_subject.FD_max  = max(sub_FD_max);
+
+    ok = true;
+end
+
+% =========================================================================
+% Find TMFC_denoise folder for original or denoised GLM paths
+function denoise_dir = tmfc_get_TMFC_denoise_dir(SPM_path)
+
+    glm_dir = fileparts(SPM_path);
+
+    % Case 1:
+    % SPM_path is already inside ...\TMFC_denoise\...
+    tok = regexpi(glm_dir, '^(.*?[\\/]TMFC_denoise)([\\/].*)?$', 'tokens', 'once');
+
+    if ~isempty(tok)
+        denoise_dir = tok{1};
+    else
+        % Case 2:
+        % SPM_path is original GLM path, so FD.mat should be in:
+        % original_GLM\TMFC_denoise\FD.mat
+        denoise_dir = fullfile(glm_dir,'TMFC_denoise');
+    end
+end
+
+% =========================================================================
+% Calculate FD time series from SPM.mat
+function FD_subject = tmfc_calculate_subject_FD(SPM_path,motion_options)
+
+    FD_subject = tmfc_empty_FD();
+
+    options = motion_options;
+    options.head_radius = 50;
+
+    SPM = load(SPM_path).SPM;
+
+    sub_FD_mean = nan(1,length(SPM.Sess));
+    sub_FD_max  = nan(1,length(SPM.Sess));
+
+    for jSess = 1:length(SPM.Sess)
+
+        if size(SPM.Sess(jSess).C.C,2) < 6
+            error('The original model contains fewer than six confound regressors. It must include six head motion regressors. Please check:\n%s',SPM_path);
+        end
+
+        HMP = SPM.Sess(jSess).C.C(:,[options.translation_idx options.rotation_idx]);
+        HMP_diff = [zeros(1,6); diff(HMP)];
+
+        HMP_diff_xyz = HMP_diff(:,1:3);
+        HMP_diff_rot = HMP_diff(:,4:6);
+
+        if strcmpi(options.rotation_unit,'rad')
+            HMP_diff_rot = options.head_radius * HMP_diff_rot;
+        elseif strcmpi(options.rotation_unit,'deg')
+            HMP_diff_rot = options.head_radius * pi/180 * HMP_diff_rot;
+        end
+
+        ts_FD = sum(abs(HMP_diff_xyz),2) + sum(abs(HMP_diff_rot),2);
+
+        FD_subject.Sess(jSess).FD_ts = ts_FD;
+        FD_subject.Sess(jSess).FD_mean = mean(ts_FD);
+        FD_subject.Sess(jSess).FD_max  = max(ts_FD);
+
+        sub_FD_mean(jSess) = FD_subject.Sess(jSess).FD_mean;
+        sub_FD_max(jSess)  = FD_subject.Sess(jSess).FD_max;
+    end
+
+    FD_subject.FD_mean = mean(sub_FD_mean);
+    FD_subject.FD_max  = max(sub_FD_max);
+end
+
+% =========================================================================
+% Flag beta values based on FD in post-onset time window
+function flagged_beta = tmfc_flag_betas_from_FD(FD_ts,trial_onsets_sec,RT,beta_scrubbing_options)
+
+    flagged_beta = zeros(length(trial_onsets_sec),1);
+    scan_times = (0:length(FD_ts)-1)' * RT;
+
+    for kTrial = 1:length(trial_onsets_sec)
+        t1 = trial_onsets_sec(kTrial);
+        t2 = t1 + beta_scrubbing_options.time_window;
+
+        idx = find(scan_times >= t1 & scan_times <= t2);
+
+        if isempty(idx)
+            continue
+        end
+
+        nFlagged = sum(FD_ts(idx) > beta_scrubbing_options.FD_thr);
+
+        if nFlagged >= beta_scrubbing_options.min_flagged_TRs
+            flagged_beta(kTrial) = 1;
+        end
+    end
+end

@@ -12,7 +12,7 @@ function [conditions] = tmfc_conditions_GUI(SPM_path,input_case)
 %                       3 = LSS and LSS after FIR
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -47,7 +47,7 @@ function [conditions] = conditions_GUI(all_cond, input_case)
         case 3
             MW_string = 'LSS: Select conditions';
             HW_string = 'LSS: Help';
-            all_cond([all_cond(:).pmod]~=1)=[];
+            all_cond([all_cond(:).pmod]~=1 | [all_cond(:).bf]~=1)=[];
     end
 
 
@@ -173,6 +173,7 @@ function [conditions] = conditions_GUI(all_cond, input_case)
                        cond(n_cond).sess = all_cond(jCond).sess;
                        cond(n_cond).number = all_cond(jCond).number;
                        cond(n_cond).pmod = all_cond(jCond).pmod;
+                       cond(n_cond).bf = all_cond(jCond).bf;
                        cond(n_cond).name = all_cond(jCond).name;
                        cond(n_cond).list_name = all_cond(jCond).list_name;
                        cond(n_cond).file_name = all_cond(jCond).file_name;
@@ -276,18 +277,46 @@ function [cond_list] = generate_conditions(SPM_path)
     cond_list = {}; 
     try
         load(SPM_path);
+
+        [bf_names,bf_file] = get_hrf_basis_info(SPM);
+        nBF = length(bf_names);
+
         kCond = 1;
         for iSess = 1:length(SPM.Sess)
             for jCond = 1:length(SPM.Sess(iSess).U)
                 for kPmod = 1:length(SPM.Sess(iSess).U(jCond).name)
-                    cond_list(kCond).sess = iSess;
-                    cond_list(kCond).number = jCond;
-                    cond_list(kCond).pmod = kPmod;
-                    cond_list(kCond).name = char(SPM.Sess(iSess).U(jCond).name(kPmod));
-                    cond_list(kCond).list_name = [char(SPM.Sess(iSess).U(jCond).name(kPmod)) ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
-                    cond_list(kCond).file_name = ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
-                                                 regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']'];
-                    kCond = kCond + 1;
+                    for kBF = 1:nBF
+                        cond_name = char(SPM.Sess(iSess).U(jCond).name(kPmod));
+
+                        cond_list(kCond).sess = iSess;
+                        cond_list(kCond).number = jCond;
+                        cond_list(kCond).pmod = kPmod;
+                        cond_list(kCond).bf = kBF;
+                        cond_list(kCond).name = cond_name;
+
+                        if kBF == 1
+                            cond_list(kCond).list_name = ...
+                                [cond_name ...
+                                ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
+                        else
+                            cond_list(kCond).list_name = ...
+                                [cond_name ' | ' bf_names{kBF} ...
+                                ' (Sess' num2str(iSess) ', Cond' num2str(jCond) ')'];
+                        end
+
+                        base_file_name = ...
+                            ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+                            regexprep(cond_name,' ','_') ']'];
+
+                        if kBF == 1
+                            cond_list(kCond).file_name = base_file_name;
+                        else
+                            cond_list(kCond).file_name = ...
+                                [base_file_name '_[' bf_file{kBF} ']'];
+                        end
+
+                        kCond = kCond + 1;
+                    end
                 end
             end 
         end
@@ -316,7 +345,7 @@ function [sorted_list] = sort_selected_conditions(selected_cond,all_cond)
         end
     end
 
-    [~,index] = sortrows([temp.sess; temp.number]');
+    [~,index] = sortrows([[temp.sess]' [temp.number]' [temp.pmod]' [temp.bf]']);
     reindexed_list = temp(index); 
 
     sorted_list = {};
@@ -325,4 +354,27 @@ function [sorted_list] = sort_selected_conditions(selected_cond,all_cond)
     end
 
     clear index temp sort_index iCond jCond reindexed_list
+end
+
+%% ===========[ Function to define HRF basis functions ]===================
+function [bf_names,bf_file] = get_hrf_basis_info(SPM)
+
+    switch lower(strtrim(SPM.xBF.name))
+
+        case 'hrf'
+            bf_names = {'HRF'};
+            bf_file  = {'HRF'};
+
+        case 'hrf (with time derivative)'
+            bf_names = {'HRF','Time derivative'};
+            bf_file  = {'HRF','TimeDeriv'};
+
+        case 'hrf (with time and dispersion derivatives)'
+            bf_names = {'HRF','Time derivative','Dispersion derivative'};
+            bf_file  = {'HRF','TimeDeriv','DispDeriv'};
+
+        otherwise
+            error('TMFC supports only canonical HRF, time derivative, and dispersion derivative.');
+
+    end
 end

@@ -157,6 +157,28 @@ clear conditions
 ROI_set_number = 1;                 % Select ROI set
 [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number);
 
+% Optional: beta scrubbing
+%
+% Beta scrubbing removes trial-wise beta values if excessive head motion
+% (FD above threshold) occurs within a post-onset time window.
+%
+% Example:
+% beta_scrubbing_options.FD_thr = 0.5;          % FD threshold in mm
+% beta_scrubbing_options.time_window = 12;      % Time window from trial onset in seconds
+% beta_scrubbing_options.min_flagged_TRs = 1;   % Minimum number of flagged TRs required to remove beta
+%
+% Then run:
+% [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,1,1,beta_scrubbing_options);
+%
+% In this command-window example beta scrubbing is intentionally turned off:
+% [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number);
+%
+% Reason:
+% this example dataset does not include head motion regressors in the
+% first-level GLMs, so FD-based beta scrubbing is not demonstrated here.
+% Beta scrubbing is intended for real datasets with motion parameters
+% available in SPM.Sess.C.C or in previously calculated FD.mat files (calculated using TMFC_denoise).
+
 % Update contrasts info
 % The tmfc_BSC function creates default contrasts for each
 % condition of interest (i.e., Condition > Baseline)
@@ -211,7 +233,21 @@ set(findall(gcf,'-property','FontSize'),'FontSize',16)
 
 clear type contrasts contrast_number
 
-% Alternatively, use tmfc_statistics_GUI
+% Full list of functions for statistical inference:
+% 1) tmfc_ttest        - parametric edge-wise one-sample and paired sample t-tests
+% 2) tmfc_ttest2       - parametric edge-wise two-sample t-test
+% 3) tmfc_ttest_perm   - non-parametric edge-wise one-sample and paired sample t-tests
+% 4) tmfc_ttest2_perm  - non-parametric edge-wise two-sample t-test
+% 5) tmfc_ttest_nbs    - one-sample and paired sample network-based statistics (NBS-extent and NBS-intensity)
+% 6) tmfc_ttest2_nbs   - two-sample network-based statistics (NBS-extent and NBS-intensity)
+% 7) tmfc_ttest_tfnbs  - one-sample and paired sample threshold-free network-based statistics (TFNBS)
+% 8) tmfc_ttest2_tfnbs - two-sample threshold-free network-based statistics (TFNBS)
+% 9) tmfc_glm          - classical GLM-based edgewise inference
+% 10) tmfc_glm_perm    - non-parametric GLM-based edgewise inference
+% 11) tmfc_glm_nbs     - non-parametric GLM-based network based statistics (NBS-extent and NBS-intensity)
+% 12) tmfc_glm_tfnbs   - non-parametric GLM-based threshold-free network-based statistics (TFNBS)
+% 
+% Alternatively, use TMFC_statistics
 
 
 %% FIR task regression (regress out co-activations and save residual time series)
@@ -309,17 +345,40 @@ clear type contrasts contrast_number
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1; (see SPM.Sess)   
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1; (see SPM.Sess.U)
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1; (see SPM.Sess.U.P)
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).bf     = 1; % 1 = HRF, 2 = time derivative, 3 = dispersion derivative
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).name = 'Task_A'; (see SPM.Sess.U.name(kPmod))
+%--------------------------------------------------------------------------
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Sess_1]_[Cond_1]_[Task_A]';
-% (i.e.: ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']'];)
+% 
+% Canonical HRF file name:
+%
+% ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%  regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']']
+%
+% Derivative file name:
+%
+% ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%  regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']_[' ...
+%  bf_file{kBF} ']']
+%
+% where bf_file{kBF} is:
+%   'TimeDeriv' - time derivative
+%   'DispDeriv' - dispersion derivative
+%--------------------------------------------------------------------------
 %
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).sess   = 1;
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).number = 2;
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).bf     = 1;
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).name = 'Task_B';
-% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_2]_[Task_B]';  
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_2]_[Task_B]';
 %
-% If GLMs contain parametric or time modulators, add the following fields:
+% If GLMs contain parametric or time modulators, pmod selects the main
+% condition or parametric modulator:
+%   pmod = 1  main condition
+%   pmod = 2  first parametric modulator
+%   pmod = 3  second parametric modulator
+%
 % First modulator for second condition:
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).sess   = 1; 
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).number = 2;
@@ -332,6 +391,51 @@ clear type contrasts contrast_number
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).pmod = 3; 
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).name = 'Task_BxModulator2^1'; 
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Sess_1]_[Cond_2]_[Task_BxModulator2^1]'; 
+%
+% Example with two conditions and canonical HRF, time derivative, and
+% dispersion derivative:
+%
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).bf     = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).name = 'Task_A';
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Sess_1]_[Cond_1]_[Task_A]';
+%
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).sess   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).number = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).bf     = 2;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).name = 'Task_A';
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_1]_[Task_A]_[TimeDeriv]';
+%
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).sess   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).number = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).bf     = 3;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).name = 'Task_A';
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).file_name = '[Sess_1]_[Cond_1]_[Task_A]_[DispDeriv]';
+%
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).sess   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).number = 2;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).bf     = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).name = 'Task_B';
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Sess_1]_[Cond_2]_[Task_B]';
+%
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).sess   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).number = 2;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).bf     = 2;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).name = 'Task_B';
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Sess_1]_[Cond_2]_[Task_B]_[TimeDeriv]';
+%
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).sess   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).number = 2;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).pmod   = 1;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).bf     = 3;
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).name = 'Task_B';
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Sess_1]_[Cond_2]_[Task_B]_[DispDeriv]';
 
 % Alternatively, use tmfc_conditions_GUI to select conditions of interest
 [conditions] = tmfc_conditions_GUI(tmfc.subjects(1).path,2);

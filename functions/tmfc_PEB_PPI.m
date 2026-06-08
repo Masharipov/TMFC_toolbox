@@ -5,7 +5,7 @@ function tmfc_PEB_PPI(CACHE, iSub)
 % Subject-level PPI computation (called from tmfc_PPI).
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -48,9 +48,20 @@ dt      = SPM.xBF.dt;
 NT      = round(RT/dt);
 fMRI_T0 = SPM.xBF.T0;
 
-hrf = spm_hrf(dt);
+bf = SPM.xBF.bf;
+hrf = bf(:,1);
+
+switch lower(strtrim(SPM.xBF.name))
+    case {'hrf', ...
+          'hrf (with time derivative)', ...
+          'hrf (with time and dispersion derivatives)'}
+    otherwise
+        error('TMFC supports only canonical HRF, time derivative, and dispersion derivative.');
+end
 
 psy_u = cell(1, nCond);
+ppi_bf = cell(1, nCond);
+
 for jCond = 1:nCond
     s    = cond_list(jCond).sess;
     Sess = SPM.Sess(s);
@@ -71,6 +82,26 @@ for jCond = 1:nCond
     end
 
     psy_u{jCond} = PSY;
+
+    % Explicitly selected basis function:
+    %   bf = 1  canonical HRF
+    %   bf = 2  time derivative
+    %   bf = 3  dispersion derivative
+    
+    % Backward compatibility:
+    % old projects do not have .bf, so use canonical HRF.
+    if isfield(cond_list,'bf') && ~isempty(cond_list(jCond).bf)
+        bf_id = cond_list(jCond).bf;
+    else
+        bf_id = 1;
+    end
+
+    if numel(bf_id) ~= 1 || isnan(bf_id) || bf_id < 1 || bf_id > size(bf,2)
+        error('Basis function %d does not exist for condition "%s".', ...
+              bf_id, cond_list(jCond).name);
+    end
+    
+    ppi_bf{jCond} = bf(:,bf_id);
 end
 
 % -------------------------------------------------------------------------
@@ -173,7 +204,7 @@ for s = sess_num(:)'
             PSYxn = PSY .* xn;
 
             % Convolve, convert to scan time, and account for slice timing shift
-            ppi = conv(PSYxn, hrf);
+            ppi = conv(PSYxn, ppi_bf{jCond});
             ppi = ppi((k-1) + fMRI_T0);
             ppi = spm_detrend(ppi);
             

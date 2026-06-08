@@ -1,6 +1,6 @@
-function output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,func_paths,display_FD,estimate_GLMs,clear_all)
+function output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,func_paths,display_FD,estimate_GLMs,clear_all,seg_paths)
 
-% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.4.4]=
+% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.5.0]=
 % 
 % The TMFC denoise toolbox updates the selected general linear model with
 % the addition of noise regressors. It can be used prior to TMFC analysis 
@@ -75,6 +75,7 @@ function output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,
 %
 % FORMAT: output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,func_paths)
 % FORMAT: output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,func_paths,display_FD,estimate_GLMs,clear_all)
+% FORMAT: output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,func_paths,display_FD,estimate_GLMs,clear_all,seg_paths)
 % Performs noise regression without calling the GUI.
 % 
 % INPUTS: 
@@ -135,8 +136,29 @@ function output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,
 % options.CSFmask.erode - Erosion cycles for the CSF mask (Default: 2 voxels)
 %
 % anat_paths{iSub}.fname  - Cell array containing paths to structural T1 images
+%
 % func_paths{iSub}.fname  - Cell array containing paths to realigned, normalized, and unsmoothed functional images
 % (NOTE: Structural images must be in the native space; functional images must be in MNI space)
+%
+% seg_paths             - Optional existing SPM segmentation output.
+%
+%                         If empty, the user will be asked whether to search
+%                         automatically for existing segmentation files.
+%
+%                         If 'auto', the toolbox searches the folder of each
+%                         selected anatomical image for:
+%                         c1*.nii, c2*.nii, c3*.nii, y_*.nii, and m*.nii.
+%
+%                         If a structure array is provided, it should contain:
+%                         seg_paths(iSub).GM  - c1 image
+%                         seg_paths(iSub).WM  - c2 image
+%                         seg_paths(iSub).CSF - c3 image
+%                         seg_paths(iSub).def - y_ deformation field
+%                         seg_paths(iSub).m   - optional bias-corrected T1
+%
+%                         If c1/c2/c3/y_ are complete, segmentation is skipped
+%                         for that subject. If m is missing, the raw anatomical
+%                         image is used for the skull-stripped QC image.
 %
 % display_FD    - 1 or 0 : Display individual FD plots (Default: 1)
 % estimate_GLMs - 1 or 0 : Estimate GLMs with noise regressors (Default: 1)
@@ -149,7 +171,7 @@ function output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,
 %
 % =========================================================================
 %
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -179,7 +201,7 @@ end
 
 %-Check TMFC_denoise version
 %--------------------------------------------------------------------------
-localVer  = 'v1.4.4';
+localVer  = 'v1.5.0';
 try
     r = webread(sprintf('https://api.github.com/repos/%s/%s/releases/latest', ...
                         'IHB-IBR-department','TMFC_denoise'), ...
@@ -229,13 +251,38 @@ if nargin<3 || isempty(options)
 end
 if isempty(options); error('Denoising options not selected.'); end
 
+% Check whether tissue masks are needed
+need_masks = sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none') || ~strcmpi(options.GSR,'none') || options.DVARS == 1;
+
+% Existing SPM segmentation paths
+if nargin<9
+    seg_paths = [];
+end
+
 % Select structural T1 images in native space
 if nargin<4 || isempty(anat_paths)
-    if (sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none') || ~strcmpi(options.GSR,'none') || options.DVARS == 1)
+    if need_masks
         anat_paths = tmfc_select_anat_GUI(subject_paths);
         if isempty(anat_paths); error('Select structural T1 files.'); end
     else
         anat_paths = [];
+    end
+end
+
+% Optionally reuse existing SPM segmentation output
+if need_masks && (nargin<9 || isempty(seg_paths))
+    answer = questdlg(['Use existing SPM segmentation output if available?', newline, newline, ...
+                       'The toolbox will automatically search the anatomical image folder ', ...
+                       'for c1/c2/c3 tissue probability maps and the matching y_ deformation field. ', ...
+                       'Subjects with missing files will be segmented as usual.'], ...
+                       'TMFC denoise', ...
+                       'Segment T1 images','Use existing if available','Segment T1 images');
+
+    switch answer
+        case 'Use existing if available'
+            seg_paths = 'auto';
+        otherwise
+            seg_paths = [];
     end
 end
 
@@ -318,7 +365,7 @@ if sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none') || ~strcmpi(optio
          options.GMmask.dilate, options.WMmask.erode, options.CSFmask.erode] = tmfc_masks_GUI();
     end
     disp('Creating binary masks...'); tic;
-    masks = tmfc_create_masks(SPM_paths,anat_paths,func_paths,options);
+    masks = tmfc_create_masks(SPM_paths,subject_paths,anat_paths,func_paths,options,seg_paths);
     hms = fix(mod((toc), [0, 3600, 60]) ./ [3600, 60, 1]);
     disp(['Done in ' num2str(hms(1),'%02.f') ':' num2str(hms(2),'%02.f') ':' num2str(hms(3),'%02.f') ' [hr:min:sec].']);
 end

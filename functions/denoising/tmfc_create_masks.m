@@ -1,4 +1,4 @@
-function [masks] = tmfc_create_masks(SPM_paths,anat_paths,func_paths,options)
+function [masks] = tmfc_create_masks(SPM_paths,subject_paths,anat_paths,func_paths,options,seg_paths)
 
 % =======[ Task-Modulated Functional Connectivity Denoise Toolbox ]========
 % 
@@ -6,7 +6,7 @@ function [masks] = tmfc_create_masks(SPM_paths,anat_paths,func_paths,options)
 % and the whole brain (GSR).
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -22,13 +22,30 @@ segment_paths = cell(nSub,1);
 glm_paths     = cell(nSub,1);
 mask_paths    = cell(nSub,1);
 
+if nargin<6
+    seg_paths = [];
+end
+
+auto_existing_seg = ischar(seg_paths) && strcmpi(seg_paths,'auto');
+manual_existing_seg = isstruct(seg_paths);
+
+if manual_existing_seg && numel(seg_paths) ~= nSub
+    error(['The number of existing segmentation entries (' num2str(numel(seg_paths)) ...
+           ') must match the number of subjects (' num2str(nSub) ').']);
+end
+
+mask_folder_name = tmfc_mask_folder_name(options);
+
+if ~isfield(options,'reuse_existing_masks')
+    options.reuse_existing_masks = 1;
+end
+
+use_existing_seg = auto_existing_seg || manual_existing_seg;
+
 for iSub = 1:nSub
     GLM_subfolder = fileparts(SPM_paths{iSub});
     segment_paths{iSub,1} = fullfile(GLM_subfolder,'TMFC_denoise','Segment');
-    glm_paths{iSub,1} = fullfile(GLM_subfolder,'TMFC_denoise', ...
-        ['[WM' num2str(round(options.WMmask.prob*100)) 'e' num2str(options.WMmask.erode) ...
-        ']_[CSF' num2str(round(options.CSFmask.prob*100)) 'e' num2str(options.CSFmask.erode) ...
-        ']_[GM' num2str(round(options.GMmask.prob*100)) 'd' num2str(options.GMmask.dilate) ']']);
+    glm_paths{iSub,1} = fullfile(GLM_subfolder,'TMFC_denoise',mask_folder_name);
     mask_paths{iSub,1} = fullfile(glm_paths{iSub,1},'Masks');
     if ~exist(segment_paths{iSub},'dir'); mkdir(segment_paths{iSub}); end
     if ~exist(mask_paths{iSub},'dir'); mkdir(mask_paths{iSub}); end
@@ -36,6 +53,67 @@ for iSub = 1:nSub
 end
 masks.glm_paths = glm_paths; 
 masks.mask_paths = mask_paths;
+
+% Try to reuse existing final masks with identical mask parameters
+%--------------------------------------------------------------------------
+if options.reuse_existing_masks == 1
+
+    reused_masks = false(nSub,1);
+    prev_mask_dirs = cell(nSub,1);
+
+    for iSub = 1:nSub
+        prev_mask_dirs{iSub} = tmfc_find_existing_mask_dir(subject_paths{iSub},SPM_paths{iSub},mask_folder_name);
+
+        if ~isempty(prev_mask_dirs{iSub})
+            reused_masks(iSub) = tmfc_check_existing_final_masks(prev_mask_dirs{iSub},options);
+        end
+    end
+
+    if all(reused_masks)
+
+        disp('Existing final masks with identical mask parameters were found for all subjects.');
+        disp('Copying existing masks and skipping mask creation.');
+
+        for iSub = 1:nSub
+            tmfc_copy_existing_final_masks(prev_mask_dirs{iSub},mask_paths{iSub},options);
+        end
+
+        if sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none')
+            masks.WM  = cell(nSub,1);
+            masks.CSF = cell(nSub,1);
+            for iSub = 1:nSub
+                masks.WM{iSub,1}  = fullfile(mask_paths{iSub},'rw_WM_mask_eroded_no_brainstem.nii');
+                masks.CSF{iSub,1} = fullfile(mask_paths{iSub},'rw_CSF_mask_eroded_only_ventricles.nii');
+            end
+        end
+
+        if options.DVARS == 1
+            masks.GM = cell(nSub,1);
+            for iSub = 1:nSub
+                masks.GM{iSub,1} = fullfile(mask_paths{iSub},'rw_GM_mask.nii');
+            end
+        end
+
+        if ~strcmpi(options.GSR,'none')
+            masks.WB = cell(nSub,1);
+            for iSub = 1:nSub
+                masks.WB{iSub,1} = fullfile(mask_paths{iSub},'rw_Whole_brain_mask.nii');
+            end
+        end
+
+        return
+
+    elseif any(reused_masks)
+
+        fprintf('Reusable final masks were found for %d/%d subjects only.\n',sum(reused_masks),nSub);
+        disp('For safety, mask creation will be run for all subjects.');
+
+    else
+
+        disp('No complete reusable final masks found. Creating masks.');
+
+    end
+end
 
 % Copy structural T1 files
 %--------------------------------------------------------------------------
@@ -52,6 +130,13 @@ for iSub = 1:nSub
             end
             anat_file{iSub,1} = [anat_name,'.nii'];
 
+            % Segmentation files
+            source_GM{iSub,1}             = fullfile(anat_dir,['c1' anat_name '.nii']);
+            source_WM{iSub,1}             = fullfile(anat_dir,['c2' anat_name '.nii']);
+            source_CSF{iSub,1}            = fullfile(anat_dir,['c3' anat_name '.nii']);
+            source_bias_corrected{iSub,1} = fullfile(anat_dir,['m'  anat_name '.nii']);
+            source_forward_field{iSub,1}  = fullfile(anat_dir,['y_' anat_name '.nii']);
+
         case '.img'
             anat_file_hdr{iSub,1} = [anat_name,'.hdr'];
             anat_copy_paths{iSub,1} = fullfile(segment_paths{iSub},[anat_name,anat_ext]);
@@ -67,6 +152,13 @@ for iSub = 1:nSub
                 end
             end
             anat_file{iSub,1} = [anat_name,'.nii'];
+            
+            % Segmentation files
+            source_GM{iSub,1}             = fullfile(anat_dir,['c1' anat_name '.nii']);
+            source_WM{iSub,1}             = fullfile(anat_dir,['c2' anat_name '.nii']);
+            source_CSF{iSub,1}            = fullfile(anat_dir,['c3' anat_name '.nii']);
+            source_bias_corrected{iSub,1} = fullfile(anat_dir,['m'  anat_name '.nii']);
+            source_forward_field{iSub,1}  = fullfile(anat_dir,['y_' anat_name '.nii']);
 
         case '.gz'
             % Extract inner extension from anat_name
@@ -79,6 +171,13 @@ for iSub = 1:nSub
                     if ~exist(anat_copy_paths{iSub},'file')
                         gunzip(anat_paths{iSub},segment_paths{iSub}); 
                     end
+                    
+                    % Segmentation files
+                    source_GM{iSub,1}             = fullfile(anat_dir,['c1' inner_name '.nii']);
+                    source_WM{iSub,1}             = fullfile(anat_dir,['c2' inner_name '.nii']);
+                    source_CSF{iSub,1}            = fullfile(anat_dir,['c3' inner_name '.nii']);
+                    source_bias_corrected{iSub,1} = fullfile(anat_dir,['m'  inner_name '.nii']);
+                    source_forward_field{iSub,1}  = fullfile(anat_dir,['y_' inner_name '.nii']);
 
                 case '.img'
                     anat_copy_paths{iSub,1}     = fullfile(segment_paths{iSub},[inner_name,'.img']);
@@ -99,6 +198,13 @@ for iSub = 1:nSub
                             error('Missing header file (.hdr) for %s', anat_paths{iSub});
                         end
                     end
+                    
+                    % Segmentation files
+                    source_GM{iSub,1}             = fullfile(anat_dir,['c1' inner_name '.nii']);
+                    source_WM{iSub,1}             = fullfile(anat_dir,['c2' inner_name '.nii']);
+                    source_CSF{iSub,1}            = fullfile(anat_dir,['c3' inner_name '.nii']);
+                    source_bias_corrected{iSub,1} = fullfile(anat_dir,['m'  inner_name '.nii']);
+                    source_forward_field{iSub,1}  = fullfile(anat_dir,['y_' inner_name '.nii']);
 
                 otherwise
                     error('Unknown compressed structural format: %s', anat_paths{iSub});
@@ -116,6 +222,8 @@ spm('defaults','fmri');
 spm_jobman('initcfg');
 spm_get_defaults('cmdline',true);
 
+existing_seg_available = false(nSub,1);
+
 jSub = 0;
 for iSub = 1:nSub
     forward_field{iSub,1} = fullfile(segment_paths{iSub},['y_',anat_file{iSub}]);
@@ -123,7 +231,70 @@ for iSub = 1:nSub
     GM{iSub,1} = fullfile(segment_paths{iSub},['c1',anat_file{iSub}]);
     WM{iSub,1} = fullfile(segment_paths{iSub},['c2',anat_file{iSub}]);
     CSF{iSub,1} = fullfile(segment_paths{iSub},['c3',anat_file{iSub}]);
-    if ~exist(bias_corrected{iSub},'file') || ~exist(GM{iSub},'file') || ~exist(WM{iSub},'file') || ~exist(CSF{iSub},'file')
+
+    % Try to copy existing segmentation files (automatically)
+    if auto_existing_seg
+
+        existing_seg_available(iSub) = ...
+            exist(source_GM{iSub},'file') && ...
+            exist(source_WM{iSub},'file') && ...
+            exist(source_CSF{iSub},'file') && ...
+            exist(source_forward_field{iSub},'file');
+
+        if existing_seg_available(iSub)
+
+            GM{iSub,1}            = tmfc_copy_seg_file(source_GM{iSub},segment_paths{iSub});
+            WM{iSub,1}            = tmfc_copy_seg_file(source_WM{iSub},segment_paths{iSub});
+            CSF{iSub,1}           = tmfc_copy_seg_file(source_CSF{iSub},segment_paths{iSub});
+            forward_field{iSub,1} = tmfc_copy_seg_file(source_forward_field{iSub},segment_paths{iSub});
+
+            if exist(source_bias_corrected{iSub},'file')
+                bias_corrected{iSub,1} = tmfc_copy_seg_file(source_bias_corrected{iSub},segment_paths{iSub});
+            else
+                bias_corrected{iSub,1} = anat_copy_paths{iSub};
+            end
+
+        end
+    
+    % Try to copy segmentation files specified by user
+    elseif manual_existing_seg
+
+        if isfield(seg_paths,'GM') && isfield(seg_paths,'WM') && ...
+           isfield(seg_paths,'CSF') && isfield(seg_paths,'def')
+
+            if ~isempty(seg_paths(iSub).GM) && ~isempty(seg_paths(iSub).WM) && ...
+               ~isempty(seg_paths(iSub).CSF) && ~isempty(seg_paths(iSub).def) && ...
+               exist(regexprep(seg_paths(iSub).GM, ',\d+$', ''),'file') && ...
+               exist(regexprep(seg_paths(iSub).WM, ',\d+$', ''),'file') && ...
+               exist(regexprep(seg_paths(iSub).CSF,',\d+$', ''),'file') && ...
+               exist(regexprep(seg_paths(iSub).def,',\d+$', ''),'file')
+
+                existing_seg_available(iSub) = true;
+
+                GM{iSub,1}            = tmfc_copy_seg_file(seg_paths(iSub).GM, segment_paths{iSub});
+                WM{iSub,1}            = tmfc_copy_seg_file(seg_paths(iSub).WM, segment_paths{iSub});
+                CSF{iSub,1}           = tmfc_copy_seg_file(seg_paths(iSub).CSF,segment_paths{iSub});
+                forward_field{iSub,1} = tmfc_copy_seg_file(seg_paths(iSub).def,segment_paths{iSub});
+
+                if isfield(seg_paths,'m') && ~isempty(seg_paths(iSub).m) && ...
+                   exist(regexprep(seg_paths(iSub).m,',\d+$',''),'file')
+                    bias_corrected{iSub,1} = tmfc_copy_seg_file(seg_paths(iSub).m,segment_paths{iSub});
+                elseif isfield(seg_paths,'bias_corrected') && ~isempty(seg_paths(iSub).bias_corrected) && ...
+                       exist(regexprep(seg_paths(iSub).bias_corrected,',\d+$',''),'file')
+                    bias_corrected{iSub,1} = tmfc_copy_seg_file(seg_paths(iSub).bias_corrected,segment_paths{iSub});
+                else
+                    bias_corrected{iSub,1} = anat_copy_paths{iSub};
+                end
+
+            end
+        end
+    end
+
+    if existing_seg_available(iSub)
+        continue
+    end
+
+    if ~exist(bias_corrected{iSub},'file') || ~exist(GM{iSub},'file') || ~exist(WM{iSub},'file') || ~exist(CSF{iSub},'file') || ~exist(forward_field{iSub},'file')
         matlabbatch{1}.spm.spatial.preproc.channel.vols = anat_copy_paths(iSub);
         matlabbatch{1}.spm.spatial.preproc.channel.biasreg = 0.001;
         matlabbatch{1}.spm.spatial.preproc.channel.biasfwhm = 60;
@@ -165,6 +336,16 @@ for iSub = 1:nSub
         jSub = jSub + 1;
         batch{jSub} = matlabbatch;
         clear matlabbatch
+    end
+end
+
+if use_existing_seg
+    fprintf('Existing complete SPM segmentation found for %d/%d subjects.\n', ...
+        sum(existing_seg_available), nSub);
+
+    if any(~existing_seg_available)
+        fprintf('SPM segmentation will be run for %d subject(s) with missing c1/c2/c3/y_ files.\n', ...
+            sum(~existing_seg_available));
     end
 end
 
@@ -658,3 +839,187 @@ function c = init_spm()
     c = onCleanup(@() []); 
 end
 
+% Copy segmentation files
+%--------------------------------------------------------------------------
+function dst = tmfc_copy_seg_file(src,dst_dir)
+
+src = regexprep(src, ',\d+$', '');
+
+if ~exist(src,'file')
+    error('File not found: %s', src);
+end
+
+[src_dir,src_name,src_ext] = fileparts(src);
+
+if ~ismember(lower(src_ext),{'.nii','.img'})
+    error('Unsupported segmentation file format: %s', src);
+end
+
+dst = fullfile(dst_dir,[src_name src_ext]);
+
+if ~exist(dst,'file')
+    copyfile(src,dst);
+end
+
+% Copy Analyze header if needed
+if strcmpi(src_ext,'.img')
+    src_hdr = fullfile(src_dir,[src_name '.hdr']);
+    dst_hdr = fullfile(dst_dir,[src_name '.hdr']);
+
+    if ~exist(src_hdr,'file')
+        error('Missing header file: %s', src_hdr);
+    end
+
+    if ~exist(dst_hdr,'file')
+        copyfile(src_hdr,dst_hdr);
+    end
+end
+
+end
+
+% Mask folder name
+%--------------------------------------------------------------------------
+function mask_folder_name = tmfc_mask_folder_name(options)
+
+mask_folder_name = ['[WM' num2str(round(options.WMmask.prob*100)) 'e' num2str(options.WMmask.erode) ...
+                    ']_[CSF' num2str(round(options.CSFmask.prob*100)) 'e' num2str(options.CSFmask.erode) ...
+                    ']_[GM' num2str(round(options.GMmask.prob*100)) 'd' num2str(options.GMmask.dilate) ']'];
+
+end
+
+% Find existing mask directory
+%--------------------------------------------------------------------------
+function prev_mask_dir = tmfc_find_existing_mask_dir(subject_path,current_SPM_path,mask_folder_name)
+
+prev_mask_dir = '';
+
+current_GLM_dir = fileparts(current_SPM_path);
+current_tmfc_dir = fullfile(current_GLM_dir,'TMFC_denoise');
+
+tmfc_dirs = tmfc_find_dirs_by_name(subject_path,'TMFC_denoise');
+
+for iDir = 1:numel(tmfc_dirs)
+
+    candidate_tmfc_dir = tmfc_dirs{iDir};
+
+    % Skip current GLM's TMFC_denoise folder
+    if strcmpi(candidate_tmfc_dir,current_tmfc_dir)
+        continue
+    end
+
+    candidate_mask_dir = fullfile(candidate_tmfc_dir,mask_folder_name,'Masks');
+
+    if exist(candidate_mask_dir,'dir')
+        prev_mask_dir = candidate_mask_dir;
+        return
+    end
+end
+
+end
+
+% Recursively find folders by name
+%--------------------------------------------------------------------------
+function out_dirs = tmfc_find_dirs_by_name(root_dir,target_name)
+
+out_dirs = {};
+
+if ~exist(root_dir,'dir')
+    return
+end
+
+items = dir(root_dir);
+
+for iItem = 1:numel(items)
+
+    name = items(iItem).name;
+
+    if ~items(iItem).isdir || strcmp(name,'.') || strcmp(name,'..')
+        continue
+    end
+
+    full_dir = fullfile(root_dir,name);
+
+    if strcmpi(name,target_name)
+        out_dirs{end+1,1} = full_dir; 
+        continue
+    end
+
+    % Optional: skip folders that are usually large and irrelevant
+    if strcmpi(name,'Raw') || strcmpi(name,'DICOM') || strcmpi(name,'dicom')
+        continue
+    end
+
+    nested_dirs = tmfc_find_dirs_by_name(full_dir,target_name);
+
+    if ~isempty(nested_dirs)
+        out_dirs = [out_dirs; nested_dirs(:)]; 
+    end
+end
+
+end
+
+% Check existing final masks
+%--------------------------------------------------------------------------
+function mask_ok = tmfc_check_existing_final_masks(prev_mask_dir,options)
+
+mask_ok = true;
+
+need_WM_CSF = sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none');
+need_GM     = options.DVARS == 1;
+need_WB     = ~strcmpi(options.GSR,'none');
+
+if need_WM_CSF
+    if ~exist(fullfile(prev_mask_dir,'rw_WM_mask_eroded_no_brainstem.nii'),'file') || ...
+       ~exist(fullfile(prev_mask_dir,'rw_CSF_mask_eroded_only_ventricles.nii'),'file')
+        mask_ok = false;
+        return
+    end
+end
+
+if need_GM
+    if ~exist(fullfile(prev_mask_dir,'rw_GM_mask.nii'),'file')
+        mask_ok = false;
+        return
+    end
+end
+
+if need_WB
+    if ~exist(fullfile(prev_mask_dir,'rw_Whole_brain_mask.nii'),'file')
+        mask_ok = false;
+        return
+    end
+end
+
+end
+
+% Copy existing final masks
+%--------------------------------------------------------------------------
+function tmfc_copy_existing_final_masks(prev_mask_dir,new_mask_dir,options)
+
+need_WM_CSF = sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none');
+need_GM     = options.DVARS == 1;
+need_WB     = ~strcmpi(options.GSR,'none');
+
+if ~exist(new_mask_dir,'dir')
+    mkdir(new_mask_dir);
+end
+
+if need_WM_CSF
+    copyfile(fullfile(prev_mask_dir,'rw_WM_mask_eroded_no_brainstem.nii'), ...
+             fullfile(new_mask_dir,'rw_WM_mask_eroded_no_brainstem.nii'));
+
+    copyfile(fullfile(prev_mask_dir,'rw_CSF_mask_eroded_only_ventricles.nii'), ...
+             fullfile(new_mask_dir,'rw_CSF_mask_eroded_only_ventricles.nii'));
+end
+
+if need_GM
+    copyfile(fullfile(prev_mask_dir,'rw_GM_mask.nii'), ...
+             fullfile(new_mask_dir,'rw_GM_mask.nii'));
+end
+
+if need_WB
+    copyfile(fullfile(prev_mask_dir,'rw_Whole_brain_mask.nii'), ...
+             fullfile(new_mask_dir,'rw_Whole_brain_mask.nii'));
+end
+
+end

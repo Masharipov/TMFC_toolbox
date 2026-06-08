@@ -44,7 +44,7 @@ function [ROI_set] = tmfc_select_ROIs_GUI(tmfc)
 %   ROI_set               - Structure with information about selected ROIs
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -234,18 +234,12 @@ function [ROI_set] = ROI_set_generation(ROI_set_name,ROI_type)
             for iSub = 1:nSub
                 cond_col = [];
                 SPM = load(tmfc.subjects(iSub).path).SPM;
-                for iCond = 1:length(conditions)
-                    FCi = SPM.Sess(conditions(iCond).sess).Fc(conditions(iCond).number).i; 
-                    if isfield(SPM.Sess(conditions(iCond).sess).Fc(conditions(iCond).number),'p')
-                        FCp = SPM.Sess(conditions(iCond).sess).Fc(conditions(iCond).number).p; 
-                        FCi = FCi(FCp==conditions(iCond).pmod);
-                    end
-                    cond_col = [cond_col, SPM.Sess(conditions(iCond).sess).col(FCi)];
-                end 
+                cond_col = tmfc_get_F_contrast_columns(SPM,conditions);
                 weights = zeros(length(cond_col),size(SPM.xX.X,2));
                 for iCond = 1:length(cond_col)
                     weights(iCond,cond_col(iCond)) = 1;
                 end
+
                 % Check if contrast already exists
                 idx = [];
                 if isfield(SPM,'xCon') && ~isempty(SPM.xCon)
@@ -1939,5 +1933,48 @@ movegui(F_contrast_MW, 'center');
 
 uiwait(F_contrast_MW);
 delete(F_contrast_MW);
+end
+
+%% ====================[ Specify F-contrast ]==============================
+function cond_col = tmfc_get_F_contrast_columns(SPM,conditions)
+
+    cond_col = [];
+
+    for iCond = 1:numel(conditions)
+
+        sess = conditions(iCond).sess;
+        cond = conditions(iCond).number;
+        pmod = conditions(iCond).pmod;
+
+        FCi = SPM.Sess(sess).Fc(cond).i;
+
+        % PMs
+        if isfield(SPM.Sess(sess).Fc(cond),'p')
+            FCp = SPM.Sess(sess).Fc(cond).p;
+            FCi = FCi(FCp == pmod);
+        end
+
+        % Derivatives
+        if isfield(conditions,'bf') && ~isempty(conditions(iCond).bf)
+
+            bf = conditions(iCond).bf;
+
+            if bf > numel(FCi)
+                error('Basis function %d does not exist for condition "%s".', ...
+                    bf, conditions(iCond).name);
+            end
+
+            FCi = FCi(bf);
+
+        end
+
+        % FCi is local session index. Convert to full design-matrix column
+        cond_col = [cond_col, SPM.Sess(sess).col(FCi)];
+
+    end
+
+    % Prevent duplicated rows if the same column was selected twice
+    cond_col = unique(cond_col,'stable');
+
 end
 

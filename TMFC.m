@@ -1,6 +1,6 @@
 function TMFC
     
-% =====[ Task-Modulated Functional Connectivity (TMFC) toolbox v1.9.0 ]====
+% =====[ Task-Modulated Functional Connectivity (TMFC) toolbox v1.9.5 ]====
 %
 % Opens the main GUI window.
 %
@@ -58,7 +58,7 @@ function TMFC
 %
 % =========================================================================
 %
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % 
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ end
 
 %-Check TMFC toolbox version
 %--------------------------------------------------------------------------
-localVer  = 'v.1.9.0';
+localVer  = 'v.1.9.5';
 try
     r = webread(sprintf('https://api.github.com/repos/%s/%s/releases/latest', ...
                         'IHB-IBR-department','TMFC_toolbox'), ...
@@ -1190,13 +1190,22 @@ function BSC_GUI(~,~,~)
         disp('Initiating BSC LSS computation...');   
         try
             % Processing BSC LSS & generation of default contrasts
-            summary = BSC_extraction_GUI;
+            [summary, perform_beta_scrubbing] = BSC_extraction_GUI;
             if isempty(summary)
                 freeze_GUI(0);
                 return;
             end
             tmfc.ROI_set(tmfc.ROI_set_number).BSC = summary;
-            [sub_check, contrasts] = tmfc_BSC(tmfc,tmfc.ROI_set_number);
+            [sub_check, contrasts, beta_scrubbing_summary] = tmfc_BSC(tmfc,tmfc.ROI_set_number,1,perform_beta_scrubbing);
+
+            % User closed beta-scrubbing parameters GUI
+            if isempty(sub_check)
+                disp('BSC LSS computation not initiated.');
+                freeze_GUI(0);
+                return;
+            end
+
+            tmfc.ROI_set(tmfc.ROI_set_number).BSC_beta_scrubbing = beta_scrubbing_summary;
 
             % Update BSC progress & BSC contrasts in TMFC structure
             for iSub = 1:nSub
@@ -1260,13 +1269,22 @@ function BSC_GUI(~,~,~)
     else
         disp('Initiating BSC LSS computation...');
         try
-            summary = BSC_extraction_GUI;
+            [summary, perform_beta_scrubbing] = BSC_extraction_GUI;
             if isempty(summary)
                 freeze_GUI(0);
                 return;
             end
             tmfc.ROI_set(tmfc.ROI_set_number).BSC = summary;
-            sub_check = tmfc_BSC(tmfc,tmfc.ROI_set_number);
+            [sub_check, ~, beta_scrubbing_summary] = tmfc_BSC(tmfc,tmfc.ROI_set_number,1,perform_beta_scrubbing);
+
+            % User closed beta-scrubbing parameters GUI
+            if isempty(sub_check)
+                disp('BSC LSS computation not initiated.');
+                freeze_GUI(0);
+                return;
+            end
+
+            tmfc.ROI_set(tmfc.ROI_set_number).BSC_beta_scrubbing = beta_scrubbing_summary;
             for iSub = 1:nSub
                 tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).BSC = sub_check(iSub);
             end
@@ -1784,13 +1802,22 @@ function BSC_after_FIR_GUI(~,~,~)
 
         try
             % Processing BSC after FIR & generation of default contrasts
-            summary = BSC_extraction_GUI;
+            [summary, perform_beta_scrubbing] = BSC_extraction_GUI;
             if isempty(summary)
                 freeze_GUI(0);
                 return;
             end
             tmfc.ROI_set(tmfc.ROI_set_number).BSC_after_FIR = summary;
-            [sub_check, contrasts] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+            [sub_check, contrasts, beta_scrubbing_summary] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,1,perform_beta_scrubbing);
+
+            % User closed beta-scrubbing parameters GUI
+            if isempty(sub_check)
+                disp('BSC LSS after FIR computation not initiated.');
+                freeze_GUI(0);
+                return;
+            end
+
+            tmfc.ROI_set(tmfc.ROI_set_number).BSC_after_FIR_beta_scrubbing = beta_scrubbing_summary;
 
             % Update BSC after FIR progress & BSC after FIR contrasts in TMFC structure
             for iSub = 1:nSub
@@ -1854,13 +1881,22 @@ function BSC_after_FIR_GUI(~,~,~)
     else
         disp('Initiating BSC LSS after FIR computation...');
         try
-            summary = BSC_extraction_GUI;
+            [summary, perform_beta_scrubbing] = BSC_extraction_GUI;
             if isempty(summary)
                 freeze_GUI(0);
                 return;
             end
             tmfc.ROI_set(tmfc.ROI_set_number).BSC_after_FIR = summary;
-            sub_check = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number);
+            [sub_check, ~, beta_scrubbing_summary] = tmfc_BSC_after_FIR(tmfc,tmfc.ROI_set_number,1,perform_beta_scrubbing);
+
+            % User closed beta-scrubbing parameters GUI
+            if isempty(sub_check)
+                disp('BSC LSS after FIR computation not initiated.');
+                freeze_GUI(0);
+                return;
+            end
+            
+            tmfc.ROI_set(tmfc.ROI_set_number).BSC_after_FIR_beta_scrubbing = beta_scrubbing_summary;
             for iSub = 1:nSub
                 tmfc.ROI_set(tmfc.ROI_set_number).subjects(iSub).BSC_after_FIR = sub_check(iSub);
             end
@@ -2209,7 +2245,7 @@ end
 %% ===========================[ Statistics ]===============================
 function statistics_GUI(~,~,~)
 	freeze_GUI(1);
-    tmfc_statistics_GUI();
+    TMFC_statistics();
     freeze_GUI(0);
 end
 
@@ -2625,29 +2661,63 @@ end
 end
 
 %% =======================[ BSC extraction GUI ]===========================
-function [summary] = BSC_extraction_GUI
+    function [summary,perform_beta_scrubbing] = BSC_extraction_GUI
 
     summary = 'first_eigenvariate';
+    perform_beta_scrubbing = 1;
     
-    BSC_GUI_MW = figure('Name', 'Beta series correlation', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.38 0.42 0.25 0.18],'Resize','on','MenuBar', 'none', 'ToolBar', 'none','Tag','tmfc_BSC_extraction_GUI', 'color', 'w','WindowStyle','modal','CloseRequestFcn', @exit_MW); 
+    BSC_GUI_MW = figure('Name', 'Beta series correlation', 'NumberTitle', 'off', ...
+        'Units', 'normalized', 'Position', [0.38 0.40 0.28 0.24], 'Resize', 'on', ...
+        'MenuBar', 'none', 'ToolBar', 'none', 'Tag', 'tmfc_BSC_extraction_GUI', ...
+        'color', 'w', 'WindowStyle', 'modal', 'CloseRequestFcn', @exit_MW); 
     
-    MW_txt_1 = uicontrol(BSC_GUI_MW,'Style','text','String', 'Select averaging to extract beta series from ROIs:','Units', 'normalized', 'Position',[0.02 0.72 0.95 0.16],'fontunits','normalized', 'fontSize', 0.565,'BackgroundColor','w'); 
-    MW_E1 = uicontrol(BSC_GUI_MW , 'Style', 'popupmenu', 'String', {'First eigenvariate', 'Mean'},'Units', 'normalized', 'Position',[0.29 0.42 0.45 0.22],'fontunits','normalized', 'fontSize', 0.40);     
-    MW_OK = uicontrol(BSC_GUI_MW,'Style','pushbutton','String', 'OK','Units', 'normalized','Position',[0.39 0.20 0.25 0.18],'fontunits','normalized', 'fontSize', 0.40,'callback', @read_data);
+    MW_txt_1 = uicontrol(BSC_GUI_MW,'Style','text', ...
+        'String', 'Select averaging to extract beta series from ROIs:', ...
+        'Units', 'normalized', 'Position',[0.04 0.76 0.95 0.12], ...
+        'fontunits','normalized', 'fontSize', 0.50, 'BackgroundColor','w'); 
     
-    % Read & Sync Data
+    MW_E1 = uicontrol(BSC_GUI_MW , 'Style', 'popupmenu', ...
+        'String', {'First eigenvariate', 'Mean'}, ...
+        'Units', 'normalized', 'Position',[0.29 0.58 0.45 0.16], ...
+        'fontunits','normalized', 'fontSize', 0.40);     
+    
+    MW_txt_2 = uicontrol(BSC_GUI_MW,'Style','text', ...
+        'String', 'Perform beta scrubbing:', ...
+        'Units', 'normalized', 'Position',[0.04 0.38 0.95 0.12], ...
+        'fontunits','normalized', 'fontSize', 0.50, 'BackgroundColor','w'); 
+    
+    MW_E2 = uicontrol(BSC_GUI_MW , 'Style', 'popupmenu', ...
+        'String', {'No', 'Yes'}, 'Value', 2, ...
+        'Units', 'normalized', 'Position',[0.38 0.22 0.27 0.16], ...
+        'fontunits','normalized', 'fontSize', 0.40);     
+    
+    MW_OK = uicontrol(BSC_GUI_MW,'Style','pushbutton','String', 'OK', ...
+        'Units', 'normalized','Position',[0.39 0.05 0.25 0.12], ...
+        'fontunits','normalized', 'fontSize', 0.40,'callback', @read_data);
+    
+    movegui(BSC_GUI_MW,'center');
+    
+    % Read & sync data
     function read_data(~,~)
-       temp_var = get(MW_E1, 'value'); 
-
-       if temp_var == 2
-           summary = 'mean';
-       end      
-       uiresume(BSC_GUI_MW);
+        temp_var = get(MW_E1, 'value'); 
+        if temp_var == 2
+            summary = 'mean';
+        end
+        
+        temp_scrub = get(MW_E2, 'value');
+        if temp_scrub == 2
+            perform_beta_scrubbing = 1;
+        else
+            perform_beta_scrubbing = 0;
+        end
+        
+        uiresume(BSC_GUI_MW);
     end
 
-    % If exit, we return cancel operation & return ''
+    % Cancel operation
     function exit_MW(~,~)
         summary = '';
+        perform_beta_scrubbing = [];
         uiresume(BSC_GUI_MW);
     end
     

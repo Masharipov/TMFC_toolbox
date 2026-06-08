@@ -164,7 +164,7 @@ if isempty(func_root_default), func_root_default = filesep; end
 func_root = func_root_default;
 
 % Button: Select parent folder (contains sub-*/ses-*/func)
-SF_MW_S0 = uicontrol(SF_MW,'Style','pushbutton','String','Select parent folder (contains sub-*/ses-*/func)', ...
+SF_MW_S0 = uicontrol(SF_MW,'Style','pushbutton','String','Select parent folder (contains sub-*/.../func)', ...
     'TooltipString','Folder that directly contains subject folders (e.g., sub-01, sub-02) with FUNC subfolders (which include unsmoothed functional images).', ...
     'Units','normalized','Position',[0.025 0.82 0.41 0.080],'FontUnits','normalized','FontSize',0.295, ...
     'Callback',@select_func_root);
@@ -240,7 +240,7 @@ end
 % Select FUNC root folder (contains sub-*/ses-*/func)
 % -------------------------------------------------------------------------
 function select_func_root(~,~)
-    tmp = deblank(spm_select(1,'dir','Select parent folder (contains sub-*/ses-*/func)',{},func_root,'..'));
+    tmp = deblank(spm_select(1,'dir','Select parent folder (contains sub-*/.../func)',{},func_root,'..'));
     if ~isempty(tmp)
         user_changed_root = ~strcmp(tmp, func_root);
         func_root = tmp;

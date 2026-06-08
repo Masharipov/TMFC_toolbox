@@ -35,10 +35,27 @@ function [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.sess   - Session number (as specified in SPM.Sess)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.number - Condition number (as specified in SPM.Sess.U)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.pmod   - Parametric/Time modulator number (see SPM.Sess.U.P)
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions.bf     - Basis function:
+%                                                         1 = canonical HRF
+%                                                         2 = time derivative
+%                                                         3 = dispersion derivative
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.name   - Condition name (as specified in SPM.Sess.U.name(kPmod))
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.file_name - Condition-specific file names:
-%   (['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
-%    regexprep(char(SPM.Sess(iSess).U(jCond).name(1)),' ','_') ']'];)
+%
+%   Canonical HRF file name:
+%
+%   ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%   regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']']
+%
+%   Derivative file name:
+%
+%   ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%   regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']_[' ...
+%   bf_file{kBF} ']']
+%
+%   where bf_file{kBF} is:
+%   'TimeDeriv' - time derivative
+%   'DispDeriv' - dispersion derivative
 %
 % Session number and condition number must match the original SPM.mat file.
 % Consider, for example, a task design with two sessions. Both sessions 
@@ -47,40 +64,75 @@ function [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub)
 % structure must be specified (see tmfc_conditions_GUI, nested function:
 % [cond_list] = generate_conditions(SPM_path)):
 %
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1;   
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).name = 'Cond_A'; 
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).bf     = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).name = 'Cond_A';
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Sess_1]_[Cond_1]_[Cond_A]';
+%
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).sess   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).number = 2;
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).pmod   = 1; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).name = 'Cond_B'; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_1]_[Cond_B]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).pmod   = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).bf     = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).name = 'Cond_B';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_2]_[Cond_B]';
+%
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).number = 1;
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).pmod   = 1; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).name = 'Cond_A'; 
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).pmod   = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).bf     = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).name = 'Cond_A';
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).file_name = '[Sess_2]_[Cond_1]_[Cond_A]';
+%
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).pmod   = 1;
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).name = 'Cond_B'; 
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).bf     = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).name = 'Cond_B';
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Sess_2]_[Cond_2]_[Cond_B]';
 %
-% If GLMs contain parametric or time modulators, add the following fields:
-% e.g. first modulator for fourth condition:
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).sess   = 2; 
+% If you also want to include time and dispersion derivatives for Cond_B
+% in session 2, add:
+%
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).number = 2;
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).pmod   = 2;
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).name = 'Cond_BxModulator1^1';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Sess_2]_[Cond_2]_[Cond_BxModulator1^1]'; 
-% e.g. second modulator for fourth condition:
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).sess   = 2; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).number = 2; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).pmod = 3; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).name = 'Cond_BxModulator2^1'; 
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Sess_2]_[Cond_2]_[Cond_BxModulator2^1]'; 
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).pmod   = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).bf     = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).name = 'Cond_B';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Sess_2]_[Cond_2]_[Cond_B]_[TimeDeriv]';
+%
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).sess   = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).number = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).pmod   = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).bf     = 3;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).name = 'Cond_B';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Sess_2]_[Cond_2]_[Cond_B]_[DispDeriv]';
+%
+% If GLMs contain parametric modulators, pmod selects the main condition or
+% the parametric modulator, and bf selects the basis function:
+%
+%   pmod = 1  main condition
+%   pmod = 2  first parametric modulator
+%   pmod = 3  second parametric modulator
+%
+% Example: first parametric modulator for Cond_B, canonical HRF:
+%
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).sess   = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).number = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).pmod   = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).bf     = 1;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).name = 'Cond_BxModulator1^1';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).file_name = '[Sess_2]_[Cond_2]_[Cond_BxModulator1^1]_[HRF]';
+%
+% Example: first parametric modulator for Cond_B, time derivative:
+%
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).sess   = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).number = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).pmod   = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).bf     = 2;
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).name = 'Cond_BxModulator1^1';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).file_name = '[Sess_2]_[Cond_2]_[Cond_BxModulator1^1]_[TimeDeriv]';
 %
 % Example of the ROI set (see tmfc_select_ROIs_GUI):
 %
@@ -100,7 +152,7 @@ function [sub_check] = tmfc_PPI(tmfc,ROI_set_number,start_sub)
 %   start_sub      - Subject number in the list to start computations from
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -202,9 +254,10 @@ CACHE.subjects.nSub = nSub;
 if tmfc.defaults.parallel == 0 || force_disable_parfor
 
     % If user requested parallel mode, notify that parfor is disabled here
+    noteH = [];
     if tmfc.defaults.parallel == 1 && force_disable_parfor
         try
-            helpdlg({ ...
+            noteH = helpdlg({ ...
                 'Parallel mode requested, but parfor is disabled for PPI calculation.', ...
                 '', ...
                 'spm_PEB is already implicitly multithreaded (BLAS/LAPACK), so parfor is often slower here.', ...
@@ -212,7 +265,7 @@ if tmfc.defaults.parallel == 0 || force_disable_parfor
                 'Set "force_disable_parfor = false" inside tmfc_PPI if you want to test parfor speed.' ...
                 }, 'TMFC note');
         catch
-            % Do nothing if GUI is not available
+            noteH = [];
         end
     end
 
@@ -243,6 +296,11 @@ if tmfc.defaults.parallel == 0 || force_disable_parfor
     % Close waitbar
     try
         delete(w);
+    end
+    
+    % Close note
+    try
+        delete(noteH);
     end
 
 % Parallel computations
