@@ -11,19 +11,21 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 %
 %   tmfc.subjects.path            - Paths to individual SPM.mat files
 %   tmfc.subjects.name            - Subject names within the TMFC project
-%                                   ('Subject_XXXX' naming will be used by default)
 %   tmfc.project_path             - Path where all results will be saved
 %   tmfc.defaults.parallel        - 0 or 1 (sequential/parallel computing)
+%   tmfc.session_mode             - 'strict' or 'repeated'
+%                                   'strict' - use the selected runs/conditions
+%                                   'repeated' - process all runs for each subject
 %
 %   tmfc.ROI_set                  - List of selected ROIs
 %   tmfc.ROI_set.type             - Type of the ROI set
 %   tmfc.ROI_set.set_name         - Name of the ROI set
 %   tmfc.ROI_set.ROIs.name        - Name of the selected ROI
-%   tmfc.ROI_set.ROIs.path_masked - Paths to the ROI images masked by group
-%                                   mean binary mask 
+%   tmfc.ROI_set.ROIs.path_masked - Paths to ROI images masked by
+%                                   individual first-level masks
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions        - List of conditions of interest
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions.sess   - Session number (as specified in SPM.Sess)
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions.sess   - Run number (SPM session, as specified in SPM.Sess)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.number - Condition number (as specified in SPM.Sess.U)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.pmod   - Parametric/Time modulator number (see SPM.Sess.U.P)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.bf     - Basis function:
@@ -35,12 +37,12 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 %
 %   Canonical HRF file name:
 %
-%   ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%   ['[Run_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
 %   regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']']
 %
 %   Derivative file name:
 %
-%   ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%   ['[Run_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
 %   regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']_[' ...
 %   bf_file{kBF} ']']
 %
@@ -48,57 +50,56 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 %   'TimeDeriv' - time derivative
 %   'DispDeriv' - dispersion derivative
 %
-% Session number and condition number must match the original SPM.mat file.
-% Consider, for example, a task design with two sessions. Both sessions 
+% Run number and condition number must match the original SPM.mat file.
+% Consider, for example, a task design with two runs (SPM sessions). Both runs 
 % contain three task regressors for "Cond A", "Cond B" and "Errors". If
 % you are only interested in comparing "Cond A" and "Cond B", the following
-% structure must be specified (see tmfc_conditions_GUI, nested function:
-% [cond_list] = generate_conditions(SPM_path)):
+% structure must be specified (see tmfc_conditions_GUI and tmfc_get_conditions):
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).name = 'Cond_A';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Sess_1]_[Cond_1]_[Cond_A]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Run_1]_[Cond_1]_[Cond_A]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).sess   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_2]_[Cond_B]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Run_1]_[Cond_2]_[Cond_B]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).number = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).name = 'Cond_A';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).file_name = '[Sess_2]_[Cond_1]_[Cond_A]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).file_name = '[Run_2]_[Cond_1]_[Cond_A]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Sess_2]_[Cond_2]_[Cond_B]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Run_2]_[Cond_2]_[Cond_B]';
 %
 % If you also want to include time and dispersion derivatives for Cond_B
-% in session 2, add:
+% in run 2, add:
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).bf     = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Sess_2]_[Cond_2]_[Cond_B]_[TimeDeriv]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Run_2]_[Cond_2]_[Cond_B]_[TimeDeriv]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).bf     = 3;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Sess_2]_[Cond_2]_[Cond_B]_[DispDeriv]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Run_2]_[Cond_2]_[Cond_B]_[DispDeriv]';
 %
 % If GLMs contain parametric modulators, pmod selects the main condition or
 % the parametric modulator, and bf selects the basis function:
@@ -114,7 +115,7 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).pmod   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).name = 'Cond_BxModulator1^1';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).file_name = '[Sess_2]_[Cond_2]_[Cond_BxModulator1^1]_[HRF]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(7).file_name = '[Run_2]_[Cond_2]_[Cond_BxModulator1^1]_[HRF]';
 %
 % Example: first parametric modulator for Cond_B, time derivative:
 %
@@ -123,16 +124,16 @@ function [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).pmod   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).bf     = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).name = 'Cond_BxModulator1^1';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).file_name = '[Sess_2]_[Cond_2]_[Cond_BxModulator1^1]_[TimeDeriv]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(8).file_name = '[Run_2]_[Cond_2]_[Cond_BxModulator1^1]_[TimeDeriv]';
 %
-% Example of the ROI set (see tmfc_select_ROIs_GUI):
+% Example of the ROI set (see tmfc_select_ROIs_GUI and tmfc_create_ROI_set):
 %
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).type = 'binary_images';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked(1).subjects = '...\Subject_0001\ROI_1_masked.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked(2).subjects = '...\Subject_0002\ROI_1_masked.nii';
 %
 % FORMAT [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for
@@ -161,6 +162,13 @@ if ~isfield(tmfc.subjects,'name')
     end
 end
 
+% Check session mode
+if ~isfield(tmfc,'session_mode')
+    session_mode = 'strict';
+else
+    session_mode = tmfc.session_mode;
+end
+
 try
     main_GUI = guidata(findobj('Tag','TMFC_GUI'));                           
     set(main_GUI.TMFC_GUI_S3,'String', 'Updating...','ForegroundColor',[0.772, 0.353, 0.067]);       
@@ -170,11 +178,6 @@ nSub = length(tmfc.subjects);
 nROI = length(tmfc.ROI_set(ROI_set_number).ROIs);
 cond_list = tmfc.ROI_set(ROI_set_number).gPPI.conditions;
 nCond = length(cond_list);
-sess = []; sess_num = []; 
-for iCond = 1:nCond
-    sess(iCond) = cond_list(iCond).sess;
-end
-sess_num = unique(sess);
 
 sub_check = zeros(1,nSub);
 if start_sub > 1
@@ -227,8 +230,14 @@ if ~useParSub
         % Load SPM
         SPM = load(tmfc.subjects(iSub).path).SPM;
 
+        if strcmp(session_mode,'repeated')
+            sess_num = 1:length(SPM.Sess);
+        else
+            sess_num = unique([cond_list.sess]);
+        end
+
         % Calculate F-contrast for all conditions of interest
-        cond_col = tmfc_get_F_contrast_columns(SPM,cond_list);
+        cond_col = tmfc_get_F_contrast_columns(SPM,cond_list,session_mode);
 
         weights = zeros(length(cond_col),size(SPM.xX.X,2));
         for iCond = 1:length(cond_col)
@@ -293,11 +302,13 @@ if ~useParSub
                 fprintf('[VOI] Sub %02d/%02d | ROI %03d/%03d (%s)\n', ...
                     iSub, nSub, kROI, nROI, roiName);
 
-                switch tmfc.ROI_set(ROI_set_number).type
-                    case {'binary_images','fixed_spheres'}
-                        maskPath = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
-                    otherwise
-                        maskPath = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked(iSub).subjects;
+                path_masked = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
+
+                % Backward compatibility with old ROI sets
+                if ischar(path_masked)
+                    maskPath = path_masked;
+                else
+                    maskPath = path_masked(iSub).subjects;
                 end
 
                 tmfc_regions(SPMr, roiName, maskPath, outPath, 1, sess_num, 0.1);
@@ -310,12 +321,14 @@ if ~useParSub
     
                 fprintf('[VOI] Sub %02d/%02d | ROI %03d/%03d (%s)\n', ...
                     iSub, nSub, kROI, nROI, roiName);
-    
-                switch tmfc.ROI_set(ROI_set_number).type
-                    case {'binary_images','fixed_spheres'}
-                        maskPath = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
-                    otherwise
-                        maskPath = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked(iSub).subjects;
+
+                path_masked = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
+
+                % Backward compatibility with old ROI sets
+                if ischar(path_masked)
+                    maskPath = path_masked;
+                else
+                    maskPath = path_masked(iSub).subjects;
                 end
     
                 tmfc_regions(SPMrc.Value, roiName, maskPath, outPath, 1, sess_num, 0.1);
@@ -368,7 +381,7 @@ else
     cleanupObj = onCleanup(@unfreeze_after_ctrl_c);
 
     parfor iSub = start_sub:nSub
-        ok = tmfc_VOI_one_sub(tmfc,ROI_set_number,iSub,cond_list,sess_num,nSub,nROI);
+        ok = tmfc_VOI_one_sub(tmfc,ROI_set_number,iSub,cond_list,session_mode,nSub,nROI);
         sub_check(iSub) = ok;
         try
             send(D,[]);
@@ -401,14 +414,20 @@ end
 end
 
 %% ========================================================================
-function ok = tmfc_VOI_one_sub(tmfc,ROI_set_number,iSub,cond_list,sess_num,nSub,nROI)
+function ok = tmfc_VOI_one_sub(tmfc,ROI_set_number,iSub,cond_list,session_mode,nSub,nROI)
     ok = 0;
 
     % Load SPM
     SPM = load(tmfc.subjects(iSub).path).SPM;
 
+    if strcmp(session_mode,'repeated')
+        sess_num = 1:length(SPM.Sess);
+    else
+        sess_num = unique([cond_list.sess]);
+    end
+
     % Calculate F-contrast for all conditions of interest
-    cond_col = tmfc_get_F_contrast_columns(SPM,cond_list);
+    cond_col = tmfc_get_F_contrast_columns(SPM,cond_list,session_mode);
 
     weights = zeros(length(cond_col),size(SPM.xX.X,2));
     for iCond = 1:length(cond_col)
@@ -475,11 +494,13 @@ function ok = tmfc_VOI_one_sub(tmfc,ROI_set_number,iSub,cond_list,sess_num,nSub,
         fprintf('[VOI] Sub %02d/%02d | ROI %03d/%03d (%s)\n', ...
                 iSub, nSub, kROI, nROI, roiName);
 
-        switch tmfc.ROI_set(ROI_set_number).type
-            case {'binary_images','fixed_spheres'}
-                maskPath = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
-            otherwise
-                maskPath = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked(iSub).subjects;
+        path_masked = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
+
+        % Backward compatibility with old ROI sets
+        if ischar(path_masked)
+            maskPath = path_masked;
+        else
+            maskPath = path_masked(iSub).subjects;
         end
 
         tmfc_regions(SPMr, roiName, maskPath, outPath, 1, sess_num, 0.1);
@@ -489,45 +510,50 @@ function ok = tmfc_VOI_one_sub(tmfc,ROI_set_number,iSub,cond_list,sess_num,nSub,
 end
 
 % Specify F-contrast
-function cond_col = tmfc_get_F_contrast_columns(SPM,conditions)
+function cond_col = tmfc_get_F_contrast_columns(SPM,conditions,session_mode)
 
     cond_col = [];
 
     for iCond = 1:numel(conditions)
 
-        sess = conditions(iCond).sess;
-        cond = conditions(iCond).number;
-        pmod = conditions(iCond).pmod;
-
-        FCi = SPM.Sess(sess).Fc(cond).i;
-
-        % PMs
-        if isfield(SPM.Sess(sess).Fc(cond),'p')
-            FCp = SPM.Sess(sess).Fc(cond).p;
-            FCi = FCi(FCp == pmod);
+        if strcmp(session_mode,'repeated')
+            sess_list = 1:length(SPM.Sess);
+        else
+            sess_list = conditions(iCond).sess;
         end
 
-        % Derivatives
-        if isfield(conditions,'bf') && ~isempty(conditions(iCond).bf)
+        for sess = sess_list
+            cond = conditions(iCond).number;
+            pmod = conditions(iCond).pmod;
 
-            bf = conditions(iCond).bf;
+            FCi = SPM.Sess(sess).Fc(cond).i;
 
-            if bf > numel(FCi)
-                error('Basis function %d does not exist for condition "%s".', ...
-                    bf, conditions(iCond).name);
+            % PMs
+            if isfield(SPM.Sess(sess).Fc(cond),'p')
+                FCp = SPM.Sess(sess).Fc(cond).p;
+                FCi = FCi(FCp == pmod);
             end
 
-            FCi = FCi(bf);
+            % Derivatives
+            if isfield(conditions,'bf') && ~isempty(conditions(iCond).bf)
 
+                bf = conditions(iCond).bf;
+
+                if bf > numel(FCi)
+                    error('Basis function %d does not exist for condition "%s".', ...
+                        bf, conditions(iCond).name);
+                end
+
+                FCi = FCi(bf);
+            end
+
+            % FCi is local session index. Convert to full design-matrix column
+            cond_col = [cond_col, SPM.Sess(sess).col(FCi)];
         end
-
-        % FCi is local session index. Convert to full design-matrix column
-        cond_col = [cond_col, SPM.Sess(sess).col(FCi)];
-
     end
 
     % Prevent duplicated rows if the same column was selected twice
-    cond_col = unique(cond_col,'stable');
+    cond_col = sort(unique(cond_col));
 
 end
 

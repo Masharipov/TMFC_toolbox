@@ -26,7 +26,6 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %
 %   tmfc.subjects.path     - Paths to individual SPM.mat files
 %   tmfc.subjects.name     - Subject names within the TMFC project
-%                           ('Subject_XXXX' naming will be used by default)
 %   tmfc.project_path      - Path where all results will be saved
 %   tmfc.defaults.parallel - 0 or 1 (sequential or parallel computing)
 %   tmfc.defaults.maxmem   - e.g. 2^31 = 2GB (how much RAM can be used)
@@ -35,6 +34,10 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %                          - 2 (ROI-to-ROI analysis only)
 %                          - 3 (Seed-to-voxel analysis only)
 %
+%   tmfc.session_mode      - 'strict' or 'repeated'
+%                            In repeated mode, run-specific gPPI-FIR
+%                            estimates are averaged across all runs
+%
 %   tmfc.ROI_set(ROI_set_number).gPPI_FIR.window - FIR window length (in seconds)
 %   tmfc.ROI_set(ROI_set_number).gPPI_FIR.bins   - Number of FIR time bins
 %
@@ -42,11 +45,11 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %   tmfc.ROI_set.type             - Type of the ROI set
 %   tmfc.ROI_set.set_name         - Name of the ROI set
 %   tmfc.ROI_set.ROIs.name        - Name of the selected ROI
-%   tmfc.ROI_set.ROIs.path_masked - Paths to the ROI images masked by group
-%                                   mean binary mask 
+%   tmfc.ROI_set.ROIs.path_masked - Paths to ROI images masked by
+%                                   individual first-level masks
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions        - List of conditions of interest
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions.sess   - Session number (as specified in SPM.Sess)
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions.sess   - Run number (SPM session, as specified in SPM.Sess)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.number - Condition number (as specified in SPM.Sess.U)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.pmod   - Parametric/Time modulator number (see SPM.Sess.U.P)
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions.bf     - Basis function:
@@ -58,12 +61,12 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %
 %   Canonical HRF file name:
 %
-%   ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%   ['[Run_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
 %   regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']']
 %
 %   Derivative file name:
 %
-%   ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
+%   ['[Run_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' ...
 %   regexprep(char(SPM.Sess(iSess).U(jCond).name(kPmod)),' ','_') ']_[' ...
 %   bf_file{kBF} ']']
 %
@@ -71,66 +74,65 @@ function [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 %   'TimeDeriv' - time derivative
 %   'DispDeriv' - dispersion derivative
 %
-% Session number and condition number must match the original SPM.mat file.
-% Consider, for example, a task design with two sessions. Both sessions 
+% Run number and condition number must match the original SPM.mat file.
+% Consider, for example, a task design with two runs (SPM sessions). Both runs 
 % contain three task regressors for "Cond A", "Cond B" and "Errors". If
 % you are only interested in comparing "Cond A" and "Cond B", the following
-% structure must be specified (see tmfc_conditions_GUI, nested function:
-% [cond_list] = generate_conditions(SPM_path)):
+% structure must be specified (see tmfc_conditions_GUI and tmfc_get_conditions):
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).name = 'Cond_A';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Sess_1]_[Cond_1]_[Cond_A]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).file_name = '[Run_1]_[Cond_1]_[Cond_A]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).sess   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Sess_1]_[Cond_2]_[Cond_B]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(2).file_name = '[Run_1]_[Cond_2]_[Cond_B]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).number = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).name = 'Cond_A';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).file_name = '[Sess_2]_[Cond_1]_[Cond_A]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(3).file_name = '[Run_2]_[Cond_1]_[Cond_A]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).bf     = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Sess_2]_[Cond_2]_[Cond_B]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(4).file_name = '[Run_2]_[Cond_2]_[Cond_B]';
 %
 % If you also want to include time and dispersion derivatives for Cond_B
-% in session 2, add:
+% in run 2, add:
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).bf     = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Sess_2]_[Cond_2]_[Cond_B]_[TimeDeriv]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(5).file_name = '[Run_2]_[Cond_2]_[Cond_B]_[TimeDeriv]';
 %
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).sess   = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).number = 2;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).pmod   = 1;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).bf     = 3;
 %   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).name = 'Cond_B';
-%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Sess_2]_[Cond_2]_[Cond_B]_[DispDeriv]';
+%   tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Run_2]_[Cond_2]_[Cond_B]_[DispDeriv]';
 %
-% Example of the ROI set (see tmfc_select_ROIs_GUI):
+% Example of the ROI set (see tmfc_select_ROIs_GUI and tmfc_create_ROI_set):
 %
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).type = 'binary_images';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked(1).subjects = '...\Subject_0001\ROI_1_masked.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked(2).subjects = '...\Subject_0002\ROI_1_masked.nii';
 %
 % FORMAT [sub_check,contrasts] = tmfc_gPPI_FIR(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for
@@ -159,20 +161,17 @@ if ~isfield(tmfc.subjects,'name')
     end
 end
 
+% Check session mode
+if ~isfield(tmfc,'session_mode')
+    session_mode = 'strict';
+else
+    session_mode = tmfc.session_mode;
+end
+
 nSub = length(tmfc.subjects);
 nROI = length(tmfc.ROI_set(ROI_set_number).ROIs);
 cond_list = tmfc.ROI_set(ROI_set_number).gPPI.conditions;
 nCond = length(cond_list);
-sess = []; sess_num = []; nSess = []; PPI_num = []; PPI_sess = [];
-for cond_PPI = 1:nCond
-    sess(cond_PPI) = cond_list(cond_PPI).sess;
-end
-sess_num = unique(sess);
-nSess = length(sess_num);
-for iSess = 1:nSess
-    PPI_num = [PPI_num, 1:sum(sess == sess_num(iSess))];
-    PPI_sess = [PPI_sess, iSess*ones(1,sum(sess == sess_num(iSess)))];
-end
 
 sub_check = zeros(1,nSub);
 if start_sub > 1
@@ -262,6 +261,38 @@ if ~useParSub
     for iSub = start_sub:nSub
         %=================[ Specify gPPI-FIR GLM ]=========================
         SPM = load(tmfc.subjects(iSub).path).SPM;
+
+        % Runs and PPI regressors for this subject
+        % -----------------------------------------------------------------
+        if strcmp(session_mode,'repeated')
+
+            sess_num = 1:length(SPM.Sess);
+            nSess = length(sess_num);
+
+            cond_in_sess = true(nSess,nCond);
+
+        elseif strcmp(session_mode,'strict')
+
+            sess_num = unique([cond_list.sess]);
+            nSess = length(sess_num);
+
+            cond_in_sess = false(nSess,nCond);
+
+            for cond_PPI = 1:nCond
+                kSess = find(sess_num == cond_list(cond_PPI).sess,1);
+                cond_in_sess(kSess,cond_PPI) = true;
+            end
+
+        else
+            error('session_mode must be ''strict'' or ''repeated''.');
+        end
+
+        PPI_num = zeros(nSess,nCond);
+
+        for kSess = 1:nSess
+            jConds = find(cond_in_sess(kSess,:));
+            PPI_num(kSess,jConds) = 1:length(jConds);
+        end
     
         % Check if SPM.mat has concatenated sessions 
         % (if spm_fmri_concatenate.m script was used)
@@ -279,11 +310,7 @@ if ~useParSub
                 pause(0.1);
             end
             mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(jROI).name));
-            % Loop through conditions of interest
-            for cond_PPI = 1:nCond
-                PPI(cond_PPI) = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'PPIs',tmfc.subjects(iSub).name, ...
-                                ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(jROI).name,' ','_') ']_' cond_list(cond_PPI).file_name '.mat']));
-            end
+            
             % gPPI GLM batch
             matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(jROI).name)};
             matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.xBF.UNITS;
@@ -323,30 +350,89 @@ if ~useParSub
                     matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).cond(cond).orth = SPM.Sess(sess_num(kSess)).U(cond).orth;
                 end
     
-                % Add PPI regressors          
-                for cond_PPI = 1:nCond
-                    if cond_list(cond_PPI).sess == sess_num(kSess)
-                        matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_num(cond_PPI)).name = ['PPI_' PPI(cond_PPI).PPI.name];
-                        matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_num(cond_PPI)).val = PPI(cond_PPI).PPI.ppi;
+                % Add PPI regressors
+                jConds = find(cond_in_sess(kSess,:));
+
+                for ii = 1:length(jConds)
+
+                    cond_PPI = jConds(ii);
+
+                    % Repeated runs
+                    if strcmp(session_mode,'repeated')
+
+                        cond = cond_list(cond_PPI).number;
+
+                        if isfield(cond_list,'pmod') && ~isempty(cond_list(cond_PPI).pmod)
+                            pmod = cond_list(cond_PPI).pmod;
+                        else
+                            pmod = 1;
+                        end
+
+                        if isfield(cond_list,'bf') && ~isempty(cond_list(cond_PPI).bf)
+                            bf = cond_list(cond_PPI).bf;
+                        else
+                            bf = 1;
+                        end
+
+                        cond_name = char(SPM.Sess(sess_num(kSess)).U(cond).name(pmod));
+
+                        file_name = ...
+                            ['[Run_' num2str(sess_num(kSess)) ']_[Cond_' num2str(cond) ']_[' ...
+                            regexprep(cond_name,' ','_') ']'];
+
+                        if bf == 2
+                            file_name = [file_name '_[TimeDeriv]'];
+                        elseif bf == 3
+                            file_name = [file_name '_[DispDeriv]'];
+                        end
+
+                        % Strict mode
+                    else
+                        file_name = strrep(cond_list(cond_PPI).file_name,'[Sess_','[Run_');
                     end
+
+                    file_new = fullfile(tmfc.project_path,'ROI_sets', ...
+                        tmfc.ROI_set(ROI_set_number).set_name,'PPIs', ...
+                        tmfc.subjects(iSub).name, ...
+                        ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(jROI).name,' ','_') ']_' ...
+                        file_name '.mat']);
+
+                    % Backward compatibility
+                    file_old = strrep(file_new,'[Run_','[Sess_');
+
+                    if exist(file_new,'file')
+                        PPI = load(file_new);
+                    elseif exist(file_old,'file')
+                        PPI = load(file_old);
+                    else
+                        error('PPI file not found: %s',file_new);
+                    end
+
+                    PPI_id = PPI_num(kSess,cond_PPI);
+
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_id).name = ['PPI_' PPI.PPI.name];
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_id).val = PPI.PPI.ppi;
+
+                    clear PPI
                 end
     
                 % Add PHYS regressors
+                nPPI_sess = sum(cond_in_sess(kSess,:));
                 VOI = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ...
                       tmfc.subjects(iSub).name, ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(jROI).name '_' num2str(sess_num(kSess)) '.mat']);
                 tmp = load(VOI);
-                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(sum(sess==sess_num(kSess))+1).name = ['Seed_' tmfc.ROI_set(ROI_set_number).ROIs(jROI).name];
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(nPPI_sess+1).name = ['Seed_' tmfc.ROI_set(ROI_set_number).ROIs(jROI).name];
                 if isfield(tmp,'Yraw')
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(sum(sess==sess_num(kSess))+1).val = tmp.Yraw;  % Use contrast-adjusted, unfiltered and unwhitened VOI time series 
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(nPPI_sess+1).val = tmp.Yraw;  % Use contrast-adjusted, unfiltered and unwhitened VOI time series 
                 else
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(sum(sess==sess_num(kSess))+1).val = tmp.Y;     % Backward compatibility: old VOI files contain only Y (contrast-adjusted, filtered and whitened time series)
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(nPPI_sess+1).val = tmp.Y;     % Backward compatibility: old VOI files contain only Y (contrast-adjusted, filtered and whitened time series)
                 end
                 clear VOI tmp
                 
                 % Confounds       
                 for conf = 1:length(SPM.Sess(sess_num(kSess)).C.name)
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+sum(sess == sess_num(kSess))+1).name = SPM.Sess(sess_num(kSess)).C.name{1,conf};
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+sum(sess == sess_num(kSess))+1).val = SPM.Sess(sess_num(kSess)).C.C(:,conf);
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+nPPI_sess+1).name = SPM.Sess(sess_num(kSess)).C.name{1,conf};
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+nPPI_sess+1).val = SPM.Sess(sess_num(kSess)).C.C(:,conf);
                 end
                 
                 matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).multi = {''};
@@ -463,7 +549,8 @@ if ~useParSub
 
                     % Save PPI beta images
                     for cond_PPI = 1:nCond
-                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM);
+                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI, ...
+                            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
                     end
                 end
             else
@@ -484,7 +571,8 @@ if ~useParSub
     
                     % Save PPI beta images
                     for cond_PPI = 1:nCond
-                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM);
+                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI, ...
+                            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
                     end
                 end
             end
@@ -519,17 +607,13 @@ if ~useParSub
             end
             
             % Save PPI beta matrices
-            SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
-            for cond_PPI = 1:nCond
-                ppi_matrix = squeeze(beta(PPI_num(cond_PPI) - 1 + SPM.Sess(PPI_sess(cond_PPI)).col(1) + SPM.Sess(PPI_sess(cond_PPI)).Fc(end).i(end),:,:));
-                ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
-                symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
-                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                    [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'ppi_matrix');
-                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
-                    [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'symm_ppi_matrix');
-                clear ppi_matrix symm_ppi_matrix
-            end
+            SPM = load(fullfile(tmfc.project_path,'ROI_sets', ...
+                tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR', ...
+                tmfc.subjects(iSub).name, ...
+                tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
+
+            tmfc_save_gPPI_FIR_matrices(tmfc,ROI_set_number,iSub,beta, ...
+                PPI_num,cond_in_sess,sess_num,cond_list,SPM);
         end
     
         % ROI-to-ROI analysis only
@@ -601,17 +685,13 @@ if ~useParSub
             end
     
             % Save PPI beta matrices
-            SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
-            for cond_PPI = 1:nCond
-                ppi_matrix = squeeze(beta(PPI_num(cond_PPI) - 1 + SPM.Sess(PPI_sess(cond_PPI)).col(1) + SPM.Sess(PPI_sess(cond_PPI)).Fc(end).i(end),:,:));
-                ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
-                symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
-                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                    [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'ppi_matrix');
-                save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
-                    [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'symm_ppi_matrix');
-                clear ppi_matrix symm_ppi_matrix
-            end
+            SPM = load(fullfile(tmfc.project_path,'ROI_sets', ...
+                tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR', ...
+                tmfc.subjects(iSub).name, ...
+                tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
+
+            tmfc_save_gPPI_FIR_matrices(tmfc,ROI_set_number,iSub,beta, ...
+                PPI_num,cond_in_sess,sess_num,cond_list,SPM);
         end
     
         % Seed-to-voxel analysis only
@@ -643,7 +723,8 @@ if ~useParSub
 
                     % Save PPI beta images
                     for cond_PPI = 1:nCond
-                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM);
+                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI, ...
+                            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
                     end
                 end
             else
@@ -663,7 +744,8 @@ if ~useParSub
 
                     % Save PPI beta images
                     for cond_PPI = 1:nCond
-                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM);
+                        tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI, ...
+                            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
                     end
                 end
             end
@@ -697,9 +779,7 @@ else
         spm_get_defaults('stats.maxmem',tmfc.defaults.maxmem);
         spm_get_defaults('stats.fmri.ufp',1);
 
-        ok = tmfc_gPPI_FIR_one_sub(tmfc, ROI_set_number, iSub, ...
-            cond_list, nCond, sess, sess_num, nSess, PPI_num, PPI_sess, nROI);
-
+        ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,nROI);
         sub_check(iSub) = ok;
 
         try, send(D,[]); end
@@ -708,7 +788,27 @@ end
 
 % Default contrasts info
 for cond_PPI = 1:nCond
-    contrasts(cond_PPI).title = cond_list(cond_PPI).file_name;
+
+    if strcmp(session_mode,'repeated')
+
+        contrasts(cond_PPI).title = ...
+            ['[All_Runs]_[Cond_' num2str(cond_list(cond_PPI).number) ']_[' ...
+            regexprep(cond_list(cond_PPI).name,' ','_') ']'];
+
+        if isfield(cond_list,'bf') && ~isempty(cond_list(cond_PPI).bf)
+            if cond_list(cond_PPI).bf == 2
+                contrasts(cond_PPI).title = ...
+                    [contrasts(cond_PPI).title '_[TimeDeriv]'];
+            elseif cond_list(cond_PPI).bf == 3
+                contrasts(cond_PPI).title = ...
+                    [contrasts(cond_PPI).title '_[DispDeriv]'];
+            end
+        end
+
+    else
+        contrasts(cond_PPI).title = cond_list(cond_PPI).file_name;
+    end
+
     contrasts(cond_PPI).weights = zeros(1,nCond);
     contrasts(cond_PPI).weights(1,cond_PPI) = 1;
 end
@@ -733,22 +833,62 @@ end
 
 %% ========================================================================
 
+%--------------------------------------------------------------------------
 % gPPI FIR for one subject (used in parfor across subjects)
-function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,sess,sess_num,nSess,PPI_num,PPI_sess,nROI)
+%--------------------------------------------------------------------------
+function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,nROI)
 
     ok = 0;
+
+    if ~isfield(tmfc,'session_mode')
+        session_mode = 'strict';
+    else
+        session_mode = tmfc.session_mode;
+    end
     
-    %=================[ Specify gPPI-FIR GLM ]=========================
+    %=====================[ Specify gPPI-FIR GLM ]=========================
     SPM = load(tmfc.subjects(iSub).path).SPM;
+
+    % Runs and PPI regressors for this subject
+    % ---------------------------------------------------------------------
+    if strcmp(session_mode,'repeated')
+
+        sess_num = 1:length(SPM.Sess);
+        nSess = length(sess_num);
+
+        cond_in_sess = true(nSess,nCond);
+
+    elseif strcmp(session_mode,'strict')
+
+        sess_num = unique([cond_list.sess]);
+        nSess = length(sess_num);
+
+        cond_in_sess = false(nSess,nCond);
+
+        for cond_PPI = 1:nCond
+            kSess = find(sess_num == cond_list(cond_PPI).sess,1);
+            cond_in_sess(kSess,cond_PPI) = true;
+        end
+
+    else
+        error('session_mode must be ''strict'' or ''repeated''.');
+    end
+
+    PPI_num = zeros(nSess,nCond);
+
+    for kSess = 1:nSess
+        jConds = find(cond_in_sess(kSess,:));
+        PPI_num(kSess,jConds) = 1:length(jConds);
+    end
 
     % Check if SPM.mat has concatenated sessions
     % (if spm_fmri_concatenate.m script was used)
     if size(SPM.nscan,2) == size(SPM.Sess,2)
-        SPM_concat(iSub) = 0;
+        SPM_concat = 0;
     else
-        SPM_concat(iSub) = 1;
+        SPM_concat = 1;
     end
-    concat(iSub).scans = SPM.nscan;
+    concat_scans = SPM.nscan;
 
     % Check rWLS
     rWLS = 0;
@@ -761,11 +901,7 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
             pause(0.1);
         end
         mkdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(jROI).name));
-        % Loop through conditions of interest
-        for cond_PPI = 1:nCond
-            PPI(cond_PPI) = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'PPIs',tmfc.subjects(iSub).name, ...
-                ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(jROI).name,' ','_') ']_' cond_list(cond_PPI).file_name '.mat']));
-        end
+
         % gPPI GLM batch
         matlabbatch{1}.spm.stats.fmri_spec.dir = {fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(jROI).name)};
         matlabbatch{1}.spm.stats.fmri_spec.timing.units = SPM.xBF.UNITS;
@@ -775,7 +911,7 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
         % Loop through sessions
         for kSess = 1:nSess
             % Functional files
-            if SPM_concat(iSub) == 0
+            if SPM_concat == 0
                 for image = 1:SPM.nscan(sess_num(kSess))
                     matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).scans{image,1} = [SPM.xY.VY(SPM.Sess(sess_num(kSess)).row(image)).fname ',' ...
                         num2str(SPM.xY.VY(SPM.Sess(sess_num(kSess)).row(image)).n(1))];
@@ -806,29 +942,88 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
             end
 
             % Add PPI regressors
-            for cond_PPI = 1:nCond
-                if cond_list(cond_PPI).sess == sess_num(kSess)
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_num(cond_PPI)).name = ['PPI_' PPI(cond_PPI).PPI.name];
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_num(cond_PPI)).val = PPI(cond_PPI).PPI.ppi;
+            jConds = find(cond_in_sess(kSess,:));
+
+            for ii = 1:length(jConds)
+
+                cond_PPI = jConds(ii);
+
+                % Repeated runs
+                if strcmp(session_mode,'repeated')
+
+                    cond = cond_list(cond_PPI).number;
+
+                    if isfield(cond_list,'pmod') && ~isempty(cond_list(cond_PPI).pmod)
+                        pmod = cond_list(cond_PPI).pmod;
+                    else
+                        pmod = 1;
+                    end
+
+                    if isfield(cond_list,'bf') && ~isempty(cond_list(cond_PPI).bf)
+                        bf = cond_list(cond_PPI).bf;
+                    else
+                        bf = 1;
+                    end
+
+                    cond_name = char(SPM.Sess(sess_num(kSess)).U(cond).name(pmod));
+
+                    file_name = ...
+                        ['[Run_' num2str(sess_num(kSess)) ']_[Cond_' num2str(cond) ']_[' ...
+                        regexprep(cond_name,' ','_') ']'];
+
+                    if bf == 2
+                        file_name = [file_name '_[TimeDeriv]'];
+                    elseif bf == 3
+                        file_name = [file_name '_[DispDeriv]'];
+                    end
+
+                    % Strict mode
+                else
+                    file_name = strrep(cond_list(cond_PPI).file_name,'[Sess_','[Run_');
                 end
+
+                file_new = fullfile(tmfc.project_path,'ROI_sets', ...
+                    tmfc.ROI_set(ROI_set_number).set_name,'PPIs', ...
+                    tmfc.subjects(iSub).name, ...
+                    ['PPI_[' regexprep(tmfc.ROI_set(ROI_set_number).ROIs(jROI).name,' ','_') ']_' ...
+                    file_name '.mat']);
+
+                % Backward compatibility
+                file_old = strrep(file_new,'[Run_','[Sess_');
+
+                if exist(file_new,'file')
+                    PPI = load(file_new);
+                elseif exist(file_old,'file')
+                    PPI = load(file_old);
+                else
+                    error('PPI file not found: %s',file_new);
+                end
+
+                PPI_id = PPI_num(kSess,cond_PPI);
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_id).name = ['PPI_' PPI.PPI.name];
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(PPI_id).val = PPI.PPI.ppi;
+
+                clear PPI
             end
 
             % Add PHYS regressors
+            nPPI_sess = sum(cond_in_sess(kSess,:));
             VOI = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'VOIs', ...
                 tmfc.subjects(iSub).name, ['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(jROI).name '_' num2str(sess_num(kSess)) '.mat']);
             tmp = load(VOI);
-            matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(sum(sess==sess_num(kSess))+1).name = ['Seed_' tmfc.ROI_set(ROI_set_number).ROIs(jROI).name];
+            matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(nPPI_sess+1).name = ['Seed_' tmfc.ROI_set(ROI_set_number).ROIs(jROI).name];
             if isfield(tmp,'Yraw')
-                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(sum(sess==sess_num(kSess))+1).val = tmp.Yraw;  % Use contrast-adjusted, unfiltered and unwhitened VOI time series 
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(nPPI_sess+1).val = tmp.Yraw;  % Use contrast-adjusted, unfiltered and unwhitened VOI time series 
             else
-                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(sum(sess==sess_num(kSess))+1).val = tmp.Y;     % Backward compatibility: old VOI files contain only Y (contrast-adjusted, filtered and whitened time series)
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(nPPI_sess+1).val = tmp.Y;     % Backward compatibility: old VOI files contain only Y (contrast-adjusted, filtered and whitened time series)
             end
             clear VOI tmp
 
             % Confounds
             for conf = 1:length(SPM.Sess(sess_num(kSess)).C.name)
-                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+sum(sess == sess_num(kSess))+1).name = SPM.Sess(sess_num(kSess)).C.name{1,conf};
-                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+sum(sess == sess_num(kSess))+1).val = SPM.Sess(sess_num(kSess)).C.C(:,conf);
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+nPPI_sess+1).name = SPM.Sess(sess_num(kSess)).C.name{1,conf};
+                matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).regress(conf+nPPI_sess+1).val = SPM.Sess(sess_num(kSess)).C.C(:,conf);
             end
 
             matlabbatch{1}.spm.stats.fmri_spec.sess(kSess).multi = {''};
@@ -912,7 +1107,8 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
 
             % Save PPI beta images
             for cond_PPI = 1:nCond
-                tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM);
+                tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI, ...
+                            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
             end
         end
 
@@ -937,17 +1133,13 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
         end
         
         % Save PPI beta matrices
-        SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
-        for cond_PPI = 1:nCond
-            ppi_matrix = squeeze(beta(PPI_num(cond_PPI) - 1 + SPM.Sess(PPI_sess(cond_PPI)).col(1) + SPM.Sess(PPI_sess(cond_PPI)).Fc(end).i(end),:,:));
-            ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
-            symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'ppi_matrix');
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
-                [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'symm_ppi_matrix');
-            clear ppi_matrix symm_ppi_matrix
-        end
+        SPM = load(fullfile(tmfc.project_path,'ROI_sets', ...
+            tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR', ...
+            tmfc.subjects(iSub).name, ...
+            tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
+
+        tmfc_save_gPPI_FIR_matrices(tmfc,ROI_set_number,iSub,beta, ...
+            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
     end
 
     % ROI-to-ROI analysis only --------------------------------------------
@@ -991,17 +1183,13 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
         end
 
         % Save PPI beta matrices
-        SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
-        for cond_PPI = 1:nCond
-            ppi_matrix = squeeze(beta(PPI_num(cond_PPI) - 1 + SPM.Sess(PPI_sess(cond_PPI)).col(1) + SPM.Sess(PPI_sess(cond_PPI)).Fc(end).i(end),:,:));
-            ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
-            symm_ppi_matrix =(ppi_matrix + ppi_matrix')/2;
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','asymmetrical', ...
-                [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'ppi_matrix');
-            save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR','ROI_to_ROI','symmetrical', ...
-                [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.mat']),'symm_ppi_matrix');
-            clear ppi_matrix symm_ppi_matrix
-        end
+        SPM = load(fullfile(tmfc.project_path,'ROI_sets', ...
+            tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR', ...
+            tmfc.subjects(iSub).name, ...
+            tmfc.ROI_set(ROI_set_number).ROIs(1).name,'SPM.mat')).SPM;
+
+        tmfc_save_gPPI_FIR_matrices(tmfc,ROI_set_number,iSub,beta, ...
+            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
     end
 
     % Seed-to-voxel analysis only -----------------------------------------
@@ -1032,7 +1220,8 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
 
             % Save PPI beta images
             for cond_PPI = 1:nCond
-                tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM);
+                tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI, ...
+                            PPI_num,cond_in_sess,sess_num,cond_list,SPM);
             end
         end
     end
@@ -1043,12 +1232,16 @@ function ok = tmfc_gPPI_FIR_one_sub(tmfc,ROI_set_number,iSub,cond_list,nCond,ses
     ok = 1;
 end
 
+%--------------------------------------------------------------------------
 % Save batches in parallel mode
+%--------------------------------------------------------------------------
 function tmfc_parsave_batch(fname,matlabbatch)
     save(fname, 'matlabbatch')
 end
 
+%--------------------------------------------------------------------------
 % Estimate rWLS gPPI-FIR model
+%--------------------------------------------------------------------------
 function tmfc_rwls_gPPI_FIR(tmfc,ROI_set_number,iSub,jROI)
     SPM = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR',tmfc.subjects(iSub).name,tmfc.ROI_set(ROI_set_number).ROIs(jROI).name,'SPM.mat')).SPM;
     SPM.xVi.form = 'wls';
@@ -1063,17 +1256,239 @@ function tmfc_rwls_gPPI_FIR(tmfc,ROI_set_number,iSub,jROI)
     cd(original_dir);
 end
 
+%--------------------------------------------------------------------------
 % Save gPPI-FIR beta files
-function tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,PPI_sess,cond_list,SPM)
-    gPPI_FIR_path = fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR');
+%--------------------------------------------------------------------------
+function tmfc_save_gPPI_FIR_betas(tmfc,ROI_set_number,iSub,jROI,cond_PPI,PPI_num,cond_in_sess,sess_num,cond_list,SPM)
+
+    gPPI_FIR_path = fullfile(tmfc.project_path,'ROI_sets', ...
+        tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR');
+
     ROI_name = tmfc.ROI_set(ROI_set_number).ROIs(jROI).name;
-    beta_number = PPI_num(cond_PPI) - 1 + SPM.Sess(PPI_sess(cond_PPI)).col(1) + SPM.Sess(PPI_sess(cond_PPI)).Fc(end).i(end);
-    orig_path = fullfile(gPPI_FIR_path,tmfc.subjects(iSub).name,ROI_name,['beta_' num2str(beta_number,'%04.f') '.nii']);
-    new_path =  fullfile(gPPI_FIR_path,'Seed_to_voxel',ROI_name,[tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' cond_list(cond_PPI).file_name '.nii']);
-    copyfile(orig_path,new_path);                 
+
+    if ~isfield(tmfc,'session_mode')
+        session_mode = 'strict';
+    else
+        session_mode = tmfc.session_mode;
+    end
+
+    % Strict mode
+    % ---------------------------------------------------------------------
+    if strcmp(session_mode,'strict')
+
+        kSess = find(cond_in_sess(:,cond_PPI),1);
+
+        beta_number = PPI_num(kSess,cond_PPI) - 1 + ...
+            SPM.Sess(kSess).col(1) + SPM.Sess(kSess).Fc(end).i(end);
+
+        orig_path = fullfile(gPPI_FIR_path,tmfc.subjects(iSub).name,ROI_name, ...
+            ['beta_' num2str(beta_number,'%04.f') '.nii']);
+
+        new_path = fullfile(gPPI_FIR_path,'Seed_to_voxel',ROI_name, ...
+            [tmfc.subjects(iSub).name '_Contrast_' num2str(cond_PPI,'%04.f') '_' ...
+            cond_list(cond_PPI).file_name '.nii']);
+
+        copyfile(orig_path,new_path);
+
+    % Repeated runs
+    % ---------------------------------------------------------------------
+    elseif strcmp(session_mode,'repeated')
+
+        nSess = length(sess_num);
+        orig_paths = cell(1,nSess);
+
+        if isfield(cond_list,'bf') && ~isempty(cond_list(cond_PPI).bf)
+            bf = cond_list(cond_PPI).bf;
+        else
+            bf = 1;
+        end
+
+        for kSess = 1:nSess
+
+            beta_number = PPI_num(kSess,cond_PPI) - 1 + ...
+                SPM.Sess(kSess).col(1) + SPM.Sess(kSess).Fc(end).i(end);
+
+            orig_paths{kSess} = fullfile(gPPI_FIR_path, ...
+                tmfc.subjects(iSub).name,ROI_name, ...
+                ['beta_' num2str(beta_number,'%04.f') '.nii']);
+
+            file_name = ...
+                ['[Run_' num2str(sess_num(kSess)) ']_[Cond_' ...
+                num2str(cond_list(cond_PPI).number) ']_[' ...
+                regexprep(cond_list(cond_PPI).name,' ','_') ']'];
+
+            if bf == 2
+                file_name = [file_name '_[TimeDeriv]'];
+            elseif bf == 3
+                file_name = [file_name '_[DispDeriv]'];
+            end
+
+            new_path = fullfile(gPPI_FIR_path,'Seed_to_voxel',ROI_name, ...
+                [tmfc.subjects(iSub).name '_Contrast_' ...
+                num2str(cond_PPI,'%04.f') '_' file_name '.nii']);
+
+            copyfile(orig_paths{kSess},new_path);
+        end
+
+        % Equal-weight mean across runs
+        file_name = ...
+            ['[All_Runs]_[Cond_' num2str(cond_list(cond_PPI).number) ']_[' ...
+            regexprep(cond_list(cond_PPI).name,' ','_') ']'];
+
+        if bf == 2
+            file_name = [file_name '_[TimeDeriv]'];
+        elseif bf == 3
+            file_name = [file_name '_[DispDeriv]'];
+        end
+
+        V = spm_vol(orig_paths{1});
+        image = spm_read_vols(V);
+
+        for kSess = 2:nSess
+            image = image + spm_read_vols(spm_vol(orig_paths{kSess}));
+        end
+
+        image = image/nSess;
+
+        V.fname = fullfile(gPPI_FIR_path,'Seed_to_voxel',ROI_name, ...
+            [tmfc.subjects(iSub).name '_Contrast_' ...
+            num2str(cond_PPI,'%04.f') '_' file_name '.nii']);
+
+        V.descrip = ['gPPI-FIR beta: ' file_name];
+
+        spm_write_vol(V,image);
+
+    else
+        error('session_mode must be ''strict'' or ''repeated''.');
+    end
 end
 
+%--------------------------------------------------------------------------
+% Save gPPI-FIR matrices
+%--------------------------------------------------------------------------
+function tmfc_save_gPPI_FIR_matrices(tmfc,ROI_set_number,iSub,beta, ...
+    PPI_num,cond_in_sess,sess_num,cond_list,SPM)
+
+    gPPI_FIR_path = fullfile(tmfc.project_path,'ROI_sets', ...
+        tmfc.ROI_set(ROI_set_number).set_name,'gPPI_FIR');
+
+    nCond = length(cond_list);
+
+    if ~isfield(tmfc,'session_mode')
+        session_mode = 'strict';
+    else
+        session_mode = tmfc.session_mode;
+    end
+
+    for cond_PPI = 1:nCond
+
+        % Strict mode
+        % -----------------------------------------------------------------
+        if strcmp(session_mode,'strict')
+
+            kSess = find(cond_in_sess(:,cond_PPI),1);
+
+            beta_number = PPI_num(kSess,cond_PPI) - 1 + ...
+                SPM.Sess(kSess).col(1) + SPM.Sess(kSess).Fc(end).i(end);
+
+            ppi_matrix = squeeze(beta(beta_number,:,:));
+            ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
+
+            symm_ppi_matrix = (ppi_matrix + ppi_matrix')/2;
+
+            save(fullfile(gPPI_FIR_path,'ROI_to_ROI','asymmetrical', ...
+                [tmfc.subjects(iSub).name '_Contrast_' ...
+                num2str(cond_PPI,'%04.f') '_' ...
+                cond_list(cond_PPI).file_name '.mat']),'ppi_matrix');
+
+            save(fullfile(gPPI_FIR_path,'ROI_to_ROI','symmetrical', ...
+                [tmfc.subjects(iSub).name '_Contrast_' ...
+                num2str(cond_PPI,'%04.f') '_' ...
+                cond_list(cond_PPI).file_name '.mat']),'symm_ppi_matrix');
+
+        % Repeated runs
+        % -----------------------------------------------------------------
+        elseif strcmp(session_mode,'repeated')
+
+            nSess = length(sess_num);
+            ppi_matrix_all = [];
+
+            if isfield(cond_list,'bf') && ~isempty(cond_list(cond_PPI).bf)
+                bf = cond_list(cond_PPI).bf;
+            else
+                bf = 1;
+            end
+
+            for kSess = 1:nSess
+
+                beta_number = PPI_num(kSess,cond_PPI) - 1 + ...
+                    SPM.Sess(kSess).col(1) + SPM.Sess(kSess).Fc(end).i(end);
+
+                ppi_matrix = squeeze(beta(beta_number,:,:));
+                ppi_matrix(1:size(ppi_matrix,1)+1:end) = nan;
+
+                symm_ppi_matrix = (ppi_matrix + ppi_matrix')/2;
+
+                file_name = ...
+                    ['[Run_' num2str(sess_num(kSess)) ']_[Cond_' ...
+                    num2str(cond_list(cond_PPI).number) ']_[' ...
+                    regexprep(cond_list(cond_PPI).name,' ','_') ']'];
+
+                if bf == 2
+                    file_name = [file_name '_[TimeDeriv]'];
+                elseif bf == 3
+                    file_name = [file_name '_[DispDeriv]'];
+                end
+
+                save(fullfile(gPPI_FIR_path,'ROI_to_ROI','asymmetrical', ...
+                    [tmfc.subjects(iSub).name '_Contrast_' ...
+                    num2str(cond_PPI,'%04.f') '_' file_name '.mat']),'ppi_matrix');
+
+                save(fullfile(gPPI_FIR_path,'ROI_to_ROI','symmetrical', ...
+                    [tmfc.subjects(iSub).name '_Contrast_' ...
+                    num2str(cond_PPI,'%04.f') '_' file_name '.mat']),'symm_ppi_matrix');
+
+                if kSess == 1
+                    ppi_matrix_all = ppi_matrix;
+                else
+                    ppi_matrix_all = ppi_matrix_all + ppi_matrix;
+                end
+            end
+
+            % Equal-weight mean across runs
+            ppi_matrix = ppi_matrix_all/nSess;
+            symm_ppi_matrix = (ppi_matrix + ppi_matrix')/2;
+
+            file_name = ...
+                ['[All_Runs]_[Cond_' num2str(cond_list(cond_PPI).number) ']_[' ...
+                regexprep(cond_list(cond_PPI).name,' ','_') ']'];
+
+            if bf == 2
+                file_name = [file_name '_[TimeDeriv]'];
+            elseif bf == 3
+                file_name = [file_name '_[DispDeriv]'];
+            end
+
+            save(fullfile(gPPI_FIR_path,'ROI_to_ROI','asymmetrical', ...
+                [tmfc.subjects(iSub).name '_Contrast_' ...
+                num2str(cond_PPI,'%04.f') '_' file_name '.mat']),'ppi_matrix');
+
+            save(fullfile(gPPI_FIR_path,'ROI_to_ROI','symmetrical', ...
+                [tmfc.subjects(iSub).name '_Contrast_' ...
+                num2str(cond_PPI,'%04.f') '_' file_name '.mat']),'symm_ppi_matrix');
+
+            clear ppi_matrix_all
+        else
+            error('session_mode must be ''strict'' or ''repeated''.');
+        end
+
+        clear ppi_matrix symm_ppi_matrix
+    end
+end
+
+%--------------------------------------------------------------------------
 % Waitbar for parallel mode
+%--------------------------------------------------------------------------
 function tmfc_parfor_waitbar(waitbarHandle,iterations,firstsub)
     persistent w nSub start_sub start_time count_sub 
     if nargin == 3

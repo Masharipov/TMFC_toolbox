@@ -104,55 +104,60 @@ clear SPM_check SPM_paths subject_paths
 
 %% Select ROIs
 
-% Use tmfc_select_ROIs_GUI to select ROIs
-%
-% The tmfc_select_ROIs_GUI function creates a group binary mask based on
-% first-level masks (SPM.VM) and applies it to all selected ROIs. Empty ROIs
-% will be removed. Masked ROIs will be limited to voxels that have 
-% data for all subjects. The dimensions, orientation, and voxel sizes of 
-% the masked ROI images will be adjusted according to the group binary mask
-%
+% Define ROI set
+ROI_definition.set_name = '100_ROIs';
+ROI_definition.type = 'binary_images';
+ROI_definition.crop_threshold = [];
+
+% Define ROI names and paths
+ROI_dir = fullfile(data.stat_path,'ROI_masks');
+ROI_paths = spm_select('FPList',ROI_dir,'.*\.nii$');
+
+for iROI = 1:size(ROI_paths,1)
+    [~, ROI_name, ~] = fileparts(deblank(ROI_paths(iROI,:)));
+    ROI_definition.ROIs(iROI).name = ROI_name;
+    ROI_definition.ROIs(iROI).path = deblank(ROI_paths(iROI,:));
+end
+
+% Create ROI set
+[ROI_set] = tmfc_create_ROI_set(tmfc,ROI_definition);
+tmfc.ROI_set(1) = ROI_set;
+
+% Alternatively, use tmfc_select_ROIs_GUI to select ROIs via GUI:
 % 1) Enter a name for the ROI set: "100_ROIs"
 % 2) Select ROI set type: binary images
 % 3) Go to ROI_masks subfolder and select 100 ROIs
-
-[ROI_set] = tmfc_select_ROIs_GUI(tmfc);
-tmfc.ROI_set(1) = ROI_set;
+% [ROI_set] = tmfc_select_ROIs_GUI(tmfc);
+% tmfc.ROI_set(1) = ROI_set;
 
 clear ROI_set
 
 
 %% LSS regression
 
-% Define conditions of interest (see tmfc_conditions_GUI, nested function:
-% [cond_list] = generate_conditions(SPM_path))
-%
-% tmfc.LSS.conditions(1).sess   = 1; (see SPM.Sess)   
-% tmfc.LSS.conditions(1).number = 1; (see SPM.Sess.U)
-% tmfc.LSS.conditions(1).name = 'Task_A'; (see SPM.Sess.U.name)
-% tmfc.LSS.conditions(1).file_name = '[Sess_1]_[Cond_1]_[Task_A]';  (i.e.: ['[Sess_' num2str(iSess) ']_[Cond_' num2str(jCond) ']_[' regexprep(char(SPM.Sess(iSess).U(jCond).name(1)),' ','_') ']'];)
-% tmfc.LSS.conditions(2).sess   = 1;
-% tmfc.LSS.conditions(2).number = 2;
-% tmfc.LSS.conditions(2).name = 'Task_B';
-% tmfc.LSS.conditions(2).file_name = '[Sess_1]_[Cond_2]_[Task_B]';  
-
-% Alternatively, use tmfc_conditions_GUI to select conditions of interest
-[conditions] = tmfc_conditions_GUI(tmfc.subjects(1).path,3);
+% Define conditions of interest
+condition_names = {'Task_A','Task_B'};
+bf = 1; % Basis functions: canonical HRF only
+conditions = tmfc_get_conditions(tmfc.subjects(1).path,condition_names,bf);
 tmfc.LSS.conditions = conditions;
+
+% Alternatively, use tmfc_conditions_GUI to select conditions of interest via GUI
+% [conditions] = tmfc_conditions_GUI(tmfc.subjects(1).path,3);
+% tmfc.LSS.conditions = conditions;
 
 % Run LSS regression
 start_sub = 1;                      % Start from the 1st subject
 [sub_check] = tmfc_LSS(tmfc,start_sub);
 
-clear conditions
+clear conditions condition_names
 
 
 %% BSC-LSS
 
 % Extract and correlate average beta series for conditions of interest
-% First eigenvariate is extracted by default
-% To extract mean beta series, enter the following line: 
-% tmfc.ROI_set(ROI_set_number).BSC = 'mean';
+% Mean beta series is extracted by default
+% To extract the first eigenvariate, enter the following line:
+% tmfc.ROI_set(ROI_set_number).BSC = 'first_eigenvariate';
 
 ROI_set_number = 1;                 % Select ROI set
 [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number);
@@ -167,8 +172,14 @@ ROI_set_number = 1;                 % Select ROI set
 % beta_scrubbing_options.time_window = 12;      % Time window from trial onset in seconds
 % beta_scrubbing_options.min_flagged_TRs = 1;   % Minimum number of flagged TRs required to remove beta
 %
+% If FD.mat files (calculated using TMFC_denoise) are unavailable,
+% motion regressors can also be defined:
+% motion_options.translation_idx = [1 2 3];
+% motion_options.rotation_idx = [4 5 6];
+% motion_options.rotation_unit = 'rad';
+%
 % Then run:
-% [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,1,1,beta_scrubbing_options);
+% [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number,1,1,beta_scrubbing_options,motion_options);
 %
 % In this command-window example beta scrubbing is intentionally turned off:
 % [sub_check,contrasts] = tmfc_BSC(tmfc,ROI_set_number);
@@ -177,7 +188,7 @@ ROI_set_number = 1;                 % Select ROI set
 % this example dataset does not include head motion regressors in the
 % first-level GLMs, so FD-based beta scrubbing is not demonstrated here.
 % Beta scrubbing is intended for real datasets with motion parameters
-% available in SPM.Sess.C.C or in previously calculated FD.mat files (calculated using TMFC_denoise).
+% available in SPM.Sess.C.C or in previously calculated FD.mat files.
 
 % Update contrasts info
 % The tmfc_BSC function creates default contrasts for each
@@ -273,9 +284,9 @@ tmfc.LSS_after_FIR.conditions = tmfc.LSS.conditions;
 %% BSC-LSS after FIR task regression (use residual time series)
 
 % Extract and correlate average beta series for conditions of interest
-% First eigenvariate is extracted by default
-% To extract mean beta series, enter the following line: 
-% tmfc.ROI_set(ROI_set_number).BSC_after_FIR = 'mean';
+% Mean beta series is extracted by default
+% To extract the first eigenvariate, enter the following line:
+% tmfc.ROI_set(ROI_set_number).BSC_after_FIR = 'first_eigenvariate';
 
 ROI_set_number = 1;                 % Select ROI set
 [sub_check,contrasts] = tmfc_BSC_after_FIR(tmfc,ROI_set_number);
@@ -339,9 +350,19 @@ clear type contrasts contrast_number
 
 %% gPPI
 
-% Define conditions of interest (see tmfc_conditions_GUI, nested function:
-% [cond_list] = generate_conditions(SPM_path)):
-%
+% Define conditions of interest
+condition_names = {'Task_A','Task_B'};
+conditions = tmfc_get_conditions(tmfc.subjects(1).path,condition_names,1);
+tmfc.ROI_set(ROI_set_number).gPPI.conditions = conditions;
+
+% Alternatively, use tmfc_conditions_GUI to select conditions of interest via GUI
+% [conditions] = tmfc_conditions_GUI(tmfc.subjects(1).path,2);
+% tmfc.ROI_set(ROI_set_number).gPPI.conditions = conditions;
+
+clear conditions condition_names
+
+%==========================================================================
+% Example of the conditions structure (see tmfc_get_conditions):
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).sess   = 1; (see SPM.Sess)   
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).number = 1; (see SPM.Sess.U)
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(1).pmod   = 1; (see SPM.Sess.U.P)
@@ -436,11 +457,8 @@ clear type contrasts contrast_number
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).bf     = 3;
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).name = 'Task_B';
 % tmfc.ROI_set(ROI_set_number).gPPI.conditions(6).file_name = '[Sess_1]_[Cond_2]_[Task_B]_[DispDeriv]';
+%==========================================================================
 
-% Alternatively, use tmfc_conditions_GUI to select conditions of interest
-[conditions] = tmfc_conditions_GUI(tmfc.subjects(1).path,2);
-tmfc.ROI_set(ROI_set_number).gPPI.conditions = conditions;
-clear conditions
 
 % VOI extraction
 [sub_check] = tmfc_VOI(tmfc,ROI_set_number,start_sub);

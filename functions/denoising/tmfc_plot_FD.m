@@ -12,7 +12,7 @@ function FDthr = tmfc_plot_FD(FD,options,SPM_paths,subject_paths,anat_paths,func
 % Allows saving group FD statistics and TMFC denoise settings.
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -50,7 +50,7 @@ FD_MW_panel_1 = uipanel(FD_MW,'Units','normalized','Position',[0.075 0.15 0.48 0
 FD_MW_panel_2 = uipanel(FD_MW,'Units','normalized','Position',[0.57 0.15 0.356 0.22],'HighLightColor',[0.78 0.78 0.78],'BackgroundColor','w','BorderType','line');
 FD_MW_info_box = uicontrol(FD_MW,'Style','text','String',[],'Units','normalized','Position',[0.09 0.160 0.45 0.2],'fontunits','normalized','FontSize',0.09*fontscale,'HorizontalAlignment','left','backgroundcolor','w');
 FD_MW_threshold = uicontrol(FD_MW,'Style','pushbutton','String','Set FD threshold [mm]:','Units','normalized','Position',[0.66 0.27 0.18 0.050],'FontUnits','normalized','FontSize',0.34,'callback',@get_FDthr);
-FD_MW_thres_edit = uicontrol(FD_MW,'Style','Edit','String','0.5','Units','normalized','Position',[0.66 0.20 0.18 0.050],'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w');
+FD_MW_thres_edit = uicontrol(FD_MW,'Style','Edit','String','0.5','Units','normalized','Position',[0.66 0.20 0.18 0.050],'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w','Callback',@get_FDthr);
 FD_MW_note_txt = uicontrol(FD_MW,'Style','text','String',note_str,'Units','normalized','Position',[0.075 0.06 0.85 0.078],'fontunits','normalized','FontSize',0.22*fontscale,'HorizontalAlignment','left','backgroundcolor','w','Visible',spikenote);
 FD_MW_OK = uicontrol(FD_MW,'Style','pushbutton','String','OK','Units','normalized','Position',[0.30 0.03 0.15 0.045],'FontUnits','normalized','FontSize',0.34,'callback',@confirm_FDthr);
 FD_MW_SAVE = uicontrol(FD_MW,'Style','pushbutton','String','Save','Units','normalized','Position',[0.55 0.03 0.15 0.045],'FontUnits','normalized','FontSize',0.34,'callback',@save_data);
@@ -118,8 +118,8 @@ function plot_data(FD_threshold,iSub)
     FD_ts = []; sess_sum = 0; sess = 0;
     for jSess = 1:length(FD(iSub).Sess)
         FD_ts = [FD_ts; FD(iSub).Sess(jSess).FD_ts];
-        sess_sum = sess_sum + length(FD(iSub).Sess(jSess).FD_ts) + 1;
-        sess = [sess; sess_sum];
+        sess_sum = sess_sum + length(FD(iSub).Sess(jSess).FD_ts);
+        sess = [sess; sess_sum + 1];
     end
 
     % Plot FD time-series

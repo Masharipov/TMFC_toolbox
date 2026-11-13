@@ -1,16 +1,16 @@
- function [SPM_paths, subject_paths, SPM_subfolder] = tmfc_select_subjects_GUI(SPM_check)
+ function [SPM_paths, subject_paths, SPM_subfolder, session_mode] = tmfc_select_subjects_GUI(SPM_check)
 
 % ========= Task-Modulated Functional Connectivity (TMFC) toolbox =========
 %
 % Opens a GUI window for selecting individual subject SPM.mat files
 % created by SPM after first level GLM estimation. Optionally checks
 % SPM.mat files: 
-% (1) checks if all SPM.mat files are present in the specified paths
-% (2) checks if the same conditions are specified in all SPM.mat files
+% (1) checks if all SPM.mat and mask.nii files are present in the specified paths
+% (2) checks if the same conditions and HRF basis functions are specified in all SPM.mat files
 % (3) checks if output folders specified in SPM.mat files exist
 % (4) checks if functional files specified in SPM.mat files exist
 %
-% FORMAT [paths] = tmfc_select_subjects_GUI(SPM_check)
+% FORMAT [SPM_paths, subject_paths, SPM_subfolder, session_mode] = tmfc_select_subjects_GUI(SPM_check)
 %
 %   Inputs: 
 %   SPM_check         - 0 or 1 (don't check or check SPM.mat files)
@@ -19,9 +19,12 @@
 %   SPM_paths         - Full paths to selected SPM.mat files
 %   subject_paths     - Paths to selected subjects
 %   SPM_subfolder     - Subfolder for SPM.mat files
+%   session_mode      - 'strict' or 'repeated'
+%                       'strict'   - same number of runs (SPM sessions) and matching conditions across subjects
+%                       'repeated' - different numbers of exchangeable runs with the same conditions in each run
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -60,6 +63,7 @@ subject_full_path = {};       % Variable to store full paths
 SPM_mat_path = {};            % Variable to store subfolder for SPM.mat file
 selected_sub = {};            % Variable to store the selected list of paths (as INDEX)
 add_new_subs = {};            % Variable used to add new subjects
+session_mode = 'strict';
 
 %--------------------------------------------------------------------------
 % Select subjects from the list
@@ -150,10 +154,10 @@ function add_new(~,~)
                         
             subject_full_path = vertcat(subject_full_path, add_subs_full_path);   % Joining existing list of subjects with new subjects
             new_subs_count = size(unique(subject_full_path)) - subs_exist;        % Removing duplicates
-            subject_full_path = unique(subject_full_path);
+            subject_full_path = unique(subject_full_path,'stable');
             
             subject_paths_tmp = vertcat(subject_paths_tmp, add_new_subs);
-            subject_paths_tmp = unique(subject_paths_tmp);
+            subject_paths_tmp = unique(subject_paths_tmp,'stable');
 
             if new_subs_count(1) == 0
                 fprintf(2,'TMFC Subjects: Newly selected subjects are already present in the list, no new subjects added. \n');
@@ -225,12 +229,12 @@ function open_help(~,~)
         '      │  │  ├─ *T1*.nii'
         '      │  │  └─ *T1*.nii derivatives'
         '      │  ├─ func/'
-        '      │  │  ├─ sess-01/'
+        '      │  │  ├─ run-01/'
         '      │  │  │  ├─ Unprocessed functional files (*.nii)'
         '      │  │  │  └─ Preprocessed functional files:'
         '      │  │  │       ◦ smoothed + norm. + real. (e.g., swar*.nii)'
         '      │  │  │       ◦ unsmoothed + norm. + real. (e.g., war*.nii)' 
-        '      │  │  └─ sess-02/ ...'
+        '      │  │  └─ run-02/ ...'
         '      │  └─ stat/              # first-level models (one folder per GLM)'
         '      │     ├─ GLM-01/'
         '      │     │  ├─ SPM.mat  <-------------- [Select the SPM.mat file for the first subject]  (2)'
@@ -288,12 +292,12 @@ function open_help(~,~)
         '   │  │  │  ├─ *T1*.nii  '
         '   │  │  │  └─ *T1*.nii derivatives'
         '   │  │  └─ func/'
-        '   │  │     ├─ sess-01/'
+        '   │  │     ├─ run-01/'
         '   │  │     │  ├─ Unprocessed functional files (*.nii)'
         '   │  │     │  └─ Preprocessed functional files (*.nii):'
         '   │  │     │     ◦ smoothed + normalized + realigned'
         '   │  │     │     ◦ unsmoothed + normalized + realigned'
-        '   │  │     └─ sess-02/ ...'
+        '   │  │     └─ run-02/ ...'
         '   │  └─ sub-02/ ...'
         '   └─ firstlevel-spm/'
         '      ├─ sub-01/   <------------------------------------------- [Select subject folder #1]  (1)'
@@ -368,16 +372,16 @@ function confirm_paths(~,~)
         
         % Check SPM.mat files
         if SPM_check == 1              
-            % Stage 1 - Check SPM.mat files existence
+            % Stage 1 - Check SPM.mat and mask.nii files existence
             [file_exist,subject_file_exist] = check_file_exist(subject_full_path,subject_paths_tmp);        
             if size(file_exist,1) == 0
-            	fprintf(2,'TMFC Subjects: (Stage 1 Check Failed) - Selected SPM.mat files are missing from the directories. Please try again.\n');
+            	fprintf(2,'TMFC Subjects: (Stage 1 Check Failed) - Selected SPM.mat or mask.nii files are missing from the directories. Please try again.\n');
                 reset_paths();
             else                
-                % Stage 2 - Check task conditions
-                [file_correct,subject_file_correct] = check_file_cond(file_exist,subject_file_exist);          
+                % Stage 2 - Check conditions and HRF basis functions specified in SPM.mat files
+                [file_correct,subject_file_correct,session_mode] = check_file_cond(file_exist,subject_file_exist);          
                 if size(file_correct,1) == 0
-                    fprintf(2,'TMFC Subjects: (Stage 2 Check Failed) - Selected SPM.mat files have different task conditions and/or number of sessions. Please select SPM.mat files with the same task conditions and number of sessions.\n');
+                    fprintf(2,'TMFC Subjects: (Stage 2 Check Failed) - Selected SPM.mat files have incompatible task conditions or HRF basis functions.\n');
                     reset_paths();
                 else                    
                     % Stage 3 - Check output directories 
@@ -441,32 +445,57 @@ function subject_dir = add_subjects(~,~)
     for iSub = 1:size(subjects,1)
     	subject_dir = vertcat(subject_dir, deblank(subjects(iSub,:)));
     end
-    subject_dir = unique(subject_dir);
+    subject_dir = unique(subject_dir,'stable');
 end              
 
 %% Select SPM.mat file
 function [subject_full_path, SPM_mat_path] = add_mat_file(subject_dir)
-    subject_full_path = {};  SPM_mat_path = {};
-    [mat_file_path] = spm_select( 1,'^SPM\.mat$','Select the SPM.mat file for the first subject',{}, strtrim(subject_dir(1,:)), 'SPM.*');
-    if ~isempty(mat_file_path)
-        [SPM_mat_path] = strrep(mat_file_path, strtrim(subject_dir(1,:)),'');   
-    end
-        
-    for iSub = 1:size(subject_dir,1)
-    	subject_full_path =  vertcat(subject_full_path,strcat(char(subject_dir(iSub,:)),char(SPM_mat_path)));
-    end
-end 
 
-%% Check SPM.mat files existence
+    subject_full_path = {};
+    SPM_mat_path = {};
+
+    mat_file_path = spm_select(1,'^SPM\.mat$','Select the SPM.mat file for the first subject',{}, strtrim(subject_dir{1}),'SPM.*');
+
+    if isempty(mat_file_path)
+        return;
+    end
+
+    mat_file_path = strtrim(mat_file_path);
+
+    % Find which selected subject folder contains the SPM.mat file
+    for iSub = 1:numel(subject_dir)
+        base = strtrim(subject_dir{iSub});
+        if base(end) == filesep
+            base(end) = [];
+        end
+        prefix = [base filesep];
+        if strncmpi(mat_file_path,prefix,numel(prefix))
+            SPM_mat_path = mat_file_path(numel(base)+1:end);
+            break;
+        end
+    end
+
+    if isempty(SPM_mat_path)
+        fprintf(2,'Selected SPM.mat is outside the selected subject folders.\n');
+        return;
+    end
+
+    % Construct SPM.mat paths for all subjects
+    for iSub = 1:numel(subject_dir)
+        subject_full_path{end+1,1} = fullfile(strtrim(subject_dir{iSub}),SPM_mat_path(2:end));
+    end
+end
+
+%% Check SPM.mat and mask.nii files existence
 function [file_exist,subject_file_exist] = check_file_exist(subject_full_path,subject_paths_tmp)
 
     file_exist = {};
     file_not_exist = {};   
     subject_file_exist = {};
     
-    % Check if SPM.mat files exist
+    % Check if SPM.mat and mask.nii files exist
     for iSub = 1:length(subject_full_path) 
-        if exist(subject_full_path{iSub}, 'file')
+        if exist(subject_full_path{iSub}, 'file') && exist(fullfile(fileparts(subject_full_path{iSub}),'mask.nii'),'file') 
             file_exist{iSub,1} = subject_full_path{iSub};
             subject_file_exist{iSub,1} = subject_paths_tmp{iSub};
         else
@@ -484,12 +513,12 @@ function [file_exist,subject_file_exist] = check_file_exist(subject_full_path,su
         file_not_exist = file_not_exist(~cellfun('isempty',file_not_exist)); 
     end
     
-    % Show missing SPM.mat files
+    % Show missing SPM.mat or mask.nii files
     if length(file_exist) ~= length(subject_full_path)      
     	% SS_WW = select subjects warning window
         SS_WW1 = figure('Name', 'Select subjects', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.26 0.35 0.28], 'color', 'w','MenuBar', 'none','ToolBar', 'none');
         SS_WW_LB = uicontrol(SS_WW1, 'Style', 'listbox', 'String', file_not_exist,'Max',inf,'Units', 'normalized', 'Position',[0.032 0.250 0.940 0.520],'FontUnits','points','FontSize',10);
-        SS_WW_S1 = uicontrol(SS_WW1,'Style','text','String', 'Warning, the following SPM.mat files are missing:','Units', 'normalized', 'Position',[0.15 0.820 0.720 0.095], 'FontUnits','normalized','FontSize',0.5,'backgroundcolor', 'w');
+        SS_WW_S1 = uicontrol(SS_WW1,'Style','text','String', 'Warning, the following subjects have missing SPM.mat or mask.nii files:','Units', 'normalized', 'Position',[0.15 0.820 0.720 0.095], 'FontUnits','normalized','FontSize',0.5,'backgroundcolor', 'w');
         SS_WW_close = uicontrol(SS_WW1,'Style','pushbutton', 'String', 'OK','Units', 'normalized',  'Position',[0.415 0.06 0.180 0.120] ,'FontUnits','normalized','FontSize',0.30,'callback', @close_SS_WW);
         movegui(SS_WW1,'center');
         uiwait(SS_WW1);
@@ -500,52 +529,109 @@ function [file_exist,subject_file_exist] = check_file_exist(subject_full_path,su
     end   
 end
 
-%% Check conditions specified in SPM.mat files
-function [file_correct,subject_file_correct] = check_file_cond(file_exist,subject_file_exist)
+%% Check conditions and HRF basis functions specified in SPM.mat files
+function [file_correct,subject_file_correct,session_mode] = check_file_cond(file_exist,subject_file_exist)
     
     file_incorrect = {};
     file_correct = {};
     subject_file_correct = {};
+    session_mode = 'strict';
     
     if length(file_exist) > 1
 
-        w = waitbar(0,'Check conditions','Name','Check SPM.mat files');
+        w = waitbar(0,'Check conditions and HRF basis functions','Name','Check SPM.mat files');
 
-        % Reference SPM.mat file
-        file_correct{1,1} = file_exist{1};
-        subject_file_correct{1,1} = subject_file_exist{1};
-        SPM_ref = load(file_exist{1});
-
-        % Reference structure for conditions
-        for iSess = 1:length(SPM_ref.SPM.Sess)
-            cond_ref(iSess).sess = struct('name', {SPM_ref.SPM.Sess(iSess).U(:).name});
-        end
-
-        % Start check
-        for iSub = 2:length(file_exist)
-            
-            % SPM.mat file to check
+        % Check number of runs (SPM sessions)
+        nSess = zeros(length(file_exist),1);
+        for iSub = 1:length(file_exist)
             SPM = load(file_exist{iSub}).SPM;
-
-            % Structure for conditions to check
-            for jSess = 1:length(SPM.Sess)
-                cond(jSess).sess = struct('name', {SPM.Sess(jSess).U(:).name});
-            end 
-
-            if ~isequaln(cond_ref, cond)
-                file_incorrect{iSub,1} = file_exist{iSub};
-            else
-                file_correct{iSub,1} = file_exist{iSub};
-                subject_file_correct{iSub,1} = subject_file_exist{iSub};
-            end
-
-            try
-                waitbar(iSub/length(file_exist),w);
-            end
-
-            clear SPM cond
+            nSess(iSub) = length(SPM.Sess);
         end
-        
+
+        % =================================================================
+        % STRICT MODE: all subjects have the same number of runs
+        % =================================================================
+        if length(unique(nSess)) == 1
+
+            % Reference SPM.mat file
+            file_correct{1,1} = file_exist{1};
+            subject_file_correct{1,1} = subject_file_exist{1};
+            SPM_ref = load(file_exist{1});
+            basis_ref = strtrim(SPM_ref.SPM.xBF.name);
+    
+            % Reference structure for conditions
+            for iSess = 1:length(SPM_ref.SPM.Sess)
+                cond_ref(iSess).sess = struct('name', {SPM_ref.SPM.Sess(iSess).U(:).name});
+            end
+    
+            % Start check
+            for iSub = 2:length(file_exist)
+                
+                % SPM.mat file to check
+                SPM = load(file_exist{iSub}).SPM;
+    
+                % Structure for conditions to check
+                for jSess = 1:length(SPM.Sess)
+                    cond(jSess).sess = struct('name', {SPM.Sess(jSess).U(:).name});
+                end 
+    
+                if ~isequaln(cond_ref,cond) || ~strcmpi(strtrim(SPM.xBF.name),basis_ref)
+                    file_incorrect{iSub,1} = file_exist{iSub};
+                else
+                    file_correct{iSub,1} = file_exist{iSub};
+                    subject_file_correct{iSub,1} = subject_file_exist{iSub};
+                end
+    
+                try
+                    waitbar(iSub/length(file_exist),w);
+                end
+    
+                clear SPM cond
+            end
+        % =================================================================
+        % REPEATED MODE: subjects have different numbers of runs
+        % =================================================================
+        else
+
+            % First run of the first subject is used as reference
+            SPM_ref = load(file_exist{1}).SPM;
+            cond_ref = struct('name', {SPM_ref.Sess(1).U(:).name});
+            basis_ref = strtrim(SPM_ref.xBF.name);
+
+            % Every run of every subject must have the same conditions
+            for iSub = 1:length(file_exist)
+
+                SPM = load(file_exist{iSub}).SPM;
+                cond_match = 1;
+
+                if ~strcmpi(strtrim(SPM.xBF.name),basis_ref)
+                    cond_match = 0;
+                end
+                
+                if cond_match == 1
+                    for iSess = 1:length(SPM.Sess)
+                        cond = struct('name', {SPM.Sess(iSess).U(:).name});
+                        if ~isequaln(cond_ref, cond)
+                            cond_match = 0;
+                            break
+                        end
+                    end
+                end
+
+                if cond_match == 0
+                    file_incorrect{iSub,1} = file_exist{iSub};
+                else
+                    file_correct{iSub,1} = file_exist{iSub};
+                    subject_file_correct{iSub,1} = subject_file_exist{iSub};
+                end
+
+                try
+                    waitbar(iSub/length(file_exist),w);
+                end
+
+                clear SPM cond
+            end
+        end
     else
         file_correct = file_exist;
         subject_file_correct = subject_file_exist;
@@ -569,10 +655,96 @@ function [file_correct,subject_file_correct] = check_file_cond(file_exist,subjec
         if isunix; fontscale = 0.85; else; fontscale = 1; end
         SS_WW2 = figure('Name', 'Select subjects', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.32 0.30 0.35 0.28], 'color', 'w','MenuBar', 'none','ToolBar', 'none');
         SS_WW_LB = uicontrol(SS_WW2, 'Style', 'listbox', 'String', file_incorrect,'Max',inf,'Units', 'normalized', 'Position',[0.032 0.250 0.940 0.520],'FontUnits','points','FontSize',10);
-        SS_WW_S1 = uicontrol(SS_WW2,'Style','text','String', 'Warning, the following SPM.mat files have different conditions specified:','Units', 'normalized', 'Position',[0.15 0.820 0.720 0.095], 'FontUnits','normalized','FontSize',0.5*fontscale,'backgroundcolor', 'w');
+        SS_WW_S1 = uicontrol(SS_WW2, 'Style', 'text', ...
+            'String', {'Warning, the following SPM.mat files have', ...
+            'different conditions or HRF basis functions specified:'}, ...
+            'Units', 'normalized', ...
+            'Position', [0.08 0.80 0.84 0.16], ...
+            'FontUnits', 'points', 'FontSize', 10, ...
+            'HorizontalAlignment', 'center', ...
+            'backgroundcolor', 'w');
         SS_WW_close = uicontrol(SS_WW2,'Style','pushbutton', 'String', 'OK','Units', 'normalized',  'Position',[0.415 0.06 0.180 0.120] ,'FontUnits','normalized','FontSize',0.30,'callback', @close_SS_WW);
         movegui(SS_WW2,'center');
         uiwait(SS_WW2);
+    end
+
+    % Check whether subjects remaining after condition/basis check still have different numbers of runs
+    if length(file_correct) > 1
+
+        nSess_correct = zeros(length(file_correct),1);
+
+        for iSub = 1:length(file_correct)
+            SPM = load(file_correct{iSub}).SPM;
+            nSess_correct(iSub) = length(SPM.Sess);
+        end
+
+        if length(unique(nSess_correct)) > 1
+
+%             answer = questdlg(sprintf([ ...
+%                 'Different numbers of runs (SPM sessions) were detected.\n\n' ...
+%                 'TMFC can analyze these subjects together only if the runs are repeated ' ...
+%                 'acquisitions of the same experimental design/context and can be treated as exchangeable.\n\n' ...
+%                 'Between-run contrasts are not supported in this case.\n\n' ...
+%                 'Continue?']), ...
+%                 'Different numbers of runs', ...
+%                 'Continue','Cancel','Continue');
+
+                answer = 'Cancel';
+    
+                SS_WW5 = figure('Name', 'Different numbers of runs', 'NumberTitle', 'off', ...
+                    'Units', 'normalized', 'Position', [0.32 0.30 0.36 0.27], ...
+                    'Color', 'w', 'MenuBar', 'none', 'ToolBar', 'none', ...
+                    'WindowStyle', 'Modal', 'CloseRequestFcn', @cancel_runs);
+                
+                SS_WW_S1 = uicontrol(SS_WW5, 'Style', 'text', ...
+                    'String', { ...
+                    'Different numbers of runs (SPM sessions) were detected.' ...
+                    '' ...
+                    'TMFC can analyze these subjects together only if the runs are repeated acquisitions of the same experimental design/context and can be treated as exchangeable.' ...
+                    '' ...
+                    'Between-run contrasts are not supported in this case.' ...
+                    '' ...
+                    'Continue?'}, ...
+                    'Units', 'normalized', 'Position', [0.07 0.25 0.86 0.66], ...
+                    'BackgroundColor', 'w', 'HorizontalAlignment', 'center', ...
+                    'FontUnits', 'points', 'FontSize', 12);
+                
+                SS_WW_continue = uicontrol(SS_WW5, 'Style', 'pushbutton', ...
+                    'String', 'Continue', 'Units', 'normalized', ...
+                    'Position', [0.25 0.07 0.20 0.11], ...
+                    'FontUnits', 'points', 'FontSize', 11, ...
+                    'Callback', @continue_runs);
+                
+                SS_WW_cancel = uicontrol(SS_WW5, 'Style', 'pushbutton', ...
+                    'String', 'Cancel', 'Units', 'normalized', ...
+                    'Position', [0.55 0.07 0.20 0.11], ...
+                    'FontUnits', 'points', 'FontSize', 11, ...
+                    'Callback', @cancel_runs);
+                
+                movegui(SS_WW5,'center');
+                uicontrol(SS_WW_continue);
+                uiwait(SS_WW5);
+
+            if strcmp(answer,'Continue')
+                session_mode = 'repeated';
+            else
+                file_correct = {};
+                subject_file_correct = {};
+            end
+
+        end
+    end
+
+    function continue_runs(~,~)
+        answer = 'Continue';
+        uiresume(SS_WW5);
+        delete(SS_WW5);
+    end
+
+    function cancel_runs(~,~)
+        answer = 'Cancel';
+        uiresume(SS_WW5);
+        delete(SS_WW5);
     end
     
     function close_SS_WW(~,~)

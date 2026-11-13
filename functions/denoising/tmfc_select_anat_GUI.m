@@ -15,6 +15,10 @@ function [anat_paths] =  tmfc_select_anat_GUI(subject_paths)
 %
 % Alternatively, you can select all T1 images manually.
 %
+% A flat ANAT folder is also supported when each filename contains a unique
+% subject identifier (e.g., sub-01_T1w.nii, sub-02_T1w.nii). Select that
+% flat folder as Parent folder and leave ANAT subfolder as Not selected.
+%
 % ----------------EXAMPLE #1 (SPM-like folder structure)-------------------
 % There is no need to change the parent folder to select structural files.
 %
@@ -112,7 +116,10 @@ txt_filter = '';
 anat_root = '';              
 anat_subfolder_full = '';    
 anat_subfolder_rel  = '';
+manual_first_subj_name = '';
 no_file = {};
+user_changed_root = false;
+selection_mode = 'none';
 
 if ischar(subject_paths), subject_paths = cellstr(subject_paths); end
 subject_paths = subject_paths(:);  
@@ -146,8 +153,10 @@ ST_MW_S0_panel = uipanel(ST_MW,'Units','normalized','Position',[0.45 0.823 0.525
 
 % Box text: Parent folder with ANAT subfolders
 ST_MW_S0_txt = uicontrol('Parent',ST_MW_S0_panel,'Style','text','String',anat_root, ...
-    'Units','normalized','Position',[0.03 0.05 0.94 0.64],'FontUnits','normalized','FontSize',0.48, ...
-    'HorizontalAlignment','center','backgroundcolor','w','ForegroundColor',[0 0 0]);
+    'Units','normalized','Position',[0.03 0.05 0.94 0.64], ...
+    'FontUnits','points','FontSize',9, ...
+    'HorizontalAlignment','center','backgroundcolor','w', ...
+    'ForegroundColor',[0 0 0],'TooltipString',anat_root);
 
 % Button: Select ANAT subfolder
 ST_MW_S1 = uicontrol(ST_MW,'Style','pushbutton','String','Select the ANAT subfolder for the first subject',...
@@ -204,193 +213,206 @@ function ST_MW_exit(~,~)
 end
 
 % -------------------------------------------------------------------------
+% Reset ANAT choice, preview, and cached results
+% -------------------------------------------------------------------------
+function reset_anat_choice()
+    anat_subfolder_full = '';
+    anat_subfolder_rel = '';
+    manual_first_subj_name = '';
+    anat_paths = {};
+    no_file = {};
+    selection_mode = 'none';
+    set(ST_MW_S1_txt,'String','Not selected','ForegroundColor','red', ...
+        'HorizontalAlignment','center','TooltipString','');
+    set(ST_MW_LB1,'String',{},'Value',[]);
+end
+
+% -------------------------------------------------------------------------
 % Select parent folder (contains sub-*/anat)
 % -------------------------------------------------------------------------
 function select_anat_root(~,~)
     tmp = deblank(spm_select(1,'dir','Select parent folder (contains sub-*/.../anat)',{},anat_root,'..'));
-    if ~isempty(tmp)
-        anat_root = tmp;
-        set(ST_MW_S0_txt,'String',anat_root,'ForegroundColor',[0 0 0],...
-            'HorizontalAlignment','center');
-        set(ST_MW_LB1,'String','');
-        anat_paths = {};
-        % If we already had a selected subfolder, refresh the displayed relative path
-        anat_subfolder_full = '';
-        anat_subfolder_rel  = '';
-        set(ST_MW_S1_txt,'String','Not selected','ForegroundColor','red','HorizontalAlignment','center');
-    end
+    if isempty(tmp), return; end
+
+    anat_root = regexprep(tmp,'[\\/]+$','');
+    user_changed_root = ~strcmpi(anat_root,regexprep(def_root,'[\\/]+$',''));
+    set(ST_MW_S0_txt,'String',anat_root,'TooltipString',anat_root, ...
+        'ForegroundColor',[0 0 0],'HorizontalAlignment','center');
+    reset_anat_choice();
 end
 
 % -------------------------------------------------------------------------
 % Select the ANAT subfolder for the first subject
 % -------------------------------------------------------------------------
 function select_subfolder(~,~)
-    set(ST_MW_S1_txt,'String','Not selected','ForegroundColor','red','HorizontalAlignment','center');
+    % Reopening ANAT resets the old choice, including when Cancel is pressed
+    reset_anat_choice();
 
-    % try <anat_root>/<sub-01>; fallback to anat_root; else to subject_paths{1}
-    [~, subj_id1] = fileparts(subject_paths{1});
-    start_dir = fullfile(anat_root, subj_id1);
-    if ~exist(start_dir,'dir')
-        start_dir = anat_root;
-    end
-    if ~exist(start_dir,'dir')
-        start_dir = subject_paths{1};
-    end
+    start_dir = resolve_anat_subject_base(1);
+    if isempty(start_dir), start_dir = anat_root; end
+    if ~isfolder(start_dir), start_dir = anat_root; end
 
     sel_dir = deblank(spm_select(1,'dir','Select ANAT subfolder',{},start_dir,'..'));
-
-    if ~isempty(sel_dir)
-       anat_subfolder_full = sel_dir;
-       update_rel_display();  % compute & show relative path
-       set(ST_MW_LB1,'String','');
-    else
-       fprintf(2,'Please select ''structural'' subfolder for the first subject.\n'); 
-    end
-end
-
-% -------------------------------------------------------------------------
-% Compute relative path & show it
-% -------------------------------------------------------------------------
-function update_rel_display()
-    if isempty(anat_subfolder_full) || ~isfolder(anat_subfolder_full)
-        set(ST_MW_S1_txt,'String','Not selected','ForegroundColor','red', ...
-            'HorizontalAlignment','center');
-        anat_subfolder_rel = '';
+    if isempty(sel_dir)
+        fprintf('TMFC: ANAT folder not selected.\n');
         return;
     end
 
-    [~, subj_id1] = fileparts(subject_paths{1});
-    base_first = [fullfile(anat_root, subj_id1) filesep];
-    tmp_rel = '';
-
-    % Try strict relative path
-    if strncmpi(anat_subfolder_full, base_first, numel(base_first))
-        tmp_rel = anat_subfolder_full(numel(base_first)+1:end);
-    else
-        % Try fallback relative to subject_paths{1}
-        base_first2 = [subject_paths{1} filesep];
-        tmp_rel = strrep(anat_subfolder_full, base_first2, '');
-    end
-
-    % If both fail (different roots or mismatched names) - use folder name only
-    if isempty(tmp_rel) || strcmp(tmp_rel, anat_subfolder_full)
-        [~, tmp_rel] = fileparts(anat_subfolder_full);
-    end
-
-    % If tmp_rel starts with the first subject ID, strip it (avoid subject-specific prefixes)
-    prefix = [subj_id1 filesep];
-    if strncmpi(tmp_rel, prefix, numel(prefix))
-        tmp_rel = tmp_rel(numel(prefix)+1:end);
-    end
-
-    % If user selected the subject folder itself (e.g. T1 files directly inside),
-    % keep it as relative path = subject folder
-    if strcmpi(anat_subfolder_full, fullfile(anat_root, subj_id1))
-        tmp_rel = subj_id1;
-    end
-
-    anat_subfolder_rel = tmp_rel;
-
-    % Update GUI text
-    set(ST_MW_S1_txt, 'String', anat_subfolder_rel, ...
-        'ForegroundColor', [0 0 0], 'HorizontalAlignment', 'center');
+    anat_subfolder_full = regexprep(sel_dir,'[\\/]+$','');
+    update_rel_display();
 end
 
 % -------------------------------------------------------------------------
-% Apply text filter and generate paths 
+% Interpret explicitly selected folder relative to ANAT parent
+% -------------------------------------------------------------------------
+function update_rel_display()
+    manual_first_subj_name = '';
+    anat_subfolder_rel = '';
+
+    root_clean = strrep(regexprep(anat_root,'[\\/]+$',''), '/', filesep);
+    selected_clean = strrep(regexprep(anat_subfolder_full,'[\\/]+$',''), '/', filesep);
+    prefix = [root_clean filesep];
+
+    if ~isfolder(selected_clean) || ~strncmpi(selected_clean,prefix,numel(prefix))
+        fprintf(2,'TMFC: Select an ANAT folder inside %s.\n',anat_root);
+        reset_anat_choice();
+        return;
+    end
+
+    % First folder below the parent is the user's explicit subject choice.
+    parts = regexp(selected_clean(numel(prefix)+1:end),'[\\/]+','split');
+    manual_first_subj_name = parts{1};
+    anat_subfolder_rel = strjoin(parts(2:end),filesep);
+
+    if isempty(anat_subfolder_rel)
+        display_text = manual_first_subj_name;
+    else
+        display_text = anat_subfolder_rel;
+    end
+    set(ST_MW_S1_txt,'String',display_text,'ForegroundColor',[0 0 0], ...
+        'HorizontalAlignment','center','TooltipString',anat_subfolder_full);
+end
+
+% -------------------------------------------------------------------------
+% Apply text filter and generate paths
 % -------------------------------------------------------------------------
 function apply_filter(~,~)
-    f = msgbox('Selecting structural images. Please wait . . .');
-    if ~isempty(anat_subfolder_rel)
-        txt_filter = get(ST_MW_S2_E,'String');
-        txt_filter = strrep(txt_filter,' ','');
-        if ~isempty(txt_filter) 
-            anat_paths = {};
-            no_file = {};
-            
-            % Prepare subject paths
-            subject_paths = strtrim(subject_paths); 
+    anat_paths = {};
+    no_file = {};
+    selection_mode = 'none';
+    set(ST_MW_LB1,'String',{},'Value',[]);
 
-            % Build ANAT paths for all subjects (uses anat_root if available)
-            for iSub = 1:size(subject_paths,1)
-                [~, subj_id] = fileparts(subject_paths{iSub});
-                subj_base = fullfile(anat_root, subj_id);
-
-                % If exact match not found – search for closest folder in anat_root
-                if ~exist(subj_base,'dir')
-
-                    % Try direct wildcard match
-                    d = dir(fullfile(anat_root, ['*' subj_id '*']));
-                    d = d([d.isdir]);
-                    d = d(~ismember({d.name},{'.','..'}));             
-                
-                    % Try substring-based search
-                    if isempty(d)
-                        d_all = dir(anat_root);
-                        d_all = d_all([d_all.isdir]);
-                        names = setdiff({d_all.name},{'.','..'});
-                        bestName = '';
-                        bestScore = -inf;
-                        for k = 1:numel(names)
-                            common = lcsstr(subj_id, strrep(names{k}, filesep, '_'));
-                            sc = numel(common);
-                            if sc > bestScore
-                                bestScore = sc;
-                                bestName = names{k};
-                            end
-                        end
-                
-                        if ~isempty(bestName)
-                            subj_base = fullfile(anat_root, bestName);
-                            if bestScore < 4
-                                fprintf(2,'[Notice] No clear match for "%s" in "%s". Please check folder names.\n', ...
-                                    subj_id, anat_root);
-                            end
-                        else
-                            subj_base = subject_paths{iSub}; 
-                        end
-                    else
-                        subj_base = fullfile(anat_root, d(1).name);
-                    end
-                end  
-                
-                % Build search path
-                if (ispc && ~isempty(strfind(anat_subfolder_rel, ':\'))) || (~ispc && strncmp(anat_subfolder_rel, filesep, 1))
-                    search_dir = anat_subfolder_rel;
-                else
-                    search_dir = fullfile(subj_base, anat_subfolder_rel);
-                end
-
-                % If folder not found, try subject folder itself
-                if ~isfolder(search_dir)
-                    search_dir = subj_base;
-                end
-                
-                fprintf('Searching in: %s | pattern: %s\n', search_dir, txt_filter);
-                anat_file = dir(fullfile(search_dir, txt_filter));
-                
-                if ~isempty(anat_file)
-                    anat_paths = vertcat(anat_paths,fullfile(search_dir,anat_file(1).name));
-                else
-                    no_file = vertcat(no_file,subject_paths(iSub));
-                end
-            end
-            set(ST_MW_LB1,'String',cellstr(anat_paths));
-
-            % If the filter found nothing at all, warn in command line
-            if isempty(anat_paths)
-                fprintf(2,'No images matched the filter "%s" within "%s". Please check the root/subfolder and filter.\n',...
-                    txt_filter, anat_subfolder_rel);
-            end
-
-            clear anat_file
-        else
-            fprintf(2,'Filter is empty or invalid. Please re-enter.\n');
-        end
-    else
-        fprintf(2,'Please select ''structural'' subfolder for the first subject before applying text filter.\n');
+    txt_filter = strrep(get(ST_MW_S2_E,'String'),' ','');
+    if isempty(txt_filter)
+        fprintf(2,'TMFC: ANAT filter is empty.\n');
+        return;
     end
-    try; close(f); end
+
+    f = msgbox('Selecting structural images. Please wait . . .');
+    nSub = numel(subject_paths);
+    subject_bases = cell(nSub,1);
+
+    for iSub = 1:nSub
+        if iSub == 1 && ~isempty(manual_first_subj_name)
+            % An explicit choice resolves ambiguity for the first subject
+            subject_bases{iSub} = fullfile(anat_root,manual_first_subj_name);
+        else
+            subject_bases{iSub} = resolve_anat_subject_base(iSub);
+        end
+    end
+
+    % Flat ANAT directory: unique subject-specific names are mandatory.
+    % Only entered when the user chose a different parent and none of the
+    % subjects resolves to a subfolder under it.
+    flat_mode = false;
+    if user_changed_root && isempty(manual_first_subj_name) && all(cellfun(@isempty,subject_bases))
+        hits = dir(fullfile(anat_root,txt_filter));
+        hits = hits(~[hits.isdir]);
+        flat_mode = ~isempty(hits);
+    end
+
+    if ~flat_mode
+        for iSub = 1:nSub
+            if isempty(subject_bases{iSub})
+                fprintf(2,'TMFC: Cannot match ANAT subject %d (%s) under %s.\n',iSub,subject_paths{iSub},anat_root);
+                try, close(f); catch, end
+                return;
+            end
+        end
+
+        keys = cellfun(@lower,subject_bases,'UniformOutput',false);
+        if numel(unique(keys)) ~= nSub
+            fprintf(2,'TMFC: Multiple subjects map to the same ANAT folder. Selection canceled.\n');
+            try, close(f); catch, end
+            return;
+        end
+    end
+
+    selected = cell(nSub,1);
+    preview = cell(nSub,1);
+
+    if flat_mode
+        hits = dir(fullfile(anat_root,txt_filter));
+        hits = hits(~[hits.isdir]);
+        fprintf('TMFC: Flat ANAT folder with %d candidate files.\n',numel(hits));
+    end
+
+    for iSub = 1:nSub
+        if flat_mode
+            match = find(arrayfun(@(x) flat_filename_matches_subject(x.name,iSub),hits));
+            if numel(match)==1
+                selected{iSub} = fullfile(anat_root,hits(match).name);
+            elseif isempty(match)
+                fprintf(2,'TMFC: No unambiguous ANAT filename for subject %d in flat folder.\n',iSub);
+            else
+                fprintf(2,'TMFC: %d ANAT files match subject %d in flat folder. Use a narrower filter.\n',numel(match),iSub);
+            end
+        else
+            if isempty(anat_subfolder_rel)
+                search_dir = subject_bases{iSub};
+            else
+                search_dir = fullfile(subject_bases{iSub},anat_subfolder_rel);
+            end
+            fprintf('Searching in: %s | pattern: %s\n',search_dir,txt_filter);
+            if isfolder(search_dir)
+                hits_one = dir(fullfile(search_dir,txt_filter));
+                hits_one = hits_one(~[hits_one.isdir]);
+                if numel(hits_one)==1
+                    selected{iSub} = fullfile(search_dir,hits_one(1).name);
+                elseif numel(hits_one)>1
+                    fprintf(2,'TMFC: %d ANAT files match subject %d. Use a narrower filter.\n',numel(hits_one),iSub);
+                else
+                    fprintf(2,'TMFC: No ANAT image found for subject %d.\n',iSub);
+                end
+            else
+                fprintf(2,'TMFC: ANAT directory does not exist: %s\n',search_dir);
+            end
+        end
+
+        if isempty(selected{iSub})
+            no_file{end+1,1} = subject_paths{iSub};
+            preview{iSub} = sprintf('[no matches] Subject %d: %s',iSub,subject_paths{iSub});
+        else
+            preview{iSub} = selected{iSub};
+        end
+    end
+
+    % Reject the same T1 file assigned to multiple subjects
+    nonempty = selected(~cellfun(@isempty,selected));
+    low_paths = cellfun(@lower,nonempty,'UniformOutput',false);
+    if numel(unique(low_paths)) ~= numel(nonempty)
+        fprintf(2,'TMFC: The same ANAT file was assigned to multiple subjects. Selection canceled.\n');
+        anat_paths = {};
+        no_file = subject_paths;
+    elseif isempty(no_file)
+        anat_paths = selected;
+        selection_mode = 'filter';
+    else
+        % Show partial matches in the list, but never allow partial export
+        anat_paths = {};
+    end
+    set(ST_MW_LB1,'String',preview,'Value',[]);
+    try, close(f); catch, end
 end
 
 % -------------------------------------------------------------------------
@@ -400,64 +422,63 @@ function clear_paths(~,~)
     if isempty(anat_paths)
         disp('No images to remove.');
     else
-        anat_paths = {};
-        set(ST_MW_LB1,'String',anat_paths,'Value',[]);
         disp('All images have been removed.');
     end
+    anat_paths = {};
+    no_file = {};
+    selection_mode = 'none';
+    set(ST_MW_LB1,'String',{},'Value',[]);
 end
 
 % -------------------------------------------------------------------------
 % Add all structural images manually
 % -------------------------------------------------------------------------
 function add_images(~,~)
-    no_file = {}
+    no_file = {};
     anat_paths = {};
+    selection_mode = 'none';
+    set(ST_MW_LB1,'String',{},'Value',[]);
     sel = spm_select(inf,'any','Select structural images for all subjects',{},subject_paths{1},'T1.*\.nii$');
-    if ~isempty(sel), anat_paths = cellstr(sel); end
-    if isempty(anat_paths)
+    if ~isempty(sel)
+        anat_paths = cellstr(sel);
+        selection_mode = 'manual';
+    else
         fprintf(2,'Structural images were not selected. Please try again.\n');
     end
-    set(ST_MW_LB1,'String',cellstr(anat_paths));
+    set(ST_MW_LB1,'String',anat_paths,'Value',[]);
 end
 
 % -------------------------------------------------------------------------
 % Export anat paths
 % -------------------------------------------------------------------------
 function export_paths(~,~)
-    nSubs = numel(subject_paths);
-    nFiles = numel(anat_paths);
-
-    if isempty(anat_paths)
-        fprintf(2,'No images selected, please try again.\n');
+    nSub = numel(subject_paths);
+    if isempty(anat_paths) || strcmp(selection_mode,'none')
+        fprintf(2,'No valid structural images selected. Please try again.\n');
+        if ~isempty(no_file), missing_file_GUI(no_file); end
         return;
     end
 
-    % CASE 1: Filter-based selection 
-    if exist('no_file','var') && ~isempty(no_file)
-        if nFiles == nSubs
-            disp('Structural images have been selected.');
-            uiresume(ST_MW);
-        else
-            % Some subjects missing (known from filtering)
-            missing_file_GUI(no_file);
-        end
+    if numel(anat_paths) ~= nSub || any(cellfun(@isempty,anat_paths))
+        fprintf(2,'TMFC: ANAT selection must contain exactly one image per subject (%d).\n',nSub);
+        return;
+    end
+    paths = anat_paths(:);
+    keys = cellfun(@lower,paths,'UniformOutput',false);
+    if numel(unique(keys)) ~= nSub
+        fprintf(2,'TMFC: The same ANAT file was assigned to multiple subjects.\n');
+        return;
+    end
+    if ~all(cellfun(@isfile,paths))
+        fprintf(2,'TMFC: One or more selected ANAT files no longer exist.\n');
         return;
     end
 
-    % CASE 2: Manual selection
-    % Assume user selected files in order of subject_paths
-    if nFiles == nSubs
-        disp('Structural images have been selected.');
-        uiresume(ST_MW);
-        return;
-    elseif nFiles > nSubs
-        fprintf(2,'The number of structural images must equal the number of selected SPM.mat files. Please try again.\n');
-        return;
-    else
-        % Fewer files than subjects -> assume missing at the end
-        missing_idx = (nFiles + 1):nSubs;
-        missing_file_GUI(subject_paths(missing_idx));
+    if strcmp(selection_mode,'manual')
+        fprintf('TMFC: Manual ANAT selection uses the order of the selected subjects.\n');
     end
+    disp('Structural images have been selected.');
+    uiresume(ST_MW);
 end
 
 % -------------------------------------------------------------------------
@@ -488,6 +509,10 @@ function open_help(~,~)
         ''
         '   Then select the ANAT subfolder for the first subject and apply text'
         '   filter (e.g., *T1*.nii) to match all T1 images.'
+        ''
+        '   You may also try the filter without choosing an ANAT subfolder.'
+        '   For a shared flat folder, select it as Parent folder and leave'
+        '   ANAT subfolder as Not selected. Filenames must identify subjects.'
         ''
         ''
         '   ================= EXAMPLE #1 (SPM-like folder structure) =================='
@@ -627,30 +652,110 @@ function open_help(~,~)
 end
 
 % -------------------------------------------------------------------------
-% Longest common substring, case-insensitive
+% Resolve ANAT subject: exact individual path component, then bounded
+% prefix/suffix matching with non-alphanumeric boundaries
 % -------------------------------------------------------------------------
-function s = lcsstr(a,b)
-a = lower(a); b = lower(b);
-na = numel(a); nb = numel(b);
-L = zeros(na+1, nb+1, 'uint16');
-bestLen = 0; bestEnd = 0;
-for i = 1:na
-    ai = a(i);
-    for j = 1:nb
-        if ai == b(j)
-            L(i+1,j+1) = L(i,j) + 1;
-            if L(i+1,j+1) > bestLen
-                bestLen = L(i+1,j+1);
-                bestEnd = i;
-            end
+function subj_base = resolve_anat_subject_base(iSub)
+    subj_base = '';
+    if ~isfolder(anat_root), return; end
+
+    d = dir(anat_root);
+    d = d([d.isdir]);
+    names = setdiff({d.name},{'.','..'});
+    parts = regexp(regexprep(strtrim(subject_paths{iSub}),'[\\/]+$',''),'[\\/]+','split');
+
+    % Exact match, excluding directory components shared by subjects
+    for k = numel(parts):-1:1
+        id = parts{k};
+        if isempty(id) || component_shared(id,iSub), continue; end
+        hit = find(strcmpi(id,names));
+        if numel(hit)==1
+            subj_base = fullfile(anat_root,names{hit});
+            return;
+        end
+    end
+
+    % Use the deepest unique source component, not a shared 'stat'/'GLM'
+    src_name = deepest_unique_component(iSub);
+    if isempty(src_name), return; end
+
+    matches = false(1,numel(names));
+    src_pattern = ['(?<![a-z0-9])' regexptranslate('escape',src_name) '(?![a-z0-9])'];
+    for j = 1:numel(names)
+        dst_name = names{j};
+        dst_pattern = ['(?<![a-z0-9])' regexptranslate('escape',dst_name) '(?![a-z0-9])'];
+        matches(j) = ~isempty(regexpi(dst_name,src_pattern,'once')) || ~isempty(regexpi(src_name,dst_pattern,'once'));
+    end
+
+    idx = find(matches);
+    if numel(idx)==1
+        subj_base = fullfile(anat_root,names{idx});
+        fprintf('TMFC: Matched ANAT subject folder "%s" to "%s".\n',src_name,names{idx});
+    elseif numel(idx)>1
+        fprintf(2,'TMFC: Ambiguous ANAT subject folder match for "%s" under %s.\n',src_name,anat_root);
+    end
+end
+
+function id = deepest_unique_component(iSub)
+    id = '';
+    parts = regexp(regexprep(strtrim(subject_paths{iSub}),'[\\/]+$',''),'[\\/]+','split');
+    for k = numel(parts):-1:1
+        if ~isempty(parts{k}) && ~component_shared(parts{k},iSub)
+            id = parts{k};
+            return;
         end
     end
 end
-if bestLen == 0
-    s = '';
-else
-    s = a(bestEnd-bestLen+1:bestEnd);
+
+function shared = component_shared(id,iSub)
+    shared = false;
+    for jSub = 1:numel(subject_paths)
+        if jSub==iSub, continue; end
+        parts = regexp(regexprep(strtrim(subject_paths{jSub}),'[\\/]+$',''),'[\\/]+','split');
+        if any(strcmpi(id,parts))
+            shared = true;
+            return;
+        end
+    end
 end
+
+% -------------------------------------------------------------------------
+% Flat ANAT: match subject-specific filenames.
+% A single arbitrary trailing underscore-delimited descriptor is tolerated,
+% e.g. 'sub-01_firstlevel' -> filename 'sub-01_T1w.nii'.
+% -------------------------------------------------------------------------
+function tf = flat_filename_matches_subject(filename,iSub)
+    tf = false;
+    src_name = deepest_unique_component(iSub);
+    if isempty(src_name), return; end
+
+    candidates = {src_name};
+    idx = find(src_name=='_',1,'last');
+    if ~isempty(idx) && idx>1
+        candidates{end+1} = src_name(1:idx-1);
+    end
+
+    for k = 1:numel(candidates)
+        id = candidates{k};
+        if numel(id)<3, continue; end
+        pattern = ['(?<![a-z0-9])' regexptranslate('escape',id) '(?![a-z0-9])'];
+
+        % The filename token must identify this subject uniquely among the
+        % source subject paths, not just happen to match its prefix.
+        shared = false;
+        for jSub = 1:numel(subject_paths)
+            if jSub==iSub, continue; end
+            other = deepest_unique_component(jSub);
+            if ~isempty(regexpi(other,pattern,'once'))
+                shared = true;
+                break;
+            end
+        end
+        if ~shared && ~isempty(regexpi(filename,pattern,'once'))
+            tf = true;
+            return;
+        end
+    end
 end
 
 % -------------------------------------------------------------------------

@@ -14,7 +14,7 @@ function [tmfc] = tmfc_specify_contrasts_GUI(tmfc,ROI_set_number,TMFC_analysis)
 %                          4: BSC-LSS after FIR
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -45,22 +45,44 @@ function [tmfc] = specify_contrasts_GUI(tmfc,ROI_set_number,TMFC_analysis,existi
     contrast_count = 1;
     new_contrasts = {};
 
-    SC_MW = figure('Name', 'Contrast manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.30 0.24 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','on','CloseRequestFcn', @SC_MW_exit);
+    SC_MW = figure('Name', 'Contrast manager', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.40 0.30 0.3 0.46],'MenuBar', 'none','ToolBar', 'none','color','w','Resize','on','CloseRequestFcn', @SC_MW_exit);
     SC_MW_S1  = uicontrol(SC_MW,'Style','text','String', 'Define contrasts','Units', 'normalized', 'Position',[0.270 0.93 0.450 0.05],'fontunits','normalized', 'fontSize', 0.64,'backgroundcolor','w');
 
-    SC_MW_S2  = uicontrol(SC_MW,'Style','text','String', 'Existing contrasts:','Units', 'normalized', 'Position',[0.045 0.86 0.300 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-    SC_MW_S3 = uicontrol(SC_MW , 'Style', 'text', 'String', 'No. :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.816 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
+    SC_MW_S2  = uicontrol(SC_MW,'Style','text','String', 'Existing contrasts:','Units', 'normalized', ...
+        'Position',[0.045 0.86 0.300 0.05],'HorizontalAlignment', 'left', ...
+        'fontunits','points','fontSize',10,'backgroundcolor','w');
+    SC_MW_S3 = uicontrol(SC_MW , 'Style', 'text', 'String', 'No. :: Title :: Contrast weights','Max', 100,'Units', 'normalized', ...
+        'Position',[0.045 0.816 0.900 0.045], ...
+        'fontunits','points','fontSize',10,'HorizontalAlignment','left','backgroundcolor','w');
     SC_MW_LB1 = uicontrol(SC_MW , 'Style', 'listbox', 'String', existing_contrasts,'Value', [],'Max', 100,'Units', 'normalized', 'Position',[0.045 0.62 0.920 0.200],'fontunits','points', 'fontSize', 11,'Enable','inactive');
 
-    SC_MW_S4  = uicontrol(SC_MW,'Style','text','String', 'Add new contrasts:','Units', 'normalized', 'Position',[0.045 0.535 0.450 0.05],'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.62,'backgroundcolor','w');
-    SC_MW_S5 = uicontrol(SC_MW , 'Style', 'text', 'String', 'No. :: Title :: Contrast weights','Max', 100,'Units', 'normalized', 'Position',[0.045 0.492 0.900 0.045],'fontunits','normalized', 'fontSize', 0.62,'HorizontalAlignment','left','backgroundcolor','w');
-    SC_MW_LB2 = uicontrol(SC_MW , 'Style', 'listbox', 'String', new_contrasts,'Value', [],'Max',100,'Units', 'normalized', 'Position',[0.045 0.26 0.920 0.230],'fontunits','points', 'fontSize', 11,'callback', @MW_LB2_select);
+    SC_MW_S4  = uicontrol(SC_MW,'Style','text','String','Add new contrasts:','Units','normalized', ...
+        'Position',[0.045 0.535 0.450 0.05],'HorizontalAlignment','left', ...
+        'fontunits','points','fontSize',10,'backgroundcolor','w');
+    SC_MW_S5 = uicontrol(SC_MW,'Style','text','String', 'No. :: Title :: Contrast weights','Max',100,'Units','normalized', ...
+        'Position',[0.045 0.492 0.900 0.045], ...
+        'fontunits','points','fontSize',10,'HorizontalAlignment','left','backgroundcolor','w');
+    SC_MW_LB2 = uicontrol(SC_MW,'Style','listbox','String', new_contrasts,'Value', [],'Max',100,'Units', 'normalized', ...
+        'Position',[0.045 0.26 0.920 0.230],'fontunits','points', 'fontSize', 11,'callback', @MW_LB2_select);
 
-    SC_MW_add = uicontrol(SC_MW,'Style','pushbutton','String', 'Add new','Units', 'normalized','Position',[0.045 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36,'callback', @MW_add);
-    SC_MW_rem = uicontrol(SC_MW,'Style','pushbutton','String', 'Remove selected','Units', 'normalized','Position',[0.360 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36, 'callback', @MW_remove);
-    SC_MW_rem_all = uicontrol(SC_MW,'Style','pushbutton','String', 'Remove all','Units', 'normalized','Position',[0.680 0.15 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36,'callback', @MW_remove_all);
-    SC_MW_conf = uicontrol(SC_MW,'Style','pushbutton','String', 'OK','Units', 'normalized','Position',[0.045 0.05 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36,'callback', @MW_confirm);
-    SC_MW_help = uicontrol(SC_MW,'Style','pushbutton','String', 'Help','Units', 'normalized','Position',[0.680 0.05 0.290 0.075],'fontunits','normalized', 'fontSize', 0.36,'callback', @MW_help);
+    SC_MW_add = uicontrol(SC_MW,'Style','pushbutton','String', 'Add new',...
+        'Units','normalized','Position',[0.045 0.15 0.210 0.075],...
+        'fontunits','normalized','fontSize',0.36,'callback',@MW_add);
+
+    SC_MW_load = uicontrol(SC_MW,'Style','pushbutton','String', 'Load from TXT',...
+        'Units','normalized','Position',[0.275 0.15 0.210 0.075],...
+        'fontunits','normalized','fontSize',0.32,'callback',@MW_load_txt);
+
+    SC_MW_rem = uicontrol(SC_MW,'Style','pushbutton','String', 'Remove selected',...
+        'Units','normalized','Position',[0.505 0.15 0.210 0.075],...
+        'fontunits','normalized','fontSize',0.32,'callback',@MW_remove);
+
+    SC_MW_rem_all = uicontrol(SC_MW,'Style','pushbutton','String', 'Remove all',...
+        'Units','normalized','Position',[0.735 0.15 0.230 0.075],...
+        'fontunits','normalized','fontSize',0.36,'callback',@MW_remove_all);
+
+    SC_MW_conf = uicontrol(SC_MW,'Style','pushbutton','String', 'OK','Units', 'normalized','Position',[0.045 0.05 0.21 0.075],'fontunits','normalized', 'fontSize', 0.36,'callback', @MW_confirm);
+    SC_MW_help = uicontrol(SC_MW,'Style','pushbutton','String', 'Help','Units', 'normalized','Position',[0.735 0.05 0.23 0.075],'fontunits','normalized', 'fontSize', 0.36,'callback', @MW_help);
     movegui(SC_MW,'center');
 
     SC_MW_SE2 = {}; 
@@ -113,6 +135,169 @@ function [tmfc] = specify_contrasts_GUI(tmfc,ROI_set_number,TMFC_analysis,existi
         else
             fprintf(2,'No contrasts added.\n');
         end
+    end
+    
+    %----------------------------------------------------------------------
+    % Load contrasts from TXT file
+    %----------------------------------------------------------------------
+    function MW_load_txt(~,~)
+
+        % Number of conditions of interest
+        switch(TMFC_analysis)
+            case 1
+                nCondOfInterest = length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI(1).weights);
+            case 2
+                nCondOfInterest = length(tmfc.ROI_set(ROI_set_number).contrasts.gPPI_FIR(1).weights);
+            case 3
+                nCondOfInterest = length(tmfc.ROI_set(ROI_set_number).contrasts.BSC(1).weights);
+            case 4
+                nCondOfInterest = length(tmfc.ROI_set(ROI_set_number).contrasts.BSC_after_FIR(1).weights);
+        end
+
+        % Select TXT file
+        [file_name,file_path] = uigetfile({'*.txt','Text files (*.txt)'},'Select contrast list');
+        if isequal(file_name,0)
+            fprintf('No contrast file selected.\n');
+            return;
+        end
+        contrast_file = fullfile(file_path,file_name);
+
+        % Open TXT file
+        fid = fopen(contrast_file,'rt');
+        if fid == -1
+            fprintf(2,'Could not open contrast file: %s\n',contrast_file);
+            return;
+        end
+        cleanupObj = onCleanup(@() fclose(fid));
+
+        % Temporary structure.
+        % Nothing is added to the GUI until the whole file is validated.
+        imported_contrasts = struct('title',{},'weights',{});
+
+        line_number = 0;
+        import_count = 0;
+
+        while true
+            line = fgetl(fid);
+            if ~ischar(line)
+                break;
+            end
+            line_number = line_number + 1;
+
+            % Remove UTF-8 BOM if present
+            if line_number == 1
+                if length(line) >= 3 && isequal(double(line(1:3)),[239 187 191])
+                    line = line(4:end);
+                elseif ~isempty(line) && double(line(1)) == 65279
+                    line = line(2:end);
+                end
+            end
+
+            % Ignore empty lines
+            if isempty(strtrim(line))
+                continue;
+            end
+
+            % Find TAB separating title and weights
+            tab_pos = find(line == sprintf('\t'),1,'first');
+
+            if isempty(tab_pos)
+                fprintf(2,['Invalid contrast file, line %d. Contrast title and weights must be separated by a TAB.\n'],line_number);
+                return;
+            end
+
+            title_contrast = strtrim(line(1:tab_pos-1));
+            weights_contrast = strtrim(line(tab_pos+1:end));
+
+            % -------------------------------------------------------------
+            % Validate title
+            % -------------------------------------------------------------
+            if isempty(title_contrast)
+                fprintf(2,'Invalid contrast file, line %d: title is empty.\n',line_number);
+                return;
+            end
+
+            if ~isempty(str2num(title_contrast))
+                fprintf(2,['Invalid contrast file, line %d: the title cannot consist only of numbers.\n'],line_number);
+                return;
+            end
+
+            % -------------------------------------------------------------
+            % Validate weights
+            % -------------------------------------------------------------
+            if isempty(weights_contrast)
+                fprintf(2,['Invalid contrast file, line %d: contrast weights are empty.\n'],line_number);
+                return;
+            end
+
+            % Permit numeric expressions and selected MATLAB functions.
+            % No other function names are allowed.
+            weights_check = weights_contrast;
+            weights_check = strrep(weights_check,'repmat','');
+            weights_check = strrep(weights_check,'ones','');
+            weights_check = strrep(weights_check,'zeros','');
+
+            if isempty(regexp(weights_check, ...
+                    '^[0-9eE\.\+\-\[\]\(\)/,\s]+$','once'))
+
+                fprintf(2,['Invalid contrast file, line %d: ' ...
+                    'invalid characters in contrast weights.\n'], ...
+                    line_number);
+                return;
+            end
+
+            weights = str2num(weights_contrast);
+
+            if isempty(weights)
+                fprintf(2,['Invalid contrast file, line %d: contrast weights are not valid numeric values.\n'],line_number);
+                return;
+            end
+
+            if length(weights) ~= nCondOfInterest
+                fprintf(2,['Invalid contrast file, line %d: contrast contains %d weights, but %d are required.\n'],line_number,length(weights),nCondOfInterest);
+                return;
+            end
+
+            if any(isnan(weights)) || any(isinf(weights))
+                fprintf(2,['Invalid contrast file, line %d: contrast weights contain NaN or Inf.\n'],line_number);
+                return;
+            end
+
+            % Store only after this line has passed all checks
+            import_count = import_count + 1;
+            imported_contrasts(import_count).title = title_contrast;
+            imported_contrasts(import_count).weights = weights;
+        end
+
+        if isempty(imported_contrasts)
+            fprintf(2,'No contrasts found in the selected TXT file.\n');
+            return;
+        end
+
+        % -------------------------------------------------------------
+        % All lines are valid. Add them to the current contrast list.
+        % -------------------------------------------------------------
+        for iCon = 1:length(imported_contrasts)
+            contrasts(contrast_count).no = size(existing_contrasts,1) + contrast_count;
+            contrasts(contrast_count).title = imported_contrasts(iCon).title;
+            contrasts(contrast_count).weights = imported_contrasts(iCon).weights;
+
+            cont_str = horzcat( ...
+                'No ',num2str(contrasts(contrast_count).no), ...
+                ' :: ',contrasts(contrast_count).title, ...
+                ' :: c = [', ...
+                num2str(contrasts(contrast_count).weights),']');
+
+            new_contrasts = vertcat(new_contrasts,cont_str);
+            contrast_count = contrast_count + 1;
+        end
+
+        % Update GUI
+        set(SC_MW_LB2,'Value',[]);
+        SC_MW_SE2 = {};
+        set(SC_MW_LB2,'String',new_contrasts);
+
+        fprintf('%d contrast(s) loaded from %s.\n',length(imported_contrasts),file_name);
     end
 
     %----------------------------------------------------------------------
@@ -190,18 +375,40 @@ function [tmfc] = specify_contrasts_GUI(tmfc,ROI_set_number,TMFC_analysis,existi
     %----------------------------------------------------------------------
     function MW_help(~,~)   
 
-        SC_HW = figure('Name', 'Contrast manager: Help', 'NumberTitle', 'off', 'Units', 'normalized', 'Position', [0.67 0.31 0.24 0.40],'color','w','MenuBar', 'none','ToolBar', 'none','Resize','off', 'WindowStyle', 'Modal');
-
-        string_info = {'Existing contrasts are contrasts that have been calculated previously. By default, the TMFC toolbox calculates contrasts for each condition of interest ("Condition > Baseline").','',...
-            'Suppose you have two separate sessions and two conditions of interest: "Cond A" and "Cond B".','','The default contrasts will be:','','1) Cond A (Sess1), c = [1 0 0 0]',...
-            '2) Cond B (Sess1), c = [0 1 0 0]', '3) Cond A (Sess2), c = [0 0 1 0]','4) Cond B (Sess2), c = [0 0 0 1]','','Where "c" is a contrast weight vector.','',...
-            'If you want to calculate a new linear contrast for "Cond A > Cond B" comparison:','','1) Press "Add new" button,','2) Enter title name (e.g. "CondA_vs_CondB"),',...
-            '3) Enter contrast weight, c = [0.5 -0.5 0.5 -0.5],','4) Press "Ok".'};
-
-        if isunix; fontscale = 0.8; else; fontscale = 1; end
-
-        SC_HW_S1 = uicontrol(SC_HW,'Style','text','String',string_info ,'Units', 'normalized', 'Position', [0.055 0.12 0.89 0.85], 'HorizontalAlignment', 'left','fontunits','normalized', 'fontSize', 0.037*fontscale,'backgroundcolor','w');
-        SC_HW_OK = uicontrol(SC_HW,'Style','pushbutton','String', 'OK','Units', 'normalized', 'Position', [0.35 0.030 0.30 0.07],'fontunits','normalized','fontSize', 0.40,'callback', @SC_HW_close);
+        SC_HW = figure('Name', 'Contrast manager: Help', 'NumberTitle', 'off', ...
+            'Units', 'normalized', 'Position', [0.67 0.27 0.30 0.70], ...
+            'color','w','MenuBar', 'none','ToolBar', 'none','Resize','off', 'WindowStyle', 'Modal');
+               
+        string_info = { ...
+            'Existing contrasts are contrasts that have been calculated previously. By default, the TMFC toolbox calculates contrasts for each condition of interest ("Condition > Baseline").','', ...
+            'Suppose you have two separate runs (sessions) and two conditions of interest: "Cond A" and "Cond B".','', ...
+            'The default contrasts will be:','', ...
+            '1) Cond A (Run1), c = [1 0 0 0]', ...
+            '2) Cond B (Run1), c = [0 1 0 0]', ...
+            '3) Cond A (Run2), c = [0 0 1 0]', ...
+            '4) Cond B (Run2), c = [0 0 0 1]','', ...
+            'Where "c" is a contrast weight vector.','', ...
+            'To add a new contrast manually:','', ...
+            '1) Press "Add new".', ...
+            '2) Enter a contrast title (e.g. "CondA_vs_CondB").', ...
+            '3) Enter contrast weights, e.g. c = [0.5 -0.5 0.5 -0.5].', ...
+            '4) Press "OK".','', ...
+            'To add multiple contrasts from a TXT file:','', ...
+            '1) Press "Load from TXT".', ...
+            '2) Select a .txt file containing one contrast per line.', ...
+            '3) Each line must contain a contrast title and contrast weights separated by a TAB.', ...
+            '4) For the example above, the TXT file could contain:','', ...
+            'CondA_vs_CondB<TAB>[1 -1 1 -1]/2', ...
+            'CondA_plus_CondB<TAB>[1 1 1 1]/2','', ...
+            'The number of contrast weights must equal the number of conditions of interest.', ...
+            'Numeric expressions such as [1 -1 1 -1]/2 are allowed.'};
+        SC_HW_S1 = uicontrol(SC_HW,'Style','text','String',string_info , ...
+            'Units', 'normalized', 'Position', [0.055 0.12 0.89 0.85], ...
+            'HorizontalAlignment', 'left', ...
+            'fontunits','points','fontSize', 11,'backgroundcolor','w');
+        SC_HW_OK = uicontrol(SC_HW,'Style','pushbutton','String', 'OK','Units', 'normalized', ...
+            'Position', [0.35 0.030 0.30 0.07], ...
+            'fontunits','points','fontSize', 12,'callback', @SC_HW_close);
         movegui(SC_HW,'center');
 
         function SC_HW_close(~,~)

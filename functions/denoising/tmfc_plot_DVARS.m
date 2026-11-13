@@ -11,7 +11,7 @@ function tmfc_plot_DVARS(preDVARS,postDVARS,FD,options,SPM_paths,subject_paths,a
 % Allows saving group FD-DVARS statistics and TMFC denoise settings.
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -106,8 +106,8 @@ function plot_data(iSub)
                 postDVARS_ts = [postDVARS_ts; NaN(3,1); spm_detrend(postDVARS(iSub).DVARS.Sess(jSess).DVARS_ts(4:end-1)); NaN];
             end
         end
-        sess_sum = sess_sum + length(FD(iSub).Sess(jSess).FD_ts) + 1;
-        sess = [sess; sess_sum];
+        sess_sum = sess_sum + length(FD(iSub).Sess(jSess).FD_ts);
+        sess = [sess; sess_sum + 1];
     end
 
     % Plotting FD
@@ -343,7 +343,7 @@ end
 %--------------------------------------------------------------------------
 function report_txt = build_report_text()
 
-    toolbox_version = 'v1.5.0';
+    toolbox_version = 'v1.5.1';
     generated_on = datestr(now,'yyyy-mm-dd HH:MM:SS');
 
     pipeline_str = get_pipeline_string();
@@ -709,7 +709,7 @@ function txt = get_short_methods_text(pipeline_str,FD_summary,DVARS_summary,task
     reg_txt = get_regressor_methods_text(reg_summary);
 
     % Final report text
-    txt = ['Denoising was performed using TMFC_denoise v1.5.0. The selected denoising strategy included ' ...
+    txt = ['Denoising was performed using TMFC_denoise v1.5.1. The selected denoising strategy included ' ...
            motion_txt '.' spike_txt acc_txt acc_ort_txt phys_txt gsr_txt rwls_txt ' ' ...
            mask_txt ' The mean FD across subjects was ' ...
            fmt(FD_summary.meanFD.mean,2) ' mm (SD = ' fmt(FD_summary.meanFD.sd,2) ...
@@ -1631,8 +1631,8 @@ function [FD_ts,preDVARS_ts,postDVARS_ts,sess] = get_subject_FD_DVARS_ts(iSub)
             end
         end
 
-        sess_sum = sess_sum + length(FD(iSub).Sess(jSess).FD_ts) + 1;
-        sess = [sess; sess_sum];
+        sess_sum = sess_sum + length(FD(iSub).Sess(jSess).FD_ts);
+        sess = [sess; sess_sum + 1];
     end
 end
 

@@ -1,6 +1,6 @@
 function output_paths = TMFC_denoise(SPM_paths,subject_paths,options,anat_paths,func_paths,display_FD,estimate_GLMs,clear_all,seg_paths)
 
-% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.5.0]=
+% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.5.1]=
 % 
 % The TMFC denoise toolbox updates the selected general linear model with
 % the addition of noise regressors. It can be used prior to TMFC analysis 
@@ -201,7 +201,7 @@ end
 
 %-Check TMFC_denoise version
 %--------------------------------------------------------------------------
-localVer  = 'v1.5.0';
+localVer  = 'v1.5.1';
 try
     r = webread(sprintf('https://api.github.com/repos/%s/%s/releases/latest', ...
                         'IHB-IBR-department','TMFC_denoise'), ...
@@ -211,17 +211,71 @@ catch
     latestVer = '';
 end
 disp(['==============[TMFC denoise ' localVer ']==============']);
-if ~isequal(localVer,latestVer) 
-    disp(['Update available: ' latestVer '. Please visit: https://github.com/IHB-IBR-department/TMFC_denoise']);
+if isempty(latestVer)
+    fprintf(2,['Could not check for updates automatically. ' ...
+        'Please check the latest version on GitHub:\n' ...
+        'https://github.com/IHB-IBR-department/TMFC_denoise/releases\n']);
+elseif ~strcmp(localVer,latestVer)
+    fprintf('Update available: %s. Please visit: https://github.com/IHB-IBR-department/TMFC_denoise/releases\n',latestVer);
 end
 
 output_paths = [];
+
+% Project setup files are used only when the GUI is started without inputs
+gui_project_mode = (nargin == 0);
+loaded_setup = false;
+autosave_path = '';
+
+if gui_project_mode
+    SPM_paths = [];
+    subject_paths = [];
+    options = [];
+    anat_paths = [];
+    func_paths = [];
+    seg_paths = [];
+
+    start_mode = tmfc_choose_analysis_mode();
+
+    switch start_mode
+        case 'New analysis'
+            % Select folder for automatic setup saves
+            autosave_dir = uigetdir(pwd,'Select folder for TMFC_denoise autosaves');
+            if isequal(autosave_dir,0), return; end
+        case 'Load saved analysis'
+            [setup_file, setup_dir] = uigetfile('*.mat','Open a saved TMFC_denoise analysis setup');
+            if isequal(setup_file,0), return; end
+            project_file = fullfile(setup_dir,setup_file);
+            saved = load(project_file,'setup');
+            if ~isfield(saved,'setup') || ~isstruct(saved.setup) || ...
+                    ~isscalar(saved.setup) || ~isfield(saved.setup,'format') || ...
+                    ~strcmp(saved.setup.format,'TMFC_denoise_setup')
+                error('Not a valid TMFC_denoise analysis setup: %s',project_file);
+            end
+            required = {'SPM_paths','subject_paths','options','anat_paths','func_paths','seg_paths'};
+            for iField = 1:numel(required)
+                if ~isfield(saved.setup,required{iField})
+                    error('The selected setup is missing: %s',required{iField});
+                end
+            end
+            SPM_paths = saved.setup.SPM_paths;
+            subject_paths = saved.setup.subject_paths;
+            options = saved.setup.options;
+            anat_paths = saved.setup.anat_paths;
+            func_paths = saved.setup.func_paths;
+            seg_paths = saved.setup.seg_paths;
+            loaded_setup = true;
+            autosave_dir = setup_dir;
+            fprintf('TMFC denoise: Loaded analysis setup from %s\n',project_file);
+        otherwise
+            return;
+    end
+end
 
 %-Prepare inputs
 %--------------------------------------------------------------------------
 
 % Select SPM.mat files
-if nargin<1 || isempty(SPM_paths)
+if (nargin<1 && ~gui_project_mode) || isempty(SPM_paths)
     [SPM_paths,subject_paths] = tmfc_select_subjects_GUI(0);
 end
 if isempty(SPM_paths); warning('Select SPM.mat files.'); return, end
@@ -245,22 +299,59 @@ if numel(subject_paths) ~= numel(SPM_paths)
            ') must match the number of SPM.mat files (' num2str(numel(SPM_paths)) ').']);
 end
 
-% Define denoising options
-if nargin<3 || isempty(options)
-    options = tmfc_denoise_options_GUI;
+if gui_project_mode
+    if ~iscell(SPM_paths) || ~iscell(subject_paths) || ...
+            any(~cellfun(@ischar,SPM_paths)) || any(~cellfun(@ischar,subject_paths))
+        error('SPM_paths and subject_paths must be cell arrays of paths.');
+    end
+    if any(~cellfun(@(p) exist(p,'dir') == 7,subject_paths))
+        error('At least one subject folder does not exist.');
+    end
+
+    % Create a new autosave without overwriting existing setup files
+    autosave_path = tmfc_new_autosave_path(autosave_dir);
+
+    tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+        anat_paths,func_paths,seg_paths,'files_selected',localVer);
+    fprintf('TMFC denoise setup autosave: %s\n',autosave_path);
 end
-if isempty(options); error('Denoising options not selected.'); end
+
+% Define denoising options
+if gui_project_mode
+    if loaded_setup && ~isempty(options)
+        options = tmfc_denoise_options_GUI(options);
+    else
+        options = tmfc_denoise_options_GUI();
+    end
+elseif nargin<3 || isempty(options)
+    options = tmfc_denoise_options_GUI();
+end
+if isempty(options)
+    if gui_project_mode, return; end
+    error('Denoising options not selected.');
+end
+if gui_project_mode
+    tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+        anat_paths,func_paths,seg_paths,'denoising_options',localVer);
+end
 
 % Check whether tissue masks are needed
 need_masks = sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none') || ~strcmpi(options.GSR,'none') || options.DVARS == 1;
 
 % Existing SPM segmentation paths
-if nargin<9
+if nargin<9 && ~gui_project_mode
     seg_paths = [];
 end
 
 % Select structural T1 images in native space
-if nargin<4 || isempty(anat_paths)
+if gui_project_mode && loaded_setup && need_masks && ~isempty(anat_paths)
+    if ~tmfc_setup_anat_valid(anat_paths,numel(SPM_paths))
+        warning('Saved anatomical paths are incomplete or missing. Please select them again.');
+        anat_paths = [];
+        seg_paths = [];  % Previous segmentation references may no longer match
+    end
+end
+if (nargin<4 && ~gui_project_mode) || isempty(anat_paths)
     if need_masks
         anat_paths = tmfc_select_anat_GUI(subject_paths);
         if isempty(anat_paths); error('Select structural T1 files.'); end
@@ -268,12 +359,16 @@ if nargin<4 || isempty(anat_paths)
         anat_paths = [];
     end
 end
+if gui_project_mode
+    tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+        anat_paths,func_paths,seg_paths,'anatomical_paths',localVer);
+end
 
 % Optionally reuse existing SPM segmentation output
-if need_masks && (nargin<9 || isempty(seg_paths))
-    answer = questdlg(['Use existing SPM segmentation output if available?', newline, newline, ...
-                       'The toolbox will automatically search the anatomical image folder ', ...
-                       'for c1/c2/c3 tissue probability maps and the matching y_ deformation field. ', ...
+if need_masks && ((nargin<9 && ~gui_project_mode) || isempty(seg_paths))
+    answer = questdlg(['Use existing SPM segmentation output if available?' sprintf('\n\n') ...
+                       'The toolbox will automatically search the anatomical image folder ' ...
+                       'for c1/c2/c3 tissue probability maps and the matching y_ deformation field. ' ...
                        'Subjects with missing files will be segmented as usual.'], ...
                        'TMFC denoise', ...
                        'Segment T1 images','Use existing if available','Segment T1 images');
@@ -287,13 +382,23 @@ if need_masks && (nargin<9 || isempty(seg_paths))
 end
 
 % Select realigned and unsmoothed functional images in MNI space
-if nargin<5 || isempty(func_paths)
-    if (sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none') || ~strcmpi(options.GSR,'none') || options.DVARS == 1)
+if gui_project_mode && loaded_setup && need_masks && ~isempty(func_paths)
+    if ~tmfc_setup_func_valid(func_paths,numel(SPM_paths))
+        warning('Saved functional paths are incomplete, missing or compressed. Please select them again.');
+        func_paths = [];
+    end
+end
+if (nargin<5 && ~gui_project_mode) || isempty(func_paths)
+    if need_masks
         func_paths = tmfc_select_func_GUI(SPM_paths,subject_paths);
         if isempty(func_paths); error('Select unsmoothed functional files.'); end
     else
         func_paths = [];
     end
+end
+if gui_project_mode
+    tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+        anat_paths,func_paths,seg_paths,'input_paths',localVer);
 end
 
 % Display individual FD plots
@@ -342,6 +447,10 @@ end
 if display_FD == 1
     FDthr = tmfc_plot_FD(FD,options,SPM_paths,subject_paths,anat_paths,func_paths);
     options.spikeregFDthr = FDthr;
+    if gui_project_mode
+        tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+            anat_paths,func_paths,seg_paths,'FD_threshold',localVer);
+    end
 end
 
 %-Create spike regressors
@@ -360,9 +469,26 @@ if sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none') || ~strcmpi(optio
     if isempty(anat_paths); error('Select structural T1 files.'); end
     if isempty(func_paths); error('Select unsmoothed functional files.'); end
     disp('----------------------------------------');
-    if ~isfield(options,'GMmask') || ~isfield(options,'WMmask') || ~isfield(options,'CSFmask') 
+    change_masks = ~tmfc_setup_mask_params_valid(options);
+    if gui_project_mode && loaded_setup && ~change_masks
+        mask_answer = questdlg('Change the previously selected mask parameters?', ...
+            'TMFC denoise', 'Keep previous', 'Change', 'Cancel', 'Keep previous');
+        switch mask_answer
+            case 'Keep previous'
+                change_masks = false;
+            case 'Change'
+                change_masks = true;
+            otherwise
+                return;
+        end
+    end
+    if change_masks
         [options.GMmask.prob, options.WMmask.prob, options.CSFmask.prob, ...
          options.GMmask.dilate, options.WMmask.erode, options.CSFmask.erode] = tmfc_masks_GUI();
+    end
+    if gui_project_mode
+        tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+            anat_paths,func_paths,seg_paths,'mask_parameters',localVer);
     end
     disp('Creating binary masks...'); tic;
     masks = tmfc_create_masks(SPM_paths,subject_paths,anat_paths,func_paths,options,seg_paths);
@@ -403,6 +529,144 @@ if options.DVARS == 1
     disp(['Done in ' num2str(hms(1),'%02.f') ':' num2str(hms(2),'%02.f') ':' num2str(hms(3),'%02.f') ' [hr:min:sec].']);
 end
 
+if gui_project_mode
+    tmfc_write_setup(autosave_path,SPM_paths,subject_paths,options, ...
+        anat_paths,func_paths,seg_paths,'completed',localVer);
+    save_answer = questdlg('Save the analysis setup?', ...
+        'TMFC denoise', 'Save a copy', 'Not now', 'Not now');
+    if strcmp(save_answer,'Save a copy')
+        [save_file, save_dir] = uiputfile('*.mat','Save TMFC_denoise analysis setup', ...
+            fullfile(fileparts(autosave_path),'TMFC_denoise_project.mat'));
+        if ~isequal(save_file,0)
+            copy_path = fullfile(save_dir,save_file);
+            tmfc_write_setup(copy_path,SPM_paths,subject_paths,options, ...
+                anat_paths,func_paths,seg_paths,'completed',localVer);
+            fprintf('TMFC denoise project saved: %s\n',copy_path);
+        end
+    end
 end
 
+end
 
+% -------------------------------------------------------------------------
+% Helpers for the GUI-only analysis setup workflow
+% -------------------------------------------------------------------------
+function path_out = tmfc_new_autosave_path(folder)
+date_str = datestr(now,'dd_mm_yyyy');
+time_str = lower(strrep(datestr(now,'HH_MM AM'),' ',''));
+base = ['TMFC_denoise_autosave_[' date_str ']_[' time_str ']'];
+path_out = fullfile(folder,[base '.mat']);
+i = 1;
+while exist(path_out,'file')
+    path_out = fullfile(folder,sprintf('%s_%02d.mat',base,i));
+    i = i+1;
+end
+end
+
+function tmfc_write_setup(filename,SPM_paths,subject_paths,options,anat_paths,func_paths,seg_paths,stage,version)
+setup.format = 'TMFC_denoise_setup';
+setup.format_version = 1;
+setup.TMFC_version = version;
+setup.updated = datestr(now,30);
+setup.stage = stage;
+setup.SPM_paths = SPM_paths;
+setup.subject_paths = subject_paths;
+setup.options = options;
+setup.anat_paths = anat_paths;
+setup.func_paths = func_paths;
+setup.seg_paths = seg_paths;
+
+% Write to a temporary file first so a failed save does not corrupt a
+% previous checkpoint. The target is replaced only after save completes.
+tmp = [filename '.tmp.mat'];
+save(tmp,'setup');
+[ok,msg] = movefile(tmp,filename,'f');
+if ~ok
+    error('Failed to save TMFC_denoise setup to %s: %s',filename,msg);
+end
+end
+
+function tf = tmfc_setup_mask_params_valid(options)
+tf = isstruct(options) && isscalar(options) && ...
+    isfield(options,'GMmask') && isfield(options,'WMmask') && ...
+    isfield(options,'CSFmask') && isfield(options.GMmask,'prob') && ...
+    isfield(options.GMmask,'dilate') && isfield(options.WMmask,'prob') && ...
+    isfield(options.WMmask,'erode') && isfield(options.CSFmask,'prob') && ...
+    isfield(options.CSFmask,'erode');
+end
+
+function tf = tmfc_setup_anat_valid(paths,nSub)
+tf = iscell(paths) && numel(paths) == nSub;
+if ~tf, return; end
+for k = 1:nSub
+    if ~ischar(paths{k}) || isempty(paths{k}) || exist(paths{k},'file') ~= 2
+        tf = false;
+        return;
+    end
+end
+end
+
+function tf = tmfc_setup_func_valid(paths,nSub)
+tf = isstruct(paths) && numel(paths) == nSub && isfield(paths,'fname');
+if ~tf, return; end
+for k = 1:nSub
+    fnames = paths(k).fname;
+    if ~iscell(fnames) || isempty(fnames)
+        tf = false;
+        return;
+    end
+    for j = 1:numel(fnames)
+        entry = fnames{j};
+        if ~ischar(entry) || isempty(entry)
+            tf = false;
+            return;
+        end
+        img = regexprep(entry,',\d+$','');
+        if ~isempty(regexpi(img,'\.nii\.gz$','once')) || exist(img,'file') ~= 2
+            tf = false;
+            return;
+        end
+    end
+end
+end
+
+function mode = tmfc_choose_analysis_mode()
+mode = '';
+
+h = dialog('Name','TMFC denoise', ...
+    'Position',[500 500 430 110], ...
+    'Color','w', ...
+    'Resize','off', ...
+    'WindowStyle','modal', ...
+    'CloseRequestFcn',@cancel_selection);
+
+movegui(h,'center');
+
+uicontrol(h,'Style','pushbutton', ...
+    'String','New analysis', ...
+    'Position',[20 30 185 50], ...
+    'FontSize',11, ...
+    'Callback',@(~,~)select_mode('New analysis'));
+
+uicontrol(h,'Style','pushbutton', ...
+    'String','Load saved analysis', ...
+    'Position',[225 30 185 50], ...
+    'FontSize',11, ...
+    'Callback',@(~,~)select_mode('Load saved analysis'));
+
+uiwait(h);
+
+if isgraphics(h)
+    delete(h);
+end
+
+function select_mode(selected_mode)
+    mode = selected_mode;
+    uiresume(h);
+end
+
+function cancel_selection(~,~)
+    mode = '';
+    uiresume(h);
+end
+end

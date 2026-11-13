@@ -9,18 +9,15 @@ function tmfc_PEB_PPI(CACHE, iSub)
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
-subj = CACHE.subjects.sublist(iSub);
+subj   = CACHE.subjects.sublist(iSub);
 nSub   = CACHE.subjects.nSub;
 
 ROIset = CACHE.ROIset;
 nROI   = length(ROIset.ROIs);
 
-cond_list      = CACHE.conditions.list;
-nCond          = CACHE.conditions.nCond;
-conds_by_sess  = CACHE.conditions.by_session;
-
-sess_num = CACHE.sessions.list;
-maxSess  = CACHE.sessions.max;
+cond_list    = CACHE.conditions.list;
+nCond        = CACHE.conditions.nCond;
+session_mode = CACHE.session_mode;
 
 % Subject folder
 % -------------------------------------------------------------------------
@@ -40,8 +37,35 @@ voiBasePath = fullfile(CACHE.project_path,'ROI_sets',ROIset.set_name,'VOIs',subj
 % -------------------------------------------------------------------------
 SPM = load(subj.path).SPM;
 
+% Runs and conditions for this subject
 % -------------------------------------------------------------------------
-% Subject-level precompute: timing + HRF + PSY per condition (microtime)
+if strcmp(session_mode,'repeated')
+
+    sess_num = 1:length(SPM.Sess);
+
+    conds_by_sess = cell(1,length(SPM.Sess));
+    for s = sess_num
+        conds_by_sess{s} = 1:nCond;
+    end
+
+elseif strcmp(session_mode,'strict')
+
+    sess_num = unique([cond_list.sess]);
+
+    conds_by_sess = cell(1,length(SPM.Sess));
+    for jCond = 1:nCond
+        s = cond_list(jCond).sess;
+        conds_by_sess{s}(end+1) = jCond;
+    end
+
+else
+    error('session_mode must be ''strict'' or ''repeated''.');
+end
+
+maxSess = max(sess_num);
+
+% -------------------------------------------------------------------------
+% Subject-level precompute
 % -------------------------------------------------------------------------
 RT      = SPM.xY.RT;
 dt      = SPM.xBF.dt;
@@ -59,30 +83,9 @@ switch lower(strtrim(SPM.xBF.name))
         error('TMFC supports only canonical HRF, time derivative, and dispersion derivative.');
 end
 
-psy_u = cell(1, nCond);
 ppi_bf = cell(1, nCond);
 
 for jCond = 1:nCond
-    s    = cond_list(jCond).sess;
-    Sess = SPM.Sess(s);
-
-    % gPPI mode: Uu is 1x3: [U_index, u_column, weight]
-    try
-        Uu = [cond_list(jCond).number cond_list(jCond).pmod 1];
-    catch
-        Uu = [cond_list(jCond).number 1 1];
-    end
-
-    PSY = full(Sess.U(Uu(1,1)).u(33:end, Uu(1,2)) * Uu(1,3));
-
-    % Mean centering (optional)
-    if strcmp(ROIset.PPI_centering,'with_mean_centering') || ...
-       strcmp(ROIset.PPI_centering,'mean_centering')
-        PSY = spm_detrend(PSY);
-    end
-
-    psy_u{jCond} = PSY;
-
     % Explicitly selected basis function:
     %   bf = 1  canonical HRF
     %   bf = 2  time derivative
@@ -105,7 +108,7 @@ for jCond = 1:nCond
 end
 
 % -------------------------------------------------------------------------
-% Session loop (precompute xb/P once; preload all Y once)
+% Run/Session loop (precompute xb/P once; preload all Y once)
 % -------------------------------------------------------------------------
 for s = sess_num(:)'
 
@@ -165,7 +168,7 @@ for s = sess_num(:)'
     %-----------------------------------------------------------------------------------
 
     % --------------------------------------------------------------
-    % Preload all VOI time series for this session
+    % Preload all VOI time series for this run/session
     % --------------------------------------------------------------
     Yall = cell(1, nROI);
     for kROI = 1:nROI
@@ -175,7 +178,7 @@ for s = sess_num(:)'
     end
 
     % --------------------------------------------------------------
-    % Prepare list of conditions in this session
+    % Prepare list of conditions in this run/session
     % --------------------------------------------------------------
     jConds = conds_by_sess{s};
     nCond_s = numel(jConds);
@@ -185,14 +188,30 @@ for s = sess_num(:)'
     % --------------------------------------------------------------
     for ii = 1:nCond_s
         jCond = jConds(ii);
-        PSY   = psy_u{jCond};
+        file_name = tmfc_PPI_file_name(SPM,s,cond_list(jCond));
 
+        % Psychological variable for the current run
+        try
+            Uu = [cond_list(jCond).number cond_list(jCond).pmod 1];
+        catch
+            Uu = [cond_list(jCond).number 1 1];
+        end
+
+        PSY = full(Sess.U(Uu(1,1)).u(33:end,Uu(1,2)) * Uu(1,3));
+        
+        % Mean centering
+        if strcmp(ROIset.PPI_centering,'with_mean_centering') || ...
+                strcmp(ROIset.PPI_centering,'mean_centering')
+            PSY = spm_detrend(PSY);
+        end     
+        
+        % PPI
         for kROI = 1:nROI
 
             roiName = ROIset.ROIs(kROI).name;
             Y = Yall{1,kROI};
 
-            fprintf('[PPI] Sub %02d/%02d | Sess %02d/%02d | Cond %02d/%02d | ROI %03d/%03d (%s)\n', ...
+            fprintf('[PPI] Sub %02d/%02d | Run %02d/%02d | Cond %02d/%02d | ROI %03d/%03d (%s)\n', ...
                 iSub, nSub, s, maxSess, jCond, nCond, kROI, nROI, roiName);
 
             % Deconvolution (PEB)
@@ -210,16 +229,51 @@ for s = sess_num(:)'
             
             % PPI struct
             PPI = struct();
-            PPI.name = ['[' regexprep(roiName,' ','_') ']_' cond_list(jCond).file_name];
+            PPI.name = ['[' regexprep(roiName,' ','_') ']_' file_name];
             PPI.ppi  = ppi;
 
             % Save
             outFile = fullfile(outPath, ...
-            ['PPI_[' regexprep(roiName,' ','_') ']_' cond_list(jCond).file_name '.mat']);
+            ['PPI_[' regexprep(roiName,' ','_') ']_' file_name '.mat']);
             save(outFile, 'PPI');
         end
     end
 
     clear xb Hxb X0 Q W P Yall
 end
+end
+
+% =========================================================================
+% Generate PPI file name
+function file_name = tmfc_PPI_file_name(SPM,s,condition)
+    cond = condition.number;
+    
+    if isfield(condition,'pmod') && ~isempty(condition.pmod)
+        pmod = condition.pmod;
+    else
+        pmod = 1;
+    end
+    
+    if isfield(condition,'bf') && ~isempty(condition.bf)
+        bf = condition.bf;
+    else
+        bf = 1;
+    end
+    
+    cond_name = char(SPM.Sess(s).U(cond).name(pmod));
+    
+    base_file_name = ...
+        ['[Run_' num2str(s) ']_[Cond_' num2str(cond) ']_[' ...
+        regexprep(cond_name,' ','_') ']'];
+    
+    switch bf
+        case 1
+            file_name = base_file_name;
+        case 2
+            file_name = [base_file_name '_[TimeDeriv]'];
+        case 3
+            file_name = [base_file_name '_[DispDeriv]'];
+        otherwise
+            error('Unsupported basis function: %d.',bf);
+    end
 end

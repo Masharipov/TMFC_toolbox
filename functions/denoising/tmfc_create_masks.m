@@ -62,20 +62,28 @@ if options.reuse_existing_masks == 1
     prev_mask_dirs = cell(nSub,1);
 
     for iSub = 1:nSub
-        prev_mask_dirs{iSub} = tmfc_find_existing_mask_dir(subject_paths{iSub},SPM_paths{iSub},mask_folder_name);
-
-        if ~isempty(prev_mask_dirs{iSub})
-            reused_masks(iSub) = tmfc_check_existing_final_masks(prev_mask_dirs{iSub},options);
+        % Check masks in the current GLM first
+        if tmfc_check_existing_final_masks(mask_paths{iSub},options)
+            prev_mask_dirs{iSub} = mask_paths{iSub};
+            reused_masks(iSub) = true;
+        else
+            % Look for masks from other GLMs
+            prev_mask_dirs{iSub} = tmfc_find_existing_mask_dir(subject_paths{iSub},SPM_paths{iSub},mask_folder_name);
+            if ~isempty(prev_mask_dirs{iSub})
+                reused_masks(iSub) = tmfc_check_existing_final_masks(prev_mask_dirs{iSub},options);
+            end
         end
     end
 
     if all(reused_masks)
 
         disp('Existing final masks with identical mask parameters were found for all subjects.');
-        disp('Copying existing masks and skipping mask creation.');
+        disp('Reusing existing masks and skipping mask creation.');
 
         for iSub = 1:nSub
-            tmfc_copy_existing_final_masks(prev_mask_dirs{iSub},mask_paths{iSub},options);
+            if ~strcmpi(prev_mask_dirs{iSub},mask_paths{iSub})
+                tmfc_copy_existing_final_masks(prev_mask_dirs{iSub},mask_paths{iSub},options);
+            end
         end
 
         if sum(options.aCompCor)~=0 || ~strcmpi(options.WM_CSF,'none')
@@ -336,6 +344,9 @@ for iSub = 1:nSub
         jSub = jSub + 1;
         batch{jSub} = matlabbatch;
         clear matlabbatch
+    else
+        % Complete segmentation already exists in TMFC_denoise/Segment
+        existing_seg_available(iSub) = true;
     end
 end
 
@@ -344,8 +355,7 @@ if use_existing_seg
         sum(existing_seg_available), nSub);
 
     if any(~existing_seg_available)
-        fprintf('SPM segmentation will be run for %d subject(s) with missing c1/c2/c3/y_ files.\n', ...
-            sum(~existing_seg_available));
+        fprintf('SPM segmentation will be run for %d subject(s) with incomplete segmentation files.\n',jSub);
     end
 end
 

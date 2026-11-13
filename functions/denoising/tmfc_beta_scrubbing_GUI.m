@@ -33,6 +33,12 @@ end
 nSub = length(tmfc.subjects);
 nCond = length(cond_list);
 
+if ~isfield(tmfc,'session_mode')
+    session_mode = 'strict';
+else
+    session_mode = tmfc.session_mode;
+end
+
 % -------------------------------------------------------------------------
 % Precompute usable trial onsets for all subjects/conditions
 % -------------------------------------------------------------------------
@@ -44,28 +50,64 @@ for iSub = 1:nSub
 
     beta_info(iSub).Subject = tmfc.subjects(iSub).name;
     beta_info(iSub).RT = RT;
+    beta_info(iSub).Cond = struct([]);
 
-    for jCond = 1:nCond
-        iSess = cond_list(jCond).sess;
-        iU    = cond_list(jCond).number;
+    if strcmp(session_mode,'repeated')
+        kCond = 0;
+        for iSess = 1:length(SPM.Sess)
+            for jCond = 1:nCond
+                kCond = kCond + 1;
+                iU = cond_list(jCond).number;
 
-        tEnd = (SPM.nscan(iSess)-1)*RT;
-        tMax = tEnd - 8;
+                tEnd = (SPM.nscan(iSess)-1)*RT;
+                tMax = tEnd - 8;
 
-        ons = SPM.Sess(iSess).U(iU).ons;
+                ons = SPM.Sess(iSess).U(iU).ons;
 
-        if strcmpi(SPM.xBF.UNITS,'scans')
-            ons_sec = ons * RT;
-        else
-            ons_sec = ons;
+                if strcmpi(SPM.xBF.UNITS,'scans')
+                    ons_sec = ons * RT;
+                else
+                    ons_sec = ons;
+                end
+
+                keep = (ons_sec >= 0) & (ons_sec <= tMax);
+
+                file_name = regexprep(cond_list(jCond).file_name, ...
+                    '^\[(Run|Sess)_\d+\]', ...
+                    ['[Run_' num2str(iSess) ']']);
+
+                beta_info(iSub).Cond(kCond).sess = iSess;
+                beta_info(iSub).Cond(kCond).trial_onsets_sec = ons_sec(keep);
+                beta_info(iSub).Cond(kCond).n_beta = sum(keep);
+                beta_info(iSub).Cond(kCond).file_name = file_name;
+            end
         end
 
-        keep = (ons_sec >= 0) & (ons_sec <= tMax);
-
-        beta_info(iSub).Cond(jCond).sess = iSess;
-        beta_info(iSub).Cond(jCond).trial_onsets_sec = ons_sec(keep);
-        beta_info(iSub).Cond(jCond).n_beta = sum(keep);
-        beta_info(iSub).Cond(jCond).file_name = cond_list(jCond).file_name;
+    elseif strcmp(session_mode,'strict')
+        for jCond = 1:nCond
+            iSess = cond_list(jCond).sess;
+            iU    = cond_list(jCond).number;
+    
+            tEnd = (SPM.nscan(iSess)-1)*RT;
+            tMax = tEnd - 8;
+    
+            ons = SPM.Sess(iSess).U(iU).ons;
+    
+            if strcmpi(SPM.xBF.UNITS,'scans')
+                ons_sec = ons * RT;
+            else
+                ons_sec = ons;
+            end
+    
+            keep = (ons_sec >= 0) & (ons_sec <= tMax);
+    
+            beta_info(iSub).Cond(jCond).sess = iSess;
+            beta_info(iSub).Cond(jCond).trial_onsets_sec = ons_sec(keep);
+            beta_info(iSub).Cond(jCond).n_beta = sum(keep);
+            beta_info(iSub).Cond(jCond).file_name = cond_list(jCond).file_name;
+        end
+    else
+        error('session_mode must be ''strict'' or ''repeated''.');
     end
 end
 
@@ -128,15 +170,18 @@ FD_MW_nTR_button = uicontrol(FD_MW,'Style','pushbutton', ...
 
 FD_MW_thres_edit = uicontrol(FD_MW,'Style','Edit','String','0.5', ...
     'Units','normalized','Position',[0.84 0.30 0.07 0.045], ...
-    'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w');
+    'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w', ...
+    'callback',@get_FDthr);
 
 FD_MW_window_edit = uicontrol(FD_MW,'Style','Edit','String','12', ...
     'Units','normalized','Position',[0.84 0.24 0.07 0.045], ...
-    'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w');
+    'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w', ...
+    'callback',@get_window);
 
 FD_MW_nTR_edit = uicontrol(FD_MW,'Style','Edit','String','1', ...
     'Units','normalized','Position',[0.84 0.18 0.07 0.045], ...
-    'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w');
+    'FontUnits','normalized','FontSize',0.4,'backgroundcolor','w', ...
+    'callback',@get_nTR);
 
 FD_MW_note_txt = uicontrol(FD_MW,'Style','text','String',note_str, ...
     'Units','normalized','Position',[0.075 0.06 0.85 0.078], ...
@@ -175,7 +220,7 @@ end
 % -------------------------------------------------------------------------
 function FD_MW_exit(~,~)
     beta_scrubbing_options = [];
-    fprintf(2,'Beta scrubbing cancelled. BSC LSS computation was not initiated.\n');
+    fprintf(2,'Beta scrubbing cancelled. BSC computation was not initiated.\n');
     uiresume(FD_MW);
 end
 
@@ -275,7 +320,7 @@ function update_text(~,~)
         flagged(jSub).total_prc = 0;
         flagged(jSub).n_total_betas = 0;
 
-        for jCond = 1:nCond
+        for jCond = 1:length(beta_info(jSub).Cond)
             iSess = beta_info(jSub).Cond(jCond).sess;
             ons_sec = beta_info(jSub).Cond(jCond).trial_onsets_sec(:);
             RT = beta_info(jSub).RT;

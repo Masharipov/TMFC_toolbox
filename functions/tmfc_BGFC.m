@@ -14,25 +14,27 @@ function [sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub)
 %
 %   tmfc.subjects.path            - Paths to individual SPM.mat files
 %   tmfc.subjects.name            - Subject names within the TMFC project
-%                           ('Subject_XXXX' naming will be used by default)
 %   tmfc.project_path             - Path where all results will be saved
 %   tmfc.defaults.parallel        - 0 or 1 (sequential/parallel computing)
+%   tmfc.session_mode             - 'strict' or 'repeated'
+%                                   In repeated mode, run-specific Fisher-z
+%                                   matrices are averaged across all runs.
 %
 %   tmfc.ROI_set                  - List of selected ROIs
 %   tmfc.ROI_set.type             - Type of the ROI set
 %   tmfc.ROI_set.set_name         - Name of the ROI set
 %   tmfc.ROI_set.ROIs.name        - Name of the selected ROI
-%   tmfc.ROI_set.ROIs.path_masked - Paths to ROI images masked by group
-%                                   mean binary mask 
+%   tmfc.ROI_set.ROIs.path_masked - Paths to ROI images masked by
+%                                   individual first-level masks
 %
-% Example of the ROI set (see tmfc_select_ROIs_GUI):
+% Example of the ROI set (see tmfc_select_ROIs_GUI and tmfc_create_ROI_set):
 %
 %   tmfc.ROI_set(1).set_name = 'two_ROIs';
 %   tmfc.ROI_set(1).type = 'binary_images';
 %   tmfc.ROI_set(1).ROIs(1).name = 'ROI_1';
 %   tmfc.ROI_set(1).ROIs(2).name = 'ROI_2';
-%   tmfc.ROI_set(1).ROIs(1).path_masked = 'C:\ROI_set\two_ROIs\ROI_1.nii';
-%   tmfc.ROI_set(1).ROIs(2).path_masked = 'C:\ROI_set\two_ROIs\ROI_2.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked(1).subjects = '...\Subject_0001\ROI_1_masked.nii';
+%   tmfc.ROI_set(1).ROIs(1).path_masked(2).subjects = '...\Subject_0002\ROI_1_masked.nii';
 %
 % FORMAT [sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub)
 % Run the function starting from a specific subject in the path list for
@@ -43,7 +45,7 @@ function [sub_check] = tmfc_BGFC(tmfc,ROI_set_number,start_sub)
 %   start_sub      - Subject number in the list to start computations from
 %
 % =========================================================================
-% Copyright (C) 2025 Ruslan Masharipov
+% Copyright (C) 2026 Ruslan Masharipov
 % License: GPL-3.0-or-later
 % Contact: masharipov@ihb.spb.ru
 
@@ -61,10 +63,16 @@ if ~isfield(tmfc.subjects,'name')
     end
 end
 
+% Check session mode
+if ~isfield(tmfc,'session_mode')
+    session_mode = 'strict';
+else
+    session_mode = tmfc.session_mode;
+end
+
 nSub = length(tmfc.subjects);
 nROI = length(tmfc.ROI_set(ROI_set_number).ROIs);
-SPM = load(tmfc.subjects(1).path).SPM;
-nSess = length(SPM.Sess);
+
 sub_check = zeros(1,nSub);
 if start_sub > 1
     sub_check(1:start_sub) = 1;
@@ -89,6 +97,9 @@ if ~isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set
 end
 
 for iSub = start_sub:nSub
+    SPM = load(tmfc.subjects(iSub).path).SPM;
+    nSess = length(SPM.Sess);
+
     if isdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','FIR_VOIs',tmfc.subjects(iSub).name))
         rmdir(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','FIR_VOIs',tmfc.subjects(iSub).name),'s');
         pause(0.1);
@@ -104,12 +115,17 @@ for iSub = start_sub:nSub
             matlabbatch{1}.spm.util.voi.adjust = NaN; % Adjust for everything 
             matlabbatch{1}.spm.util.voi.session = jSess;
             matlabbatch{1}.spm.util.voi.name = tmfc.ROI_set(ROI_set_number).ROIs(kROI).name;
-            switch tmfc.ROI_set(ROI_set_number).type
-                case {'binary_images','fixed_spheres'}
-                    matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked};
-                otherwise
-                    matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked(iSub).subjects};
+            
+            path_masked = tmfc.ROI_set(ROI_set_number).ROIs(kROI).path_masked;
+
+            % Backward compatibility with old ROI sets
+            if ischar(path_masked)
+                maskPath = path_masked;
+            else
+                maskPath = path_masked(iSub).subjects;
             end
+
+            matlabbatch{1}.spm.util.voi.roi{1}.mask.image = {maskPath};
             matlabbatch{1}.spm.util.voi.roi{1}.mask.threshold = 0.1;
             matlabbatch{1}.spm.util.voi.expression = 'i1';           
             batch{kROI} = matlabbatch;
@@ -166,18 +182,44 @@ for iSub = start_sub:nSub
         clear batch
     end
 
-    % Calculate BGFC matrix
+    % Calculate run-specific BGFC matrices
+    z_matrix_sum = [];
+
     for jSess = 1:nSess
         for kROI = 1:nROI
             Y(:,kROI) = load(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','FIR_VOIs', ... 
                 tmfc.subjects(iSub).name,['VOI_' tmfc.ROI_set(ROI_set_number).ROIs(kROI).name '_' num2str(jSess) '.mat'])).Y;
         end
+
         z_matrix = atanh(tmfc_corr(Y));
         z_matrix(1:size(z_matrix,1)+1:end) = nan;
+
         save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','ROI_to_ROI', ... 
-                [tmfc.subjects(iSub).name '_Session_' num2str(jSess) '.mat']),'z_matrix');
-        clear Y z_matrix  
+                [tmfc.subjects(iSub).name '_Run_' num2str(jSess) '.mat']),'z_matrix');
+
+        % Sum run-specific Fisher-z matrices in repeated mode
+        if strcmp(session_mode,'repeated')
+            if isempty(z_matrix_sum)
+                z_matrix_sum = z_matrix;
+            else
+                z_matrix_sum = z_matrix_sum + z_matrix;
+            end
+        end
+
+        clear Y z_matrix
     end
+
+    % Equal-weight average across repeated runs
+    if strcmp(session_mode,'repeated')
+        z_matrix = z_matrix_sum/nSess;
+
+        save(fullfile(tmfc.project_path,'ROI_sets',tmfc.ROI_set(ROI_set_number).set_name,'BGFC','ROI_to_ROI', ...
+                [tmfc.subjects(iSub).name '_All_Runs.mat']),'z_matrix');
+
+        clear z_matrix
+    end
+
+    clear z_matrix_sum
     
     sub_check(iSub) = 1;
     

@@ -1,8 +1,10 @@
-function options = tmfc_denoise_options_GUI()
+function options = tmfc_denoise_options_GUI(saved_options)
 
-% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.5.0]=
+% =[Task-Modulated Functional Connectivity (TMFC) Denoise Toolbox v1.5.1]=
 % 
 % Opens a GUI to select denoising options.
+% Optional saved_options struct initializes the GUI with previously selected settings.
+% Calling without arguments retains the original defaults.
 %
 % =========================================================================
 % Copyright (C) 2026 Ruslan Masharipov
@@ -27,6 +29,20 @@ options.WM_CSF = 'none';
 options.GSR = 'none';
 options.parallel = 0;
 
+
+% Optional: start from a previously saved configuration.
+% Fields not present in saved_options retain their defaults.
+restore_saved = nargin > 0 && ~isempty(saved_options);
+if restore_saved
+    if ~isstruct(saved_options) || ~isscalar(saved_options)
+        error('saved_options must be a scalar options struct.');
+    end
+    saved_fields = fieldnames(saved_options);
+    for iField = 1:numel(saved_fields)
+        options.(saved_fields{iField}) = saved_options.(saved_fields{iField});
+    end
+end
+
 % These options can be selected via tmfc_masks_GUI.m:
 % options.GMmask.prob = 0.95;
 % options.WMmask.prob = 0.99;
@@ -48,7 +64,7 @@ set_WM_CSF = {'None','Add WM and CSF signals (2Phys)','Add WM and CSF signals al
 set_GSR = {'None','Add whole-brain signal (GSR)','Add whole-brain signal and its temporal derivative (2GSR)','Add whole-brain signal, its temporal derivative, and 2 quadratic terms (4GSR)'};
 set_PAR = {'None','Enable parallel computations'};
 
-tmfc_DN_GUI = figure('Name','TMFC denoise v1.5.0','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', ...
+tmfc_DN_GUI = figure('Name','TMFC denoise v1.5.1','MenuBar', 'none', 'ToolBar', 'none','NumberTitle', 'off', ...
     'Units', 'normalized', 'Position', [0.345 0.062 0.310 0.850], 'color', 'w', 'Tag', 'TMFC_DN_GUI','resize','on', ...
     'CloseRequestFcn',@close_options_GUI);
 
@@ -118,6 +134,45 @@ DN_PAR_pop = uicontrol(tmfc_DN_GUI,'Style','popupmenu','String',set_PAR,'Units',
 % OK and Help Buttons 
 DN_OK = uicontrol(tmfc_DN_GUI,'Style','pushbutton','String','OK','Units','normalized','Position',[0.16 0.02 0.240 0.04],'FontUnits','normalized','fontsize',0.38,'callback',@export_options);
 DN_HELP = uicontrol(tmfc_DN_GUI,'Style','pushbutton','String','Help','Units','normalized','Position',[0.6 0.02 0.240 0.04],'FontUnits','normalized','fontsize',0.38,'callback',@help_options);
+
+
+% Set the GUI controls to the saved values without triggering popup
+% callbacks, which would reset user-defined aCompCor PC counts.
+if restore_saved
+    set(DN_HMP_pop, 'Value', option_index(options.motion, {'24HMP','12HMP','6HMP'}, 'motion'));
+    set(DN_FD_pop_2, 'Value', option_index(options.rotation_unit, {'rad','deg'}, 'rotation_unit'));
+    set(DN_DVARS_pop, 'Value', option_index(options.DVARS, {1,0}, 'DVARS'));
+    set(DN_rWLS_pop, 'Value', option_index(options.rWLS, {0,1}, 'rWLS'));
+    set(DN_SR_pop, 'Value', option_index(options.spikereg, {0,1}, 'spikereg'));
+    set(DN_WM_CSM_pop, 'Value', option_index(options.WM_CSF, {'none','2Phys','4Phys','8Phys'}, 'WM_CSF'));
+    set(DN_GSR_pop, 'Value', option_index(options.GSR, {'none','GSR','2GSR','4GSR'}, 'GSR'));
+    set(DN_PAR_pop, 'Value', option_index(options.parallel, {0,1}, 'parallel'));
+
+    set(DN_FD_TR_E, 'String', num2str(options.translation_idx));
+    set(DN_FD_RR_E, 'String', num2str(options.rotation_idx));
+
+    if isequal(options.aCompCor, [0 0])
+        acc_idx = 3;
+        options.aCompCor_ort = 0;
+    elseif isequal(options.aCompCor, [0.5 0.5])
+        acc_idx = 2;
+    elseif isnumeric(options.aCompCor) && numel(options.aCompCor) == 2 && ...
+           all(options.aCompCor > 0 & options.aCompCor == floor(options.aCompCor))
+        acc_idx = 1;
+    else
+        error('Invalid saved aCompCor setting. Expected [0 0], [0.5 0.5], or two positive integers.');
+    end
+    set(DN_ACC_pop, 'Value', acc_idx);
+    set(DN_ACC_E1, 'String', num2str(options.aCompCor(1)));
+    set(DN_ACC_E2, 'String', num2str(options.aCompCor(2)));
+    set(DN_ACC_PO_pop, 'Value', option_index(options.aCompCor_ort, {1,0}, 'aCompCor_ort'));
+    if acc_idx ~= 1
+        set([DN_ACC_E1, DN_ACC_E2, DN_ACC_txt_2, DN_ACC_txt_3], 'Enable', 'off');
+    end
+    if acc_idx == 3
+        set(DN_ACC_PO_pop, 'Enable', 'off');
+    end
+end
 
 % Enter the number of PCs for aCompCor
 function ACC_value(~,~)
@@ -312,6 +367,26 @@ function export_options(~,~)
     
     disp('Denoising options selected.');
     uiresume(tmfc_DN_GUI);
+end
+
+
+% Match a saved option to its GUI popup index; do not silently use a
+% default when an incompatible or corrupted configuration is loaded.
+function idx = option_index(value, choices, field_name)
+    idx = [];
+    for iChoice = 1:numel(choices)
+        candidate = choices{iChoice};
+        if (ischar(value) || (isstring(value) && isscalar(value))) && ischar(candidate)
+            match = strcmpi(value, candidate);
+        else
+            match = isequal(value, candidate);
+        end
+        if match
+            idx = iChoice;
+            return
+        end
+    end
+    error('Unsupported saved value for options.%s.', field_name);
 end
 
 uiwait(tmfc_DN_GUI);

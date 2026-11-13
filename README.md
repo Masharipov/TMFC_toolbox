@@ -14,6 +14,7 @@
 1) Statistical inference for TMFC matrices
    - Network-Based Statistic (NBS) with Family-Wise Error (FWE) correction ✅
    - Threshold-Free Network-Based Statistic (TFNBS) ✅
+   - ANOVA ⬜
 2) ReadTheDocs documentation
 3) Performance improvements (migration from SPM batch system to internal TMFC functions)
      - VOI extraction ✅
@@ -35,7 +36,11 @@ TMFC toolbox implements:
  - Parallel computations.
 
 If you use TMFC toolbox, please cite this study: <br/>
-[Masharipov et al. "Comparison of whole-brain task-modulated functional connectivity methods for fMRI task connectomics." Commun Biol 7, 1402 (2024)](https://doi.org/10.1038/s42003-024-07088-3).
+[Masharipov, R., Knyazeva, I., Korotkov, A., Cherednichenko, D., & Kireev, M. (2024). Comparison of whole-brain task-modulated functional connectivity methods for fMRI task connectomics. Communications Biology, 7(1), 1402. https://doi.org/10.1038/s42003-024-07088-3](https://doi.org/10.1038/s42003-024-07088-3).
+[Masharipov, R., & Kireev, M. (2026) "Revisiting prewhitening in psychophysiological interaction analysis: A note on whitening inversion and double prewhitening: Comment on He et al. Imaging Neuroscience, 4. https://doi.org/10.1162/IMAG.a.1431](https://doi.org/10.1162/IMAG.a.1431).
+
+If you use TMFC denoise, please cite this study: <br/>
+[Masharipov, R., Ireddy, A., Didur, M., Cherednichenko, D., & Kireev, M. (2026). Denoising for task-modulated functional connectivity: Current practices, empirical benchmarking, and an SPM toolbox. Network Neuroscience, 1–35. https://doi.org/10.1162/netn.a.605](https://doi.org/10.1162/NETN.a.605).
 
 ## Installation
 
@@ -426,7 +431,7 @@ Select mean centering:
 "Enable/Disable mean centering" ([Di, Reynolds & Biswal, 2017](https://doi.org/10.1002/hbm.23413),[Masharipov et al., 2025](https://doi.org/10.1038/s42003-024-07088-3)).
 
 **Note:** 
-**Inverse whitening** has been deprecated since v1.9.0 ([He et al., 2025](https://doi.org/10.1101/2025.05.22.655642)). During deconvolution, the same whitening transform is applied to both the seed signal and the deconvolution matrix, consistent with SPM PEB assumptions. During subsequent gPPI model estimation, the PHYS regressor is derived from unwhitened and unfiltered BOLD data adjusted for regressors of no interest, thereby avoiding double whitening (Masharipov & Kireev, 2026).
+**Inverse whitening** has been deprecated since v1.9.0 ([He et al., 2025](https://doi.org/10.1101/2025.05.22.655642)). During deconvolution, the same whitening transform is applied to both the seed signal and the deconvolution matrix, consistent with SPM PEB assumptions. During subsequent gPPI model estimation, the PHYS regressor is derived from unwhitened and unfiltered BOLD data adjusted for regressors of no interest, thereby avoiding double whitening ([Masharipov & Kireev, 2026](https://doi.org/10.1162/IMAG.a.1431)).
    
 Once the calculations are complete, TMFC toolbox will create a **"...\TMFC_project_name\ROI_sets\ROI_set_name\PPIs"** folder with subjects' subfolders. Subjects' subfolders will contain SPM **PPI .mat files**.
 
