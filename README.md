@@ -36,11 +36,11 @@ TMFC toolbox implements:
  - Parallel computations.
 
 If you use TMFC toolbox, please cite this study: <br/>
-[Masharipov, R., Knyazeva, I., Korotkov, A., Cherednichenko, D., & Kireev, M. (2024). Comparison of whole-brain task-modulated functional connectivity methods for fMRI task connectomics. Communications Biology, 7(1), 1402. https://doi.org/10.1038/s42003-024-07088-3](https://doi.org/10.1038/s42003-024-07088-3).
-[Masharipov, R., & Kireev, M. (2026) "Revisiting prewhitening in psychophysiological interaction analysis: A note on whitening inversion and double prewhitening: Comment on He et al. Imaging Neuroscience, 4. https://doi.org/10.1162/IMAG.a.1431](https://doi.org/10.1162/IMAG.a.1431).
+Masharipov, R., Knyazeva, I., Korotkov, A., Cherednichenko, D., & Kireev, M. (2024). Comparison of whole-brain task-modulated functional connectivity methods for fMRI task connectomics. Communications Biology, 7(1), 1402. [https://doi.org/10.1038/s42003-024-07088-3](https://doi.org/10.1038/s42003-024-07088-3). <br/>
+Masharipov, R., & Kireev, M. (2026) "Revisiting prewhitening in psychophysiological interaction analysis: A note on whitening inversion and double prewhitening: Comment on He et al. Imaging Neuroscience, 4. [https://doi.org/10.1162/IMAG.a.1431](https://doi.org/10.1162/IMAG.a.1431).
 
 If you use TMFC denoise, please cite this study: <br/>
-[Masharipov, R., Ireddy, A., Didur, M., Cherednichenko, D., & Kireev, M. (2026). Denoising for task-modulated functional connectivity: Current practices, empirical benchmarking, and an SPM toolbox. Network Neuroscience, 1–35. https://doi.org/10.1162/netn.a.605](https://doi.org/10.1162/NETN.a.605).
+Masharipov, R., Ireddy, A., Didur, M., Cherednichenko, D., & Kireev, M. (2026). Denoising for task-modulated functional connectivity: Current practices, empirical benchmarking, and an SPM toolbox. Network Neuroscience, 1–35. [https://doi.org/10.1162/netn.a.605](https://doi.org/10.1162/NETN.a.605).
 
 ## Installation
 
